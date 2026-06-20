@@ -1,4 +1,6 @@
-/** Daylio-style плашки для дневника */
+/** Daylio-style метки для дневника */
+
+import { GENERIC_MODE } from "./app-config";
 
 export type TagColor = "green" | "gray" | "brown" | "purple" | "pink" | "black";
 
@@ -95,6 +97,14 @@ export const DEFAULT_TRACKING_TAGS: TrackingTag[] = [
   { id: "stress", label: "Стресс", color: "gray", category: "mood", icon: "frown" },
 ];
 
+/** Дефолтные метки дня — без медицинских в mass-market */
+const GENERIC_HIDDEN_TAG_IDS = new Set(["meds", "cycle"]);
+
+export function defaultTrackingTags(): TrackingTag[] {
+  if (!GENERIC_MODE) return [...DEFAULT_TRACKING_TAGS];
+  return DEFAULT_TRACKING_TAGS.filter((t) => !GENERIC_HIDDEN_TAG_IDS.has(t.id));
+}
+
 export function tagWithIcon(tag: TrackingTag): TrackingTag {
   return { ...tag, icon: tag.icon ?? TAG_ICON_BY_ID[tag.id] };
 }
@@ -107,19 +117,19 @@ export function enrichTags(tags: TrackingTag[]): TrackingTag[] {
 export function mergeDefaultTags(parsed: TrackingTag[]): TrackingTag[] {
   const ids = new Set(parsed.map((t) => t.id));
   const merged = [...parsed];
-  for (const d of DEFAULT_TRACKING_TAGS) {
+  for (const d of defaultTrackingTags()) {
     if (!ids.has(d.id)) merged.push(d);
   }
   return merged;
 }
 
 export function parseTrackingTags(raw: string | null | undefined): TrackingTag[] {
-  if (!raw || raw === "[]") return [...DEFAULT_TRACKING_TAGS];
+  if (!raw || raw === "[]") return defaultTrackingTags();
   try {
     const parsed = JSON.parse(raw) as TrackingTag[];
-    return parsed.length > 0 ? mergeDefaultTags(parsed) : [...DEFAULT_TRACKING_TAGS];
+    return parsed.length > 0 ? mergeDefaultTags(parsed) : defaultTrackingTags();
   } catch {
-    return [...DEFAULT_TRACKING_TAGS];
+    return defaultTrackingTags();
   }
 }
 

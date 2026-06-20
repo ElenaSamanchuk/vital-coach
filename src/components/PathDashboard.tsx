@@ -36,6 +36,7 @@ import type { JourneyProgress } from "@/lib/user-journey";
 import type { WheelScores } from "@/lib/life-spheres";
 import type { WeeklyInsights } from "@/lib/types";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import { UI } from "@/lib/product-copy";
 
 export function PathDashboard() {
   const [journey, setJourney] = useState<{
@@ -199,7 +200,9 @@ export function PathDashboard() {
 
   return (
     <div className="space-y-4 pb-10 vc-stagger">
-      <JourneyHero progress={journey.progress} nextTitle={journey.next?.title} />
+      {GENERIC_FEATURES.journeyBanner && (
+        <JourneyHero progress={journey.progress} nextTitle={journey.next?.title} />
+      )}
 
       <div className="flex items-center gap-2 px-1">
         <StreakBadge days={journey.streak} freezeUsed={journey.freezeUsed} />
@@ -217,7 +220,7 @@ export function PathDashboard() {
       )}
 
       {trends.length > 0 && (
-        <GlassCard title="Тренды" subtitle="Стрелки как Apple Health">
+        <GlassCard title="Тренды" subtitle={UI.trendsSubtitle}>
           <TrendArrows items={trends} />
         </GlassCard>
       )}
@@ -254,17 +257,23 @@ export function PathDashboard() {
 
       {GENERIC_FEATURES.medical && weeklyExp && <WeeklyExperimentCard exp={weeklyExp} />}
 
-      <GlassCard title="Бейджи" subtitle="За привычки и streak">
-        <BadgeStrip unlockedIds={badges} />
+      <GlassCard title="Бейджи" subtitle={UI.badgesSubtitle}>
+        <BadgeStrip
+          unlockedIds={badges.filter(
+            (id) => GENERIC_FEATURES.medical || !["labs_done", "pcos_week"].includes(id),
+          )}
+        />
       </GlassCard>
 
-      <GlassCard title="Календарь" subtitle="Daylio — цвет по настроению">
+      <GlassCard title="Календарь" subtitle={UI.calendarMood}>
         <DaylioCalendar days={calendarDays} tags={trackingTags} />
       </GlassCard>
 
-      <GlassCard title="Плашки" subtitle="За 35 дней">
+      {GENERIC_FEATURES.lifeCatalog && (
+      <GlassCard title="Метки" subtitle="За 35 дней">
         <TagStats tags={trackingTags} counts={tagCounts} days={35} />
       </GlassCard>
+      )}
 
       <GlassCard title="7 дней" subtitle="Кольца привычек">
         <WeekSummaryRings {...weekRings} />

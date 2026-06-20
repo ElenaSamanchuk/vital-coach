@@ -365,7 +365,7 @@ export function CoachDashboard() {
         </button>
       )}
 
-      {journeyNext && (
+      {GENERIC_FEATURES.journeyBanner && journeyNext && (
         <Link href={journeyNext.href} className="block">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)] p-4 flex items-center gap-3">
             <Target size={18} className="text-[var(--accent)] shrink-0" />
@@ -464,6 +464,7 @@ export function CoachDashboard() {
         </div>
       </div>
 
+      {!GENERIC_FEATURES.dayRhythm ? null : (
       <DayRhythmCard
         lifeActions={lifeActions}
         ctx={routineCtx}
@@ -471,7 +472,9 @@ export function CoachDashboard() {
         onToggleStep={toggleRoutineStep}
         onMoodSaved={load}
       />
+      )}
 
+      {GENERIC_FEATURES.wellbeingPain && (
       <WellbeingPainCard
         painLevel={painLevel}
         painZones={painZones}
@@ -483,8 +486,11 @@ export function CoachDashboard() {
         onPainChange={savePain}
         onToggleAction={toggleWellbeingAction}
       />
+      )}
 
-      {plan.horizonPlan && <HorizonPlanCard plan={plan.horizonPlan} compact />}
+      {GENERIC_FEATURES.horizonPlan && plan.horizonPlan && (
+        <HorizonPlanCard plan={plan.horizonPlan} compact />
+      )}
 
       {plan.mealPlan && plan.todayLeisure && plan.todaySportExtras && (
         <TodayOptionsStrip
@@ -506,7 +512,7 @@ export function CoachDashboard() {
       >
         <TaskTrackerPanel tasks={dayTasks} onChange={saveTasks} compact />
         <Link href="/log" className="text-[11px] text-[var(--accent)] mt-2 inline-block">
-          Канбан и каталог жизни →
+          {GENERIC_FEATURES.lifeCatalog ? "Канбан и каталог жизни →" : "Открыть канбан в дневнике →"}
         </Link>
       </IconCard>
 

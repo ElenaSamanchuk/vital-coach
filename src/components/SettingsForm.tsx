@@ -23,6 +23,8 @@ import { WheelOfLife } from "./WheelOfLife";
 import type { WheelScores } from "@/lib/life-spheres";
 import { Save } from "lucide-react";
 import { GENERIC_MODE, STANDALONE_MODE } from "@/lib/app-config";
+import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import { UI } from "@/lib/product-copy";
 import { WeeklyReviewCard } from "./WeeklyReviewCard";
 
 interface Profile {
@@ -71,10 +73,12 @@ export function SettingsForm() {
 
   useEffect(() => {
     const t = searchParams.get("tab");
+    if (t === "health" && GENERIC_MODE && !showAdvanced) return;
+    if (t === "life" && GENERIC_MODE && !showAdvanced) return;
     if (t === "health" || t === "life" || t === "body" || t === "system") {
       setTab(t as Tab);
     }
-  }, [searchParams]);
+  }, [searchParams, showAdvanced]);
 
   useEffect(() => {
     apiClient("/api/profile").then((r) => r.json()).then((p) => {
@@ -110,7 +114,8 @@ export function SettingsForm() {
   const settingsTabs = SETTINGS_TABS.filter((t) => {
     if (!GENERIC_MODE) return true;
     if (t.id === "body" || t.id === "system") return true;
-    if (showAdvanced && (t.id === "life" || t.id === "health")) return true;
+    if (showAdvanced && GENERIC_FEATURES.checkupTab && t.id === "health") return true;
+    if (showAdvanced && GENERIC_FEATURES.deepPsychology && t.id === "life") return true;
     return false;
   });
 
@@ -185,7 +190,7 @@ export function SettingsForm() {
               onClick={() => setShowAdvanced((v) => !v)}
               className="apple-btn apple-btn-secondary w-full text-[13px]"
             >
-              {showAdvanced ? "Скрыть расширенные настройки" : "Расширенные: цикл, лекарства, диагнозы"}
+              {showAdvanced ? "Скрыть расширенные настройки" : UI.advancedSettings}
             </button>
           )}
 
@@ -218,7 +223,7 @@ export function SettingsForm() {
           )}
 
           <button type="button" onClick={saveProfile} className="apple-btn apple-btn-primary w-full py-4">
-            {saved ? "Сохранено ✓" : "Сохранить тело"}
+            {saved ? "Сохранено ✓" : GENERIC_MODE ? UI.saveProfile : "Сохранить тело"}
           </button>
         </>
       )}

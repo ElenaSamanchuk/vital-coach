@@ -1,5 +1,7 @@
 /** Локальные напоминания — PWA + Notification API */
 
+import { APP_NAME } from "./app-config";
+
 export interface NotificationPrefs {
   enabled: boolean;
   morningHour: number;
@@ -38,7 +40,7 @@ export function buildReminder(
     const tasks = ctx?.tasks?.slice(0, 3).join(" · ") || "Открой дневник";
     return {
       kind,
-      title: "Доброе утро — Vital Coach",
+      title: `Доброе утро — ${APP_NAME}`,
       body: ctx?.briefing
         ? `${ctx.briefing} · Дела: ${tasks}`
         : `Сегодня: ${tasks}`,

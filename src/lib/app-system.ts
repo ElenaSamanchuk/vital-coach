@@ -3,8 +3,8 @@
  * Эмодзи: только настроение (дневник) и онбординг.
  * Навигация — нижняя панель (без дублирующей карты зон).
  */
-import { GENERIC_MODE } from "@/lib/app-config";
-import { CHECKUP } from "@/lib/product-copy";
+import { GENERIC_MODE, APP_NAME } from "@/lib/app-config";
+import { CHECKUP, UI } from "@/lib/product-copy";
 
 export const APP_RULES = {
   edit: ["Дневник", "Профиль"],
@@ -22,7 +22,7 @@ export const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   },
   "/path": {
     title: "Прогресс",
-    subtitle: GENERIC_MODE ? "Streak и динамика" : "Прогресс и динамика",
+    subtitle: GENERIC_MODE ? UI.pathSubtitle : "Прогресс и динамика",
   },
   "/settings": {
     title: "Профиль",

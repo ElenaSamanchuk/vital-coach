@@ -2,13 +2,16 @@
 
 import { apiClient } from "@/lib/api-client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { DEFAULT_ASSESSMENT } from "@/lib/onboarding-assessment";
-import { APP_NAME, APP_TAGLINE } from "@/lib/app-config";
+import { APP_NAME, APP_TAGLINE, GENERIC_PROFILE } from "@/lib/app-config";
+import { UI } from "@/lib/product-copy";
 import { BRAND_GRADIENT } from "@/lib/design-tokens";
 
 /** Один экран: имя + старт. Всё остальное — в Профиле. */
 export function OnboardingWizard() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +23,7 @@ export function OnboardingWizard() {
       const res = await apiClient("/api/onboarding/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...DEFAULT_ASSESSMENT, name: name.trim() }),
+        body: JSON.stringify({ ...DEFAULT_ASSESSMENT, ...GENERIC_PROFILE, name: name.trim() }),
       });
       const result = await res.json();
       if (!res.ok) {
@@ -28,7 +31,7 @@ export function OnboardingWizard() {
         setSaving(false);
         return;
       }
-      window.location.href = "/";
+      router.replace("/");
     } catch {
       setError("Не удалось сохранить — попробуй ещё раз");
       setSaving(false);
@@ -51,7 +54,7 @@ export function OnboardingWizard() {
           </div>
 
           <label className="block">
-            <span className="vc-label">Как к вам обращаться? (необязательно)</span>
+            <span className="vc-label">{UI.onboardingName}</span>
             <input
               className="apple-input mt-2"
               placeholder="Имя"
@@ -62,7 +65,7 @@ export function OnboardingWizard() {
           </label>
 
           <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
-            Регистрация не нужна — всё хранится на этом устройстве. Вес и цели можно задать позже в «Профиле».
+            {UI.onboardingPrivacy}
           </p>
 
           {error && (

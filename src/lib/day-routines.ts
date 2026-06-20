@@ -2,6 +2,8 @@
  * Ритмы дня: утро · обед (переключение с работы) · вечер.
  */
 
+import { GENERIC_MODE } from "./app-config";
+
 export type RoutinePhase = "morning" | "midday" | "evening";
 
 export interface RoutineStep {
@@ -30,9 +32,9 @@ export function activeRoutinePhase(hour: number): RoutinePhase {
 export function getRoutineSteps(phase: RoutinePhase, ctx: RoutineContext): RoutineStep[] {
   if (phase === "morning") {
     const steps: RoutineStep[] = [
-      { id: "water", label: "Стакан воды", hint: "До кофе — щитовидка и ИР", minutes: 1 },
+      { id: "water", label: "Стакан воды", hint: GENERIC_MODE ? "До кофе — гидратация" : "До кофе — щитовидка и ИР", minutes: 1 },
     ];
-    if (ctx.hypothyroidism) {
+    if (ctx.hypothyroidism && !GENERIC_MODE) {
       steps.push({
         id: "thyroid",
         label: "Тироксин натощак",
@@ -67,11 +69,18 @@ export function getRoutineSteps(phase: RoutinePhase, ctx: RoutineContext): Routi
         minutes: 15,
       },
     ];
-    if (ctx.insulinResistance || ctx.cortisolIssues) {
+    if ((ctx.insulinResistance || ctx.cortisolIssues) && !GENERIC_MODE) {
       steps.push({
         id: "walk_10",
         label: "10 мин ходьбы после еды",
         hint: "ИР: главный ритуал дня",
+        minutes: 10,
+      });
+    } else if (GENERIC_MODE) {
+      steps.push({
+        id: "walk_10",
+        label: "10 мин ходьбы после еды",
+        hint: "Лёгкая прогулка — энергия и пищеварение",
         minutes: 10,
       });
     }
@@ -89,7 +98,7 @@ export function getRoutineSteps(phase: RoutinePhase, ctx: RoutineContext): Routi
         minutes: 3,
       },
     );
-    if (ctx.endometriosis) {
+    if (ctx.endometriosis && !GENERIC_MODE) {
       steps.push({
         id: "pelvis_rest",
         label: "Поза покоя для таза",

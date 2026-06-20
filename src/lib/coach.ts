@@ -34,6 +34,7 @@ import { parseDayTags } from "./tracking-tags";
 import { computeCompensation } from "./compensation-plan";
 import { buildHealthBriefing } from "./health-briefing";
 import { CHECKUP, checkupReminderTitle } from "./product-copy";
+import { GENERIC_MODE } from "./app-config";
 import { parseDayTasks, taskStats } from "./day-tasks";
 import { parseLifeActions } from "./life-actions";
 import { mealImpact, workoutImpact } from "./impact-motivation";
@@ -286,9 +287,11 @@ export function generateDailyPlan(
   }
 
   const nutritionFocus = [...framework.principles.slice(0, 4), ...dynamic.extraFocus];
-  if (conditions.pcosSuspected) nutritionFocus.unshift("СПКЯ: силовая 2×/нед + ходьба после еды");
-  if (conditions.endometriosis) nutritionFocus.unshift("Эндометриоз: рыба, крестоцветные, без жёсткого пресса в боли");
-  if (conditions.vitaminAbsorption) nutritionFocus.push("Усвоение: жир + витамин C к железу/B12");
+  if (!GENERIC_MODE) {
+    if (conditions.pcosSuspected) nutritionFocus.unshift("СПКЯ: силовая 2×/нед + ходьба после еды");
+    if (conditions.endometriosis) nutritionFocus.unshift("Эндометриоз: рыба, крестоцветные, без жёсткого пресса в боли");
+    if (conditions.vitaminAbsorption) nutritionFocus.push("Усвоение: жир + витамин C к железу/B12");
+  }
 
   const warnings: string[] = [...dynamic.extraWarnings];
   if (mealOverTarget) {
@@ -296,7 +299,7 @@ export function generateDailyPlan(
       `Меню ~${mealTotals.calories} ккал — выше цели ${calorieTarget}. Попробуй варианты с меньшей цифрой`,
     );
   }
-  if (conditions.hypothyroidism && !todayLog?.thyroidMedTaken) {
+  if (!GENERIC_MODE && conditions.hypothyroidism && !todayLog?.thyroidMedTaken) {
     warnings.push("Отметь приём тироксина — на пустой желудок");
   }
   if (psychology.minimumDay) {
@@ -305,7 +308,12 @@ export function generateDailyPlan(
   if (recentStressHigh && !softDay) {
     warnings.push("3 дня высокого стресса — включи «Мягкий день» или снизь нагрузку");
   }
-  if (who5Total != null && who5NeedsAttention(who5Total) && nutritionMeta.bodyGoal === "lose") {
+  if (
+    !GENERIC_MODE &&
+    who5Total != null &&
+    who5NeedsAttention(who5Total) &&
+    nutritionMeta.bodyGoal === "lose"
+  ) {
     warnings.push(`WHO-5 ${who5Total}/25 — не ужесточай дефицит, приоритет сон и связи`);
   }
 
@@ -336,9 +344,9 @@ export function generateDailyPlan(
     {
       id: "morning_weigh",
       category: "track",
-      title: isWeighDay(cycleDay) ? "День взвешивания (цикл 5–7)" : "Вес — по желанию",
-      description: isWeighDay(cycleDay) ? "Честная точка для тренда" : "Тренд важнее ежедневного веса",
-      priority: isWeighDay(cycleDay) ? "must" : "optional",
+      title: GENERIC_MODE ? "Вес — по желанию" : isWeighDay(cycleDay) ? "День взвешивания (цикл 5–7)" : "Вес — по желанию",
+      description: GENERIC_MODE ? "Тренд важнее ежедневного веса" : isWeighDay(cycleDay) ? "Честная точка для тренда" : "Тренд важнее ежедневного веса",
+      priority: GENERIC_MODE ? "optional" : isWeighDay(cycleDay) ? "must" : "optional",
       completed: todayLog?.weightKg != null,
     },
     {
@@ -599,7 +607,9 @@ export function generateDailyPlan(
 
   return {
     greeting: `Привет${profile.name ? `, ${profile.name}` : ""}! ${format(today, "EEEE, d MMMM", { locale: ru })}`,
-    summary: `День ${cycleDay ?? "?"} цикла · ${calorieTarget} ккал · ${proteinTarget} г белка · ${doneCount}/${tasks.length} задач`,
+    summary: GENERIC_MODE
+      ? `${calorieTarget} ккал · ${proteinTarget} г белка · ${doneCount}/${tasks.length} задач`
+      : `День ${cycleDay ?? "?"} цикла · ${calorieTarget} ккал · ${proteinTarget} г белка · ${doneCount}/${tasks.length} задач`,
     cycleDay,
     cyclePhase: phase,
     cycleNote,

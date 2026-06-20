@@ -22,6 +22,10 @@ export function StandaloneAppLayout({ children }: { children: React.ReactNode })
         router.replace("/onboarding");
         return;
       }
+      if (profile.onboardingDone && pathname === "/onboarding") {
+        router.replace("/");
+        return;
+      }
       if (!cancelled) setReady(true);
     })();
     return () => {

@@ -3,6 +3,9 @@
  * Постепенное усложнение — не всё сразу.
  */
 
+import { GENERIC_MODE } from "./app-config";
+import { CHECKUP } from "./product-copy";
+
 export type JourneyPhase = 1 | 2 | 3 | 4 | 5;
 
 export interface JourneyStep {
@@ -24,8 +27,6 @@ export const JOURNEY_PHASES: { phase: JourneyPhase; label: string; weeks: string
   { phase: 4, label: "Система", weeks: "Месяц 2" },
   { phase: 5, label: "Мастерство", weeks: "Постоянно" },
 ];
-
-import { CHECKUP } from "./product-copy";
 
 export const JOURNEY_STEPS: JourneyStep[] = [
   {
@@ -170,6 +171,42 @@ export const JOURNEY_STEPS: JourneyStep[] = [
   },
 ];
 
+const GENERIC_HIDDEN_STEP_IDS = new Set([
+  "wheel_save",
+  "labs_first",
+  "exam_first",
+  "life_actions",
+  "who5",
+  "weekly_review",
+  "cases_apply",
+]);
+
+const GENERIC_STEP_OVERRIDES: Partial<Record<string, Partial<JourneyStep>>> = {
+  onboarding: {
+    title: "Представиться",
+    subtitle: "1 экран",
+    description: "Имя по желанию — остальное настроишь в профиле.",
+    hrefLabel: "Старт",
+  },
+  coach_plan: { hrefLabel: "Сегодня" },
+  backup: {
+    description: "Скачай копию — данные не потеряются при смене телефона.",
+    hrefLabel: "Копия",
+  },
+  full_system: {
+    description: "Сегодня + дневник + прогресс — в еженедельном ритме.",
+    hrefLabel: "Прогресс",
+  },
+};
+
+export function getActiveJourneySteps(): JourneyStep[] {
+  if (!GENERIC_MODE) return JOURNEY_STEPS;
+  return JOURNEY_STEPS.filter((s) => !GENERIC_HIDDEN_STEP_IDS.has(s.id)).map((s) => ({
+    ...s,
+    ...GENERIC_STEP_OVERRIDES[s.id],
+  }));
+}
+
 export interface JourneyProgress {
   completed: string[];
   currentPhase: JourneyPhase;
@@ -206,12 +243,15 @@ export function computeJourneyProgress(ctx: {
   if (ctx.lifeActionDays >= 3) completed.push("cases_apply");
   if (completed.length >= 12) completed.push("full_system");
 
-  const percent = Math.round((completed.length / JOURNEY_STEPS.length) * 100);
-  const currentPhase = (Math.min(5, Math.ceil(completed.length / 3)) || 1) as JourneyPhase;
+  const active = getActiveJourneySteps();
+  const activeIds = new Set(active.map((s) => s.id));
+  const relevant = completed.filter((id) => activeIds.has(id));
+  const percent = Math.round((relevant.length / active.length) * 100);
+  const currentPhase = (Math.min(5, Math.ceil(relevant.length / 2)) || 1) as JourneyPhase;
 
   return { completed, currentPhase, percent };
 }
 
 export function nextRecommendedStep(completed: string[]): JourneyStep | null {
-  return JOURNEY_STEPS.find((s) => !completed.includes(s.id)) ?? null;
+  return getActiveJourneySteps().find((s) => !completed.includes(s.id)) ?? null;
 }

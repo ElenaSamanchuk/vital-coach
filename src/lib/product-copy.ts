@@ -1,39 +1,31 @@
 /**
  * Единая продуктовая терминология Vital.
- * Раздел «Чекап» — вместо «Анализы» (маркетинг · UX · UI).
- * Технические имена API (labs) не меняем.
+ * Маркетинг · UX · UI — один источник правды.
  */
+import { GENERIC_MODE } from "./app-config";
+
 export const CHECKUP = {
-  /** Заголовок раздела / вкладки */
   section: "Чекап",
-  /** Путь в подсказках */
   sectionPath: "Профиль → Чекап",
-  /** Подвкладка: результаты из крови */
   markersTab: "Показатели",
-  /** Карточка расписания */
   bloodScheduleTitle: "Показатели из крови",
   bloodScheduleSubtitle: "Когда пересдавать",
   emptySchedule: "Всё актуально — или добавь первые показатели во вкладке «Показатели»",
-  /** Формы */
   addMarker: "Добавить показатель",
   addMarkerCard: "Новый показатель",
   history: "История",
-  /** План визитов */
   visitBundles: "Визиты по чекапу",
   doctorTextLabs: "Текст для врача (чекап)",
   bundlesTitle: "Комплексы чекапа",
   bundlesSubtitle: "Что сдавать вместе — меньше визитов",
-  /** Journey / коуч */
   journeyTitle: "Записать чекап",
   journeyHref: "Чекап",
   reminderTitle: (label: string) => `Чекап: ${label}`,
   adjustmentNote: "Корректировка по чекапу",
   addResultHint: "Добавь результат в Профиль → Чекап.",
-  /** Бэкап / gamification */
   backupIncludes: "чекап",
   badgeTitle: "Знаю своё тело",
   badgeDescription: "5+ показателей в чекапе",
-  /** Прочее */
   matrixRow: "Чекап",
   dayTask: "Чекап / УЗИ",
   guideTitle: "Чекап — 3 визита",
@@ -45,6 +37,33 @@ export const CHECKUP = {
   motivation: "Точный план под твоё тело · 1 раз/квартал",
 } as const;
 
+/** Тексты mass-market версии (GitHub Pages / APK) */
+export const UI = {
+  onboardingName: "Как к тебе обращаться? (необязательно)",
+  onboardingPrivacy:
+    "Регистрация не нужна — всё хранится на этом устройстве. Вес и цели можно задать позже в «Профиле».",
+  pathSubtitle: "Серия дней и динамика",
+  backupIncludes: "профиль и дневники",
+  backupTech: "Скачай файл копии — перенесёшь на новый телефон.",
+  saveProfile: "Сохранить профиль",
+  advancedSettings: "Расширенные настройки",
+  dayTags: "Метки дня",
+  diaryPhoto: "Один кадр на день",
+  caloriesSubtitle: "План vs цель",
+  planVsFact: "Цель на сегодня",
+  kanbanLink: "Открыть канбан в дневнике →",
+  calendarMood: "Календарь настроения",
+  trendsSubtitle: "Динамика за период",
+  badgesSubtitle: "За привычки и серию дней",
+  eveningReflection: "Три коротких вопроса",
+  movementDone: "Движение из «Сегодня» сделано",
+  thyroidTaken: "Принял(а) натощак",
+} as const;
+
 export function checkupReminderTitle(label: string): string {
   return CHECKUP.reminderTitle(label);
+}
+
+export function backupIncludesLine(): string {
+  return GENERIC_MODE ? UI.backupIncludes : CHECKUP.backupIncludes;
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { CHECKUP } from "@/lib/product-copy";
+import { backupIncludesLine, UI } from "@/lib/product-copy";
 import { apiClient } from "@/lib/api-client";
-import { STANDALONE_MODE } from "@/lib/app-config";
+import { GENERIC_MODE, STANDALONE_MODE } from "@/lib/app-config";
 import { useEffect, useRef, useState } from "react";
 import { GlassCard } from "./ui/GlassCard";
 import { Badge } from "./ui/Badge";
@@ -78,8 +78,11 @@ export function BackupPanel() {
             на новый телефон.
           </p>
           <p className="text-[var(--text-secondary)] mt-2">
-            Профиль, дневники, фото дня, {CHECKUP.backupIncludes}, XP.
+            Профиль, дневники, фото дня, {backupIncludesLine()}, XP.
           </p>
+          {GENERIC_MODE && (
+            <p className="text-[var(--text-secondary)] mt-1 text-[12px]">{UI.backupTech}</p>
+          )}
         </div>
       </div>
       {lastBackup && (

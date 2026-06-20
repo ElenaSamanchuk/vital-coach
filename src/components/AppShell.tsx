@@ -6,6 +6,7 @@ import { Home, Map, ClipboardList, Settings } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { NAV_ITEMS, PAGE_META } from "@/lib/app-system";
+import { APP_NAME } from "@/lib/app-config";
 import { BRAND_GRADIENT } from "@/lib/design-tokens";
 
 const ICONS = [Home, ClipboardList, Map, Settings];
@@ -20,7 +21,7 @@ export function AppShell({
   subtitle?: string;
 }) {
   const pathname = usePathname();
-  const meta = PAGE_META[pathname] ?? { title: "Vital Coach", subtitle: "" };
+  const meta = PAGE_META[pathname] ?? { title: APP_NAME, subtitle: "" };
 
   return (
     <div className="vc-app-shell min-h-screen flex flex-col">

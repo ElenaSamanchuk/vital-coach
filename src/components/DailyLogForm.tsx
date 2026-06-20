@@ -44,6 +44,9 @@ import { mealSlotsFromPlan } from "@/lib/meal-distribution";
 import { EVENING_PROMPTS, appendReflection } from "@/lib/evening-reflection";
 import type { MealSlotPlan } from "@/lib/types";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
+import { GENERIC_MODE } from "@/lib/app-config";
+import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import { UI } from "@/lib/product-copy";
 import {
   Smile,
   Scale,
@@ -314,8 +317,8 @@ export function DailyLogForm() {
         <WeekDots loggedDays={weekLogged} />
       </div>
 
-      {autoNutrition.calories != null && (
-        <IconCard icon={Flame} iconColor={CARD_ICON} title="Калории" subtitle="Как в Lifesum — план vs цель">
+      {autoNutrition.calories != null && !GENERIC_MODE && (
+        <IconCard icon={Flame} iconColor={CARD_ICON} title="Калории" subtitle={UI.caloriesSubtitle}>
           <CalorieRing
             consumed={autoNutrition.calories}
             target={calTarget}
@@ -342,7 +345,8 @@ export function DailyLogForm() {
         </IconCard>
       )}
 
-      <IconCard icon={Trophy} iconColor={CARD_ICON} title="План vs факт" subtitle="Цель коуча на сегодня">
+      {!GENERIC_MODE && (
+      <IconCard icon={Trophy} iconColor={CARD_ICON} title="План vs факт" subtitle={UI.planVsFact}>
         <PlanVsFact
           planCalories={autoNutrition.calories}
           planProtein={autoNutrition.proteinG}
@@ -354,15 +358,21 @@ export function DailyLogForm() {
           waterTarget={waterTarget}
         />
       </IconCard>
+      )}
 
-      <IconCard icon={Camera} iconColor={CARD_ICON} title="Фото дня" subtitle="Daylio-style — один кадр на день">
+      {!GENERIC_MODE && (
+      <IconCard icon={Camera} iconColor={CARD_ICON} title="Фото дня" subtitle={UI.diaryPhoto}>
         <DayPhotoUpload photo={dayPhoto} onChange={setDayPhoto} />
       </IconCard>
+      )}
 
-      <IconCard icon={Tags} iconColor={CARD_ICON} title="Плашки дня" subtitle="Здоровье · уход · быт · настроение">
+      {!GENERIC_MODE && (
+      <IconCard icon={Tags} iconColor={CARD_ICON} title={UI.dayTags} subtitle="Здоровье · уход · быт · настроение">
         <DayTrackerTags tags={trackingTags} selected={dayTags} onToggle={toggleDayTag} />
       </IconCard>
+      )}
 
+      {GENERIC_FEATURES.careHomeBlock && (
       <IconCard icon={Sparkles} iconColor={CARD_ICON} title="Уход и быт" subtitle="Маска, массаж, уборка — без идеала">
         <CareHomePanel
           selfcare={selfcare}
@@ -378,12 +388,13 @@ export function DailyLogForm() {
           />
         </div>
       </IconCard>
+      )}
 
       <SegmentTabs
         tabs={[
           { id: "quick", label: "Быстро" },
           { id: "tasks", label: "Дела" },
-          { id: "life", label: "Жизнь" },
+          ...(GENERIC_FEATURES.lifeCatalog ? [{ id: "life" as const, label: "Жизнь" }] : []),
           { id: "more", label: isEvening ? "Вечер" : "Подробнее" },
         ]}
         value={tab}
@@ -401,7 +412,7 @@ export function DailyLogForm() {
         </>
       )}
 
-      {tab === "life" && (
+      {tab === "life" && GENERIC_FEATURES.lifeCatalog && (
         <>
           <LeisureQuizCard
             initial={parseLeisureQuiz(leisureQuizJson)}
@@ -562,7 +573,7 @@ export function DailyLogForm() {
             </div>
           </IconCard>
 
-          {profile.hypothyroidism && (
+          {GENERIC_FEATURES.medical && profile.hypothyroidism && (
             <IconCard icon={Pill} iconColor={CARD_ICON} title="Тироксин">
               <label className="flex items-center gap-3">
                 <input
@@ -571,7 +582,7 @@ export function DailyLogForm() {
                   onChange={(e) => update({ thyroidMedTaken: e.target.checked })}
                   className="w-5 h-5 accent-[var(--accent)]"
                 />
-                <span className="text-[14px]">Приняла натощак</span>
+                <span className="text-[14px]">{UI.thyroidTaken}</span>
               </label>
             </IconCard>
           )}
@@ -587,13 +598,24 @@ export function DailyLogForm() {
               size={20}
               className={log.workoutCompleted ? "text-[var(--success)]" : "text-[var(--text-tertiary)]"}
             />
-            <span className="text-[14px]">Движение из «Сегодня» сделала</span>
+            <span className="text-[14px]">{UI.movementDone}</span>
           </label>
         </>
       )}
 
       {tab === "more" && (
         <>
+          {GENERIC_MODE && (
+            <>
+              <IconCard icon={Camera} iconColor={CARD_ICON} title="Фото дня" subtitle={UI.diaryPhoto}>
+                <DayPhotoUpload photo={dayPhoto} onChange={setDayPhoto} />
+              </IconCard>
+              <IconCard icon={Tags} iconColor={CARD_ICON} title={UI.dayTags} subtitle="Отметь, что было сегодня">
+                <DayTrackerTags tags={trackingTags} selected={dayTags} onToggle={toggleDayTag} />
+              </IconCard>
+            </>
+          )}
+
           <IconCard icon={Moon} iconColor={CARD_ICON} title="Сон и вечер" subtitle="Закрой день за 2 минуты">
             <input
               type="number"
@@ -636,6 +658,7 @@ export function DailyLogForm() {
             />
           </IconCard>
 
+          {GENERIC_FEATURES.cycle && (
           <IconCard icon={Droplets} iconColor={CARD_ICON} title="Цикл">
             <button
               type="button"
@@ -654,6 +677,7 @@ export function DailyLogForm() {
               Длина цикла — в Профиле
             </p>
           </IconCard>
+          )}
 
           <EveningRitualCard
             done={eveningRitual}
@@ -664,7 +688,7 @@ export function DailyLogForm() {
             }}
           />
 
-          <IconCard icon={Smile} iconColor={CARD_ICON} title="Вечерняя рефлексия" subtitle="Как Apple Health — 3 вопроса">
+          <IconCard icon={Smile} iconColor={CARD_ICON} title="Вечерняя рефлексия" subtitle={UI.eveningReflection}>
             <div className="flex gap-2 mb-3">
               {EVENING_PROMPTS.map((p) => (
                 <button
