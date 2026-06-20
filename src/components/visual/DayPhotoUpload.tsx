@@ -68,7 +68,7 @@ export function DayPhotoUpload({
         >
           <Camera size={28} className="text-[var(--brown)]" />
           <span className="text-[13px] font-medium">Фото дня</span>
-          <span className="text-[10px]">как в Daylio — момент, еда, настроение</span>
+          <span className="text-[10px]">Момент дня — еда или настроение</span>
         </button>
       )}
       <input

@@ -509,7 +509,7 @@ export function generateDailyPlan(
     softDay,
     wheelScores,
     quiz: leisureQuiz,
-    limit: 10,
+    limit: 24,
   });
 
   const workoutCtx = {
@@ -524,7 +524,7 @@ export function generateDailyPlan(
       0,
     ),
   };
-  const todaySportExtras = pickTodaySportExtras(workoutCtx, 8);
+  const todaySportExtras = pickTodaySportExtras(workoutCtx, 18);
 
   const weeklyExperiment = currentExperiment(profile.weeklyExperimentJson, recentLogs);
 

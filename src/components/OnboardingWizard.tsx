@@ -3,7 +3,7 @@
 import { apiClient } from "@/lib/api-client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, ShieldCheck } from "lucide-react";
+import { ShieldCheck, Leaf } from "lucide-react";
 import { DEFAULT_ASSESSMENT } from "@/lib/onboarding-assessment";
 import { APP_NAME, APP_TAGLINE, GENERIC_PROFILE } from "@/lib/app-config";
 import { APP_FLOW, UI } from "@/lib/product-copy";
@@ -39,22 +39,24 @@ export function OnboardingWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] md:bg-[#ebebeb] flex justify-center">
-      <div className="vc-app-shell min-h-screen w-full flex flex-col justify-center py-10 pb-16 px-4 max-h-none overflow-visible">
+    <div className="vc-app-shell vc-app-shell--page">
+      <main className="vc-app-main flex flex-col justify-center px-4 py-10 pb-16 vc-header-safe">
         <div className="vc-surface p-6 space-y-6 w-full">
           <div className="text-center">
             <div
               className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"
               style={{ background: BRAND_GRADIENT }}
             >
-              <Sparkles className="text-white" size={32} />
+              <Leaf className="text-white" size={32} />
             </div>
             <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1 rounded-full mb-3">
               <ShieldCheck size={14} />
               {UI.onboardingBadge}
             </p>
             <h1 className="vc-display text-[26px]">{UI.onboardingTitle}</h1>
-            <p className="vc-subtitle mt-2">{APP_NAME} · {APP_TAGLINE}</p>
+            <p className="vc-subtitle mt-2">
+              {APP_NAME} · {APP_TAGLINE}
+            </p>
           </div>
 
           <ol className="space-y-2 text-[12px] text-[var(--text-secondary)]">
@@ -84,19 +86,21 @@ export function OnboardingWizard() {
           </p>
 
           {error && (
-            <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl">{error}</p>
+            <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl">
+              {error}
+            </p>
           )}
 
           <button
             type="button"
             onClick={start}
             disabled={saving}
-            className="apple-btn apple-btn-primary w-full py-4 text-[16px] font-semibold"
+            className="apple-btn apple-btn-primary w-full font-semibold"
           >
             {saving ? "Запуск…" : UI.onboardingCta}
           </button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

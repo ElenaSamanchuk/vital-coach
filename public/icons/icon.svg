@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="108" fill="#3B9B7A"/>
-  <text x="256" y="320" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-size="240" font-weight="700" fill="white" text-anchor="middle">V</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ритм">
+  <rect width="512" height="512" rx="108" fill="#3d9b6e"/>
+  <path
+    fill="#ffffff"
+    d="M256 96c-72 88-120 148-120 208a120 120 0 0 0 240 0c0-60-48-120-120-208zm0 288a80 80 0 0 1-80-80c0-36 28-84 80-152 52 68 80 116 80 152a80 80 0 0 1-80 80z"
+  />
 </svg>

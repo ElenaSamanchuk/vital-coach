@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { SessionProvider } from "next-auth/react";
 import { STANDALONE_MODE, BASE_PATH } from "@/lib/app-config";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -13,9 +14,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       .catch(() => {});
   }, []);
 
+  const wrapped = <ToastProvider>{children}</ToastProvider>;
+
   if (STANDALONE_MODE) {
-    return <>{children}</>;
+    return wrapped;
   }
 
-  return <SessionProvider>{children}</SessionProvider>;
+  return <SessionProvider>{wrapped}</SessionProvider>;
 }

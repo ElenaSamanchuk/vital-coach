@@ -141,7 +141,7 @@ export function SettingsForm() {
   );
 
   return (
-    <div className="space-y-4 pb-8">
+    <div className="vc-page">
       <IconSegmentTabs
         tabs={settingsTabs.map((t) => ({ ...t, id: t.id as Tab }))}
         value={tab}

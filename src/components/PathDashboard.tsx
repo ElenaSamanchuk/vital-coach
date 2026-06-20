@@ -14,7 +14,7 @@ import { WeeklyDigest } from "./visual/WeeklyDigest";
 import { StreakBadge } from "./visual/StreakBadge";
 import { WeekSummaryRings } from "./visual/WeekSummaryRings";
 import { WellbeingTrend } from "./visual/WellbeingTrend";
-import { DaylioCalendar } from "./visual/DaylioCalendar";
+import { MoodCalendar } from "./visual/MoodCalendar";
 import { TagStats } from "./visual/TagStats";
 import { TrendArrows } from "./visual/TrendArrows";
 import { WeeklyExperimentCard } from "./visual/WeeklyExperimentCard";
@@ -35,6 +35,7 @@ import type { TrackingTag } from "@/lib/tracking-tags";
 import type { JourneyProgress } from "@/lib/user-journey";
 import type { WheelScores } from "@/lib/life-spheres";
 import type { WeeklyInsights } from "@/lib/types";
+import { PageSkeleton } from "@/components/ui/Skeleton";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { UI } from "@/lib/product-copy";
 
@@ -195,11 +196,11 @@ export function PathDashboard() {
   }, []);
 
   if (!journey) {
-    return <div className="text-center py-16 text-[var(--text-secondary)]">Загрузка…</div>;
+    return <PageSkeleton cards={3} />;
   }
 
   return (
-    <div className="space-y-4 pb-10 vc-stagger">
+    <div className="vc-page vc-stagger">
       {GENERIC_FEATURES.journeyBanner && (
         <JourneyHero progress={journey.progress} nextTitle={journey.next?.title} />
       )}
@@ -266,7 +267,7 @@ export function PathDashboard() {
       </GlassCard>
 
       <GlassCard title="Календарь" subtitle={UI.calendarMood}>
-        <DaylioCalendar days={calendarDays} tags={trackingTags} />
+        <MoodCalendar days={calendarDays} tags={trackingTags} />
       </GlassCard>
 
       {GENERIC_FEATURES.lifeCatalog && (

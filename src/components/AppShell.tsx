@@ -2,77 +2,78 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, ClipboardList, Settings } from "lucide-react";
-import { ReactNode } from "react";
+import { Home, BookOpen, TrendingUp, User, Leaf } from "lucide-react";
+import { ReactNode, RefObject } from "react";
 import { cn } from "@/lib/cn";
 import { NAV_ITEMS, PAGE_META } from "@/lib/app-system";
 import { APP_NAME } from "@/lib/app-config";
+import { isNavActive, normalizeAppPath } from "@/lib/routes";
 import { BRAND_GRADIENT } from "@/lib/design-tokens";
 
-const ICONS = [Home, ClipboardList, Map, Settings];
+const NAV_ICONS = [Home, BookOpen, TrendingUp, User] as const;
 
-/**
- * Mobile-first shell: header · scroll · dock (optional) · tab bar.
- * Без viewport-fixed — всё в колонке 480px, как в Ionic / native tab apps.
- */
 export function AppShell({
   children,
   title,
   subtitle,
   dock,
   mainClassName,
+  mainRef,
 }: {
   children: ReactNode;
   title?: string;
   subtitle?: string;
-  /** Кнопка над таб-баром (например «Записать в дневник») */
   dock?: ReactNode;
   mainClassName?: string;
+  mainRef?: RefObject<HTMLElement | null>;
 }) {
   const pathname = usePathname();
-  const meta = PAGE_META[pathname] ?? { title: APP_NAME, subtitle: "" };
+  const route = normalizeAppPath(pathname);
+  const meta = PAGE_META[route] ?? PAGE_META[pathname] ?? { title: APP_NAME, subtitle: "" };
 
   return (
     <div className="vc-app-shell">
-      <header className="shrink-0 z-40 vc-header px-4 py-3">
-        <div className="flex items-center gap-2">
+      <header className="shrink-0 z-40 vc-header vc-header-safe px-4 pb-2.5">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: BRAND_GRADIENT }}
+            aria-hidden
           >
-            <Map size={16} className="text-white" />
+            <Leaf size={17} className="text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="vc-display text-[20px] truncate">{title ?? meta.title}</h1>
+            <h1 className="vc-display">{title ?? meta.title}</h1>
             {(subtitle ?? meta.subtitle) && (
-              <p className="vc-subtitle text-[12px] truncate">{subtitle ?? meta.subtitle}</p>
+              <p className="vc-subtitle vc-text-xs mt-0.5 truncate">{subtitle ?? meta.subtitle}</p>
             )}
           </div>
         </div>
       </header>
 
-      <main className={cn("vc-app-main px-4 pt-2 pb-4 vc-page-enter", mainClassName)}>
+      <main ref={mainRef} className={cn("vc-app-main", mainClassName)}>
         {children}
       </main>
 
-      {dock}
+      {dock ? <div className="vc-shell-dock">{dock}</div> : null}
 
-      <nav className="shrink-0 vc-nav pb-[max(8px,env(safe-area-inset-bottom))]">
-        <div className="flex justify-around py-2 px-2">
+      <nav className="shrink-0 vc-nav pb-[max(6px,env(safe-area-inset-bottom))]" aria-label="Основные разделы">
+        <div className="flex justify-around gap-0.5 py-1.5 px-1.5">
           {NAV_ITEMS.map(({ href, label }, i) => {
-            const Icon = ICONS[i];
-            const active = pathname === href;
+            const Icon = NAV_ICONS[i];
+            const active = isNavActive(pathname, href);
             return (
               <Link
                 key={href}
                 href={href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
-                  "vc-nav-item flex-1 max-w-[88px]",
+                  "vc-nav-item flex-1 min-w-0",
                   active ? "vc-nav-item--active" : "vc-nav-item--idle",
                 )}
               >
-                <Icon size={22} strokeWidth={active ? 2.5 : 1.75} />
-                <span className="text-[10px] font-semibold">{label}</span>
+                <Icon size={20} strokeWidth={active ? 2.5 : 1.75} aria-hidden />
+                <span className="text-[10px] font-semibold truncate w-full text-center">{label}</span>
               </Link>
             );
           })}

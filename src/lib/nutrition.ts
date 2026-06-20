@@ -244,7 +244,21 @@ export function getMealOptions(
     options = options.filter((o) => !o.title.toLowerCase().includes("сырой капуст"));
   }
 
-  return options.slice(0, 5);
+  const limit = 12;
+  if (options.length < limit) {
+    for (const phaseKey of Object.keys(BANK) as CyclePhase[]) {
+      if (phaseKey === p) continue;
+      for (const o of BANK[phaseKey][mealType] ?? []) {
+        if (seen.has(o.id)) continue;
+        seen.add(o.id);
+        options.push(o);
+        if (options.length >= limit) break;
+      }
+      if (options.length >= limit) break;
+    }
+  }
+
+  return options.slice(0, limit);
 }
 
 export function getDailyMealPlan(

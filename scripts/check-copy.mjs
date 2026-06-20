@@ -59,4 +59,26 @@ if (hits.length) {
   process.exit(1);
 }
 
+// Чужие бренды в пользовательских строках (комментарии /** ... */ пропускаем)
+const competitorRe = /Daylio|Lifesum|Apple Health|Samsung|как в [A-ZА-Я]/i;
+const competitorHits = [];
+
+for (const dir of SCAN_DIRS) {
+  for (const file of walk(join(ROOT, dir))) {
+    const lines = readFileSync(file, "utf8").split("\n");
+    lines.forEach((line, i) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/**")) return;
+      if (!competitorRe.test(line)) return;
+      competitorHits.push(`${file.replace(ROOT + "/", "")}:${i + 1}: ${trimmed}`);
+    });
+  }
+}
+
+if (competitorHits.length) {
+  console.error("Found competitor references in user-facing copy:\n");
+  competitorHits.forEach((h) => console.error(" ", h));
+  process.exit(1);
+}
+
 console.log("✓ Copy check passed — «Чекап» terminology consistent");

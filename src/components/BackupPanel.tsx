@@ -78,7 +78,8 @@ export function BackupPanel() {
             на новый телефон.
           </p>
           <p className="text-[var(--text-secondary)] mt-2">
-            Профиль, дневники, фото дня, {backupIncludesLine()}, XP.
+            Профиль, дневники, фото дня, {backupIncludesLine()}
+            {GENERIC_MODE ? ", достижения" : ", XP"}.
           </p>
           {GENERIC_MODE && (
             <p className="text-[var(--text-secondary)] mt-1 text-[12px]">{UI.backupTech}</p>

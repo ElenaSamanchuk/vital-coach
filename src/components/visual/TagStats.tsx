@@ -21,7 +21,7 @@ export function TagStats({
   if (sorted.length === 0) {
     return (
       <p className="text-[12px] text-[var(--text-secondary)]">
-        Отмечай плашки в дневнике — здесь появится статистика за {days} дней
+        Отмечай метки в дневнике — здесь появится статистика за {days} дней
       </p>
     );
   }

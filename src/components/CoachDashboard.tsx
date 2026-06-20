@@ -57,6 +57,7 @@ import {
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import type { DailyCoachPlan } from "@/lib/types";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import { PageSkeleton } from "@/components/ui/Skeleton";
 import type { ReactNode } from "react";
 
 interface ProfileFlags {
@@ -69,13 +70,10 @@ interface ProfileFlags {
 }
 
 export function CoachDashboard({
-  renderShell,
+  renderDock,
 }: {
-  /** Оборачивает контент в AppShell с dock — кнопка остаётся в рамке 480px */
-  renderShell?: (
-    content: React.ReactNode,
-    dock: { diaryDone: boolean; isEvening: boolean },
-  ) => React.ReactNode;
+  /** Кнопка в доке над навигацией — только на «Сегодня» */
+  renderDock?: (dock: { diaryDone: boolean; isEvening: boolean }) => ReactNode;
 }) {
   const [plan, setPlan] = useState<DailyCoachPlan | null>(null);
   const [profile, setProfile] = useState<ProfileFlags | null>(null);
@@ -215,6 +213,35 @@ export function CoachDashboard({
     });
   };
 
+  const patchTodayLog = async (patch: Record<string, unknown>) => {
+    hapticLight();
+    await apiClient("/api/daily", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        date: format(new Date(), "yyyy-MM-dd"),
+        partial: true,
+        ...patch,
+      }),
+    });
+  };
+
+  const addWater = (ml: number) => {
+    const next = todayWater + ml;
+    setTodayWater(next);
+    void patchTodayLog({ waterMl: next });
+  };
+
+  const setSleepMinutes = (minutes: number) => {
+    setTodaySleep(minutes);
+    void patchTodayLog({ sleepMinutes: minutes });
+  };
+
+  const setStepsCount = (n: number) => {
+    setTodaySteps(n);
+    void patchTodayLog({ steps: n });
+  };
+
   const toggleRoutineStep = async (
     phase: import("@/lib/day-routines").RoutinePhase,
     stepId: string,
@@ -260,10 +287,34 @@ export function CoachDashboard({
     load();
   };
 
+  const saveLeisureChoice = async (id: string) => {
+    hapticLight();
+    const next = { ...mealChoices };
+    if (next._leisure === id) {
+      delete next._leisure;
+    } else {
+      next._leisure = id;
+    }
+    setMealChoices(next);
+    await apiClient("/api/choices", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: format(new Date(), "yyyy-MM-dd"), mealChoices: next }),
+    });
+    load();
+  };
+
+  const mealChoicesForSlots = useMemo(() => {
+    const { _leisure: _, ...slots } = mealChoices;
+    return slots;
+  }, [mealChoices]);
+
+  const leisureChoice = mealChoices._leisure ?? "";
+
   const mealsDone = useMemo(() => {
     if (!plan) return 0;
-    return plan.mealPlan.filter((s) => mealChoices[s.slot] || s.selected?.id).length;
-  }, [plan, mealChoices]);
+    return plan.mealPlan.filter((s) => mealChoicesForSlots[s.slot] || s.selected?.id).length;
+  }, [plan, mealChoicesForSlots]);
 
   const mealsTotal = plan?.mealPlan.length ?? 4;
   const workoutPicked = Boolean(workoutChoice || plan?.workout.recommended.id);
@@ -291,12 +342,13 @@ export function CoachDashboard({
   }, [allComplete, prevComplete]);
 
   if (loading) {
-    const loadingEl = (
-      <div className="text-center py-16 text-[var(--text-secondary)]">Считаю план…</div>
+    const isEveningLoad = new Date().getHours() >= 18;
+    return (
+      <>
+        {renderDock?.({ diaryDone: false, isEvening: isEveningLoad })}
+        <PageSkeleton cards={3} />
+      </>
     );
-    return renderShell
-      ? renderShell(loadingEl, { diaryDone: false, isEvening: new Date().getHours() >= 18 })
-      : loadingEl;
   }
   if (!plan || !profile) return null;
 
@@ -354,7 +406,7 @@ export function CoachDashboard({
   const briefingLine = plan.healthBriefing?.[0]?.title;
 
   const inner = (
-    <div className="space-y-4 pb-2 vc-stagger">
+    <div className="vc-page vc-stagger">
       <ReminderBoot
         prefsJson={notificationPrefsJson}
         taskLabels={taskLabels}
@@ -392,11 +444,11 @@ export function CoachDashboard({
         </Link>
       )}
 
-      <div className="vc-glass-card rounded-3xl p-5">
+      <div className="vc-glass-card rounded-2xl">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[18px] font-bold tracking-tight text-[var(--text)]">{plan.greeting}</p>
-            <p className="text-[13px] text-[var(--text-secondary)] mt-1 leading-snug">{plan.summary}</p>
+            <p className="vc-text-xl">{plan.greeting}</p>
+            <p className="vc-subtitle mt-1 leading-snug">{plan.summary}</p>
           </div>
           {allComplete && (
             <span className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-[var(--success)] bg-[var(--success-soft)] px-2 py-1 rounded-full">
@@ -464,18 +516,21 @@ export function CoachDashboard({
             {plan.warnings[0]}
           </p>
         )}
+      </div>
 
-        <div className="mt-4">
-          <HealthSummaryStrip
-            calories={totals.calories}
-            calorieTarget={plan.dayTargets.calorieTarget}
-            waterMl={todayWater}
-            waterTarget={plan.dayTargets.waterTargetMl}
-            sleepMin={todaySleep}
-            sleepTargetMin={480}
-            steps={todaySteps}
-          />
-        </div>
+      <div className="vc-glass-card rounded-2xl">
+        <HealthSummaryStrip
+          calories={totals.calories}
+          calorieTarget={plan.dayTargets.calorieTarget}
+          waterMl={todayWater}
+          waterTarget={plan.dayTargets.waterTargetMl}
+          sleepMin={todaySleep}
+          sleepTargetMin={480}
+          steps={todaySteps}
+          onWaterAdd={addWater}
+          onSleepSet={setSleepMinutes}
+          onStepsSet={setStepsCount}
+        />
       </div>
 
       {!GENERIC_FEATURES.dayRhythm ? null : (
@@ -509,12 +564,14 @@ export function CoachDashboard({
       {plan.mealPlan && plan.todayLeisure && plan.todaySportExtras && (
         <TodayOptionsStrip
           mealPlan={plan.mealPlan}
-          mealChoices={mealChoices}
+          mealChoices={mealChoicesForSlots}
           onMealSelect={saveMealChoice}
           sportOptions={plan.todaySportExtras}
           selectedWorkoutId={selectedWorkoutId ?? ""}
           onWorkoutSelect={saveWorkoutChoice}
           leisure={plan.todayLeisure}
+          selectedLeisureId={leisureChoice}
+          onLeisureSelect={saveLeisureChoice}
         />
       )}
 
@@ -595,7 +652,10 @@ export function CoachDashboard({
     </div>
   );
 
-  return renderShell
-    ? renderShell(inner, { diaryDone, isEvening })
-    : inner;
+  return (
+    <>
+      {renderDock?.({ diaryDone, isEvening })}
+      {inner}
+    </>
+  );
 }

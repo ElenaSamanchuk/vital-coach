@@ -21,17 +21,17 @@ export function IconCard({
   const bg = iconBg ?? `${iconColor}18`;
 
   return (
-    <div className={`vc-glass-card rounded-[var(--radius-md)] p-4 vc-animate-in ${className}`}>
+    <div className={`vc-glass-card vc-animate-in ${className}`}>
       <div className="flex gap-3 mb-3">
         <div
-          className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: bg, color: iconColor }}
         >
-          <Icon size={22} strokeWidth={2} />
+          <Icon size={20} strokeWidth={2} />
         </div>
-        <div className="min-w-0">
-          <h3 className="text-[17px] font-semibold tracking-tight">{title}</h3>
-          {subtitle && <p className="text-[13px] text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
+        <div className="min-w-0 flex flex-col justify-center">
+          <h3 className="vc-text-lg">{title}</h3>
+          {subtitle && <p className="vc-subtitle mt-0.5">{subtitle}</p>}
         </div>
       </div>
       {children}

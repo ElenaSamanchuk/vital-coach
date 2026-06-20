@@ -1,6 +1,6 @@
 {
   "appId": "com.elenasamanchuk.vital",
-  "appName": "Vital",
+  "appName": "Ритм",
   "webDir": "public",
   "server": {
     "url": "https://elenasamanchuk.github.io/vital-coach/",

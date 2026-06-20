@@ -36,7 +36,7 @@ export const GENERIC_PROFILE = {
   sleepHours: 7.5,
 };
 
-export const APP_NAME = GENERIC_MODE ? "Vital" : "Vital Coach";
+export const APP_NAME = GENERIC_MODE ? "Ритм" : "Vital Coach";
 export const APP_TAGLINE = GENERIC_MODE
-  ? "Здоровье, привычки и баланс — для всех"
+  ? "Еда · движение · дневник"
   : "Личный коуч: питание, тренировки, здоровье";

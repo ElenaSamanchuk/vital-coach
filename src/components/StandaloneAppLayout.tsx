@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { initStore, ensureProfile } from "@/lib/local-store";
+import { AppBootScreen } from "@/components/AppBootScreen";
 
 export function StandaloneAppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -34,11 +35,7 @@ export function StandaloneAppLayout({ children }: { children: React.ReactNode })
   }, [pathname, router]);
 
   if (!ready && pathname !== "/onboarding") {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--text-secondary)]">
-        Загрузка…
-      </div>
-    );
+    return <AppBootScreen />;
   }
 
   return <>{children}</>;

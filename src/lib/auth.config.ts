@@ -1,5 +1,9 @@
 import type { NextAuthConfig } from "next-auth";
 
+const STANDALONE =
+  process.env.NEXT_PUBLIC_STANDALONE === "true" ||
+  process.env.STANDALONE === "true";
+
 export const authConfig: NextAuthConfig = {
   secret: process.env.AUTH_SECRET,
   trustHost: true,
@@ -8,6 +12,8 @@ export const authConfig: NextAuthConfig = {
   pages: { signIn: "/login" },
   callbacks: {
     authorized({ auth, request }) {
+      if (STANDALONE) return true;
+
       const isLoggedIn = !!auth?.user;
       const path = request.nextUrl.pathname;
       const isPublic =

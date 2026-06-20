@@ -7,7 +7,7 @@ export function BadgeStrip({ unlockedIds }: { unlockedIds: string[] }) {
   if (shown.length === 0) {
     return (
       <p className="text-[11px] text-[var(--text-secondary)]">
-        Бейджи Samsung-style — за streak, белок, мягкий день
+        Бейджи за серию дней, белок и мягкий день появятся здесь
       </p>
     );
   }

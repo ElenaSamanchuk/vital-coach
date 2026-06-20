@@ -20,7 +20,7 @@ import { enrichTags } from "@/lib/tracking-tags";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-export function DaylioCalendar({
+export function MoodCalendar({
   days,
   tags = [],
 }: {
@@ -92,7 +92,7 @@ export function DaylioCalendar({
         })}
       </div>
       <p className="text-[9px] text-[var(--text-tertiary)] mt-3">
-        Точка: цвет плашки или настроение · коричневая точка = фото
+        Точка: цвет метки или настроение · коричневая точка = фото
       </p>
     </div>
   );

@@ -36,7 +36,7 @@ export function TrackingTagsEditor({
   const reset = () => onChange([...DEFAULT_TRACKING_TAGS]);
 
   return (
-    <Card title="Плашки дня" subtitle="Как в Daylio — тапай в дневнике, что было сегодня">
+    <Card title="Метки дня" subtitle="Отмечай в дневнике, что было сегодня">
       <div className="flex flex-wrap gap-2 mb-4">
         {tags.map((tag) => (
           <span

@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/Card";
 import { CHECKUP } from "@/lib/product-copy";
 import { getWeeklyMovementPlan } from "@/lib/fitness";
@@ -20,7 +19,6 @@ export default function GuidePage() {
   });
 
   return (
-    <AppShell>
       <div className="space-y-4 pb-8">
         <Card title="Единая система питания" subtitle="Синтез подходов с доказательной базой">
           <div className="text-[13px] space-y-3">
@@ -79,6 +77,5 @@ export default function GuidePage() {
           </ul>
         </Card>
       </div>
-    </AppShell>
   );
 }

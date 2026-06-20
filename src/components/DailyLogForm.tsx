@@ -44,6 +44,9 @@ import { mealSlotsFromPlan } from "@/lib/meal-distribution";
 import { EVENING_PROMPTS, appendReflection } from "@/lib/evening-reflection";
 import type { MealSlotPlan } from "@/lib/types";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
+import { useToast } from "@/components/ui/Toast";
+import { PageSkeleton } from "@/components/ui/Skeleton";
+import { PickChip } from "@/components/ui/PickChip";
 import { GENERIC_MODE } from "@/lib/app-config";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { UI } from "@/lib/product-copy";
@@ -84,6 +87,8 @@ interface Profile {
 interface LogData {
   weightKg?: number;
   waistCm?: number;
+  hipsCm?: number;
+  chestCm?: number;
   waterMl?: number;
   steps?: number;
   sleepMinutes?: number;
@@ -129,6 +134,8 @@ export function DailyLogForm() {
   const [trackingTags, setTrackingTags] = useState(parseTrackingTags(null));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const { showToast } = useToast();
   const [weekLogged, setWeekLogged] = useState<string[]>([]);
   const [selfcare, setSelfcare] = useState<string[]>([]);
   const [home, setHome] = useState<string[]>([]);
@@ -176,6 +183,8 @@ export function DailyLogForm() {
           setLog({
             weightKg: t.weightKg ?? undefined,
             waistCm: t.waistCm ?? undefined,
+            hipsCm: t.hipsCm ?? undefined,
+            chestCm: t.chestCm ?? undefined,
             waterMl: t.waterMl ?? 0,
           steps: t.steps ?? undefined,
             sleepMinutes: t.sleepMinutes ?? undefined,
@@ -267,42 +276,57 @@ export function DailyLogForm() {
 
   const save = async () => {
     setSaving(true);
+    setSaveError(null);
     const { lifeActions, leisure, intellect } = winsToPayload(wins);
     lifeActions.selfcare = [...new Set([...(lifeActions.selfcare ?? []), ...selfcare])];
     lifeActions.home = [...new Set([...(lifeActions.home ?? []), ...home])];
     lifeActions.ritual = eveningRitual;
-    await apiClient("/api/daily", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        date: format(new Date(), "yyyy-MM-dd"),
-        ...log,
-        calories: autoNutrition.calories,
-        proteinG: autoNutrition.proteinG,
-        dayPhoto,
-        dayTags,
-        workouts: log.workoutCompleted
-          ? [{ type: "walk", durationMin: 30, intensity: "moderate", completed: true, notes: "" }]
-          : [],
-        lifeActions,
-        leisure,
-        intellect,
-        workSatisfaction,
-        tasks: dayTasks,
-        shopping,
-      }),
-    });
-    setSaving(false);
-    setSaved(true);
-    hapticSuccess();
-    setWeekLogged((prev) => {
-      const today = format(new Date(), "yyyy-MM-dd");
-      return prev.includes(today) ? prev : [...prev, today];
-    });
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      const res = await apiClient("/api/daily", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: format(new Date(), "yyyy-MM-dd"),
+          ...log,
+          calories: autoNutrition.calories,
+          proteinG: autoNutrition.proteinG,
+          dayPhoto,
+          dayTags,
+          workouts: log.workoutCompleted
+            ? [{ type: "walk", durationMin: 30, intensity: "moderate", completed: true, notes: "" }]
+            : [],
+          lifeActions,
+          leisure,
+          intellect,
+          workSatisfaction,
+          tasks: dayTasks,
+          shopping,
+        }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          typeof result.error === "string" ? result.error : "Не удалось сохранить день",
+        );
+      }
+      setSaved(true);
+      hapticSuccess();
+      showToast(new Date().getHours() >= 18 ? "День закрыт" : "День сохранён", "success");
+      setWeekLogged((prev) => {
+        const today = format(new Date(), "yyyy-MM-dd");
+        return prev.includes(today) ? prev : [...prev, today];
+      });
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось сохранить";
+      setSaveError(msg);
+      showToast(msg, "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (!profile) return <div className="text-center py-8 text-[var(--text-secondary)]">Загрузка…</div>;
+  if (!profile) return <PageSkeleton cards={3} />;
 
   const moodMatch = MOOD_VISUAL.find(
     (m) => m.energy === log.energy && m.mood === log.mood && m.stress === log.stress,
@@ -311,9 +335,9 @@ export function DailyLogForm() {
   const isEvening = new Date().getHours() >= 18;
 
   return (
-    <div className="space-y-4 pb-8">
-      <div className="vc-glass-card rounded-2xl p-4">
-        <p className="text-[12px] font-medium text-[var(--text-secondary)] mb-3">Неделя в дневнике</p>
+    <div className="vc-page">
+      <div className="vc-glass-card rounded-2xl">
+        <p className="vc-label mb-2">Неделя в дневнике</p>
         <WeekDots loggedDays={weekLogged} />
       </div>
 
@@ -473,15 +497,15 @@ export function DailyLogForm() {
                       hapticLight();
                       update({ energy: preset.energy, mood: preset.mood, stress: preset.stress });
                     }}
-                    className={`flex-1 flex flex-col items-center py-2 rounded-2xl transition-all ${
+                    className={`flex-1 flex flex-col items-center justify-center py-2.5 min-h-[var(--touch-min)] rounded-2xl transition-all ${
                       active
-                        ? "bg-[var(--accent)] shadow-md scale-105"
+                        ? "bg-[var(--accent)] shadow-md scale-[1.02]"
                         : "bg-[var(--bg-subtle)] hover:bg-[var(--surface)]"
                     }`}
                   >
-                    <span className="text-[26px] leading-none">{preset.emoji}</span>
+                    <span className="text-2xl leading-none">{preset.emoji}</span>
                     <span
-                      className={`text-[8px] font-semibold mt-1 ${active ? "text-white" : "text-[var(--text-secondary)]"}`}
+                      className={`vc-text-xs font-semibold mt-1 ${active ? "text-white" : "text-[var(--text-secondary)]"}`}
                     >
                       {preset.label}
                     </span>
@@ -540,16 +564,16 @@ export function DailyLogForm() {
                 <button
                   key={ml}
                   type="button"
-                  className="flex flex-col items-center rounded-2xl px-4 py-2 bg-[var(--accent-soft)] hover:bg-[var(--accent)]/20 transition-colors"
+                  className="flex flex-col items-center justify-center rounded-2xl px-4 py-2.5 min-h-[var(--touch-min)] min-w-[4.5rem] bg-[var(--accent-soft)] hover:bg-[var(--accent)]/20 transition-colors"
                   onClick={() => update({ waterMl: (log.waterMl ?? 0) + ml })}
                 >
                   <Droplets size={18} className="text-[var(--accent)]" />
-                  <span className="text-[11px] font-bold mt-0.5">+{ml}</span>
+                  <span className="vc-text-sm font-bold mt-0.5">+{ml}</span>
                 </button>
               ))}
             </div>
             <ProgressBar value={log.waterMl ?? 0} max={waterTarget} label="Вода" />
-            <p className="text-[10px] text-[var(--text-tertiary)] mt-2 text-center">
+            <p className="vc-text-xs text-[var(--text-tertiary)] mt-2 text-center">
               Чай и еда тоже считаются — не нужно «доливать до 3 л»
             </p>
           </IconCard>
@@ -557,18 +581,14 @@ export function DailyLogForm() {
           <IconCard icon={Trophy} iconColor={CARD_ICON} title="Победы дня" subtitle="До 5">
             <div className="flex flex-wrap gap-2">
               {DAILY_WINS.map((w) => (
-                <button
+                <PickChip
                   key={w.id}
-                  type="button"
+                  selected={wins.includes(w.id)}
+                  className="!min-h-0 px-3 py-2"
                   onClick={() => toggleWin(w.id)}
-                  className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition-all ${
-                    wins.includes(w.id)
-                      ? "bg-[var(--accent)] text-white"
-                      : "bg-[var(--bg-subtle)] text-[var(--text)] border border-[var(--border)]"
-                  }`}
                 >
-                  {w.label}
-                </button>
+                  <span className="vc-text-sm font-medium text-[var(--text)]">{w.label}</span>
+                </PickChip>
               ))}
             </div>
           </IconCard>
@@ -636,18 +656,32 @@ export function DailyLogForm() {
             <SliderField label="Стресс" value={log.stress ?? 5} onChange={(v) => update({ stress: v })} />
           </IconCard>
 
-          <IconCard icon={Scale} iconColor={CARD_ICON} title="Замеры">
-            <label>
-              <span className="text-[13px] text-[var(--text-secondary)]">Талия, см</span>
-              <input
-                type="number"
-                className="apple-input mt-1"
-                value={log.waistCm ?? ""}
-                onChange={(e) =>
-                  update({ waistCm: e.target.value ? parseFloat(e.target.value) : undefined })
-                }
-              />
-            </label>
+          <IconCard icon={Scale} iconColor={CARD_ICON} title="Замеры" subtitle="Раз в неделю — необязательно">
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { key: "waistCm" as const, label: "Талия" },
+                  { key: "hipsCm" as const, label: "Бёдра" },
+                  { key: "chestCm" as const, label: "Грудь" },
+                ] as const
+              ).map(({ key, label }) => (
+                <label key={key} className="block">
+                  <span className="vc-label">{label}, см</span>
+                  <input
+                    type="number"
+                    step={0.5}
+                    className="apple-input mt-1 text-center text-[15px] font-semibold"
+                    placeholder="—"
+                    value={log[key] ?? ""}
+                    onChange={(e) =>
+                      update({
+                        [key]: e.target.value ? parseFloat(e.target.value) : undefined,
+                      })
+                    }
+                  />
+                </label>
+              ))}
+            </div>
           </IconCard>
 
           <IconCard icon={Smile} iconColor={CARD_ICON} title="Работа">
@@ -741,14 +775,21 @@ export function DailyLogForm() {
         </>
       )}
 
-      <button
-        type="button"
-        onClick={save}
-        disabled={saving}
-        className="apple-btn apple-btn-primary w-full py-4 text-[16px]"
-      >
-        {saving ? "Сохраняю…" : saved ? "Сохранено ✓" : isEvening ? "Закрыть день" : "Сохранить день"}
-      </button>
+      <div className="vc-sticky-save">
+        {saveError && (
+          <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl mb-2">
+            {saveError}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="apple-btn apple-btn-primary w-full flex items-center justify-center"
+        >
+          {saving ? "Сохраняю…" : saved ? "Сохранено ✓" : isEvening ? "Закрыть день" : "Сохранить день"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -12,17 +12,15 @@ export function SegmentTabs<T extends string>({
   onChange: (id: T) => void;
 }) {
   return (
-    <div className="flex gap-1 p-1 rounded-2xl bg-[var(--bg-subtle)] mb-4">
+    <div className="vc-segment-tabs">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onChange(tab.id)}
           className={cn(
-            "flex-1 py-2 px-3 rounded-xl text-[13px] font-semibold transition-all",
-            value === tab.id
-              ? "bg-white text-[#1d1d1f] shadow-sm"
-              : "text-[var(--text-secondary)] hover:text-[var(--text)]",
+            "vc-segment-tab",
+            value === tab.id ? "vc-segment-tab--active" : "vc-segment-tab--idle",
           )}
         >
           {tab.label}

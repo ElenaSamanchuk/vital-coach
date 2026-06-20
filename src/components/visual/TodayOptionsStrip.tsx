@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { activeRoutinePhase } from "@/lib/day-routines";
 import * as LucideIcons from "lucide-react";
 import { Activity, Sparkles, Utensils, type LucideIcon } from "lucide-react";
@@ -10,6 +10,7 @@ import type { WorkoutOption } from "@/lib/fitness";
 import { workoutIcon } from "@/lib/visual-icons";
 import { hapticLight } from "@/lib/haptics";
 import { ImpactLine } from "./ImpactLine";
+import { PickChip } from "@/components/ui/PickChip";
 
 type Tab = "food" | "sport" | "leisure";
 
@@ -21,8 +22,36 @@ const TABS: { id: Tab; label: string; icon: typeof Utensils }[] = [
 
 function LeisureIcon({ name, color }: { name: string; color: string }) {
   const Icon = (LucideIcons as unknown as Record<string, LucideIcon>)[name];
-  if (!Icon) return <Sparkles size={14} style={{ color }} />;
-  return <Icon size={14} style={{ color }} />;
+  if (!Icon) return <Sparkles size={16} style={{ color }} className="shrink-0" />;
+  return <Icon size={16} style={{ color }} className="shrink-0" />;
+}
+
+function PickStripSection({
+  label,
+  count,
+  children,
+}: {
+  label?: string;
+  count: number;
+  children: ReactNode;
+}) {
+  return (
+    <div>
+      {(label || count > 1) && (
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          {label ? <p className="vc-overline">{label}</p> : <span />}
+          {count > 1 && (
+            <span className="vc-text-xs text-[var(--text-tertiary)] shrink-0">
+              {count} · листай →
+            </span>
+          )}
+        </div>
+      )}
+      <div className="vc-pick-strip-wrap">
+        <div className="vc-pick-strip">{children}</div>
+      </div>
+    </div>
+  );
 }
 
 export function TodayOptionsStrip({
@@ -33,6 +62,8 @@ export function TodayOptionsStrip({
   selectedWorkoutId,
   onWorkoutSelect,
   leisure,
+  selectedLeisureId,
+  onLeisureSelect,
 }: {
   mealPlan: MealSlotPlan[];
   mealChoices: Record<string, string>;
@@ -41,6 +72,8 @@ export function TodayOptionsStrip({
   selectedWorkoutId: string;
   onWorkoutSelect: (id: string) => void;
   leisure: TodayLeisurePick[];
+  selectedLeisureId: string;
+  onLeisureSelect: (id: string) => void;
 }) {
   const defaultTab = (): Tab => {
     const phase = activeRoutinePhase(new Date().getHours());
@@ -50,12 +83,14 @@ export function TodayOptionsStrip({
   };
   const [tab, setTab] = useState<Tab>(defaultTab);
 
+  const mealCount = mealPlan.reduce((n, s) => n + s.options.length, 0);
+
   return (
-    <div className="vc-glass-card rounded-3xl p-4 space-y-3">
+    <div className="vc-glass-card rounded-2xl space-y-3">
       <div>
-        <p className="text-[15px] font-bold">Выбор на сегодня</p>
-        <p className="text-[10px] text-[var(--text-tertiary)] mt-0.5">
-          ↑ подпись — что получишь: нутриент, мышца, срок
+        <p className="vc-text-lg">Выбор на сегодня</p>
+        <p className="vc-subtitle vc-text-xs mt-0.5">
+          Листай влево — вариантов много · подпись — что получишь
         </p>
       </div>
       <div className="flex gap-1 p-1 rounded-xl bg-[var(--bg-subtle)]">
@@ -64,105 +99,114 @@ export function TodayOptionsStrip({
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[11px] font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[var(--touch-min)] rounded-lg vc-text-sm font-semibold transition-colors ${
               tab === id
                 ? "bg-[var(--elevated)] text-[var(--text)] shadow-sm"
                 : "text-[var(--text-secondary)]"
             }`}
           >
-            <Icon size={12} />
+            <Icon size={14} />
             {label}
           </button>
         ))}
       </div>
 
       {tab === "food" && (
-        <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
+        <div className="space-y-4">
           {mealPlan.map((slot) => (
-            <div key={slot.slot}>
-              <p className="text-[10px] font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-1.5">
-                {slot.slotLabel}
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {slot.options.map((opt) => {
-                  const id = (opt as { id?: string }).id ?? opt.title;
-                  const selected = (mealChoices[slot.slot] ?? slot.selected?.id) === id;
-                  const short = opt.title.split("+")[0].trim().slice(0, 28);
-                  const impact = (opt as { impact?: string }).impact;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        hapticLight();
-                        onMealSelect(slot.slot, id);
-                      }}
-                      className={`rounded-lg px-2.5 py-2 text-left min-w-[46%] flex-1 max-w-full ${
-                        selected
-                          ? "bg-[var(--accent)] text-white"
-                          : "bg-[var(--elevated)] border border-[var(--border)]"
-                      }`}
-                    >
-                      <p className="text-[11px] font-medium leading-tight line-clamp-2">{short}</p>
-                      <p className={`text-[10px] mt-0.5 ${selected ? "text-white/80" : "text-[var(--accent)]"}`}>
-                        {opt.calories} ккал · {opt.proteinG} г
-                      </p>
-                      {impact && <ImpactLine text={impact} inverted={selected} />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <PickStripSection key={slot.slot} label={slot.slotLabel} count={slot.options.length}>
+              {slot.options.map((opt) => {
+                const id = (opt as { id?: string }).id ?? opt.title;
+                const selected = (mealChoices[slot.slot] ?? slot.selected?.id) === id;
+                const short = opt.title.split("+")[0].trim().slice(0, 40);
+                const impact = (opt as { impact?: string }).impact;
+                return (
+                  <PickChip
+                    key={id}
+                    selected={selected}
+                    onClick={() => {
+                      hapticLight();
+                      onMealSelect(slot.slot, id);
+                    }}
+                  >
+                    <p className="vc-pick-chip-title line-clamp-2">{short}</p>
+                    <p className="vc-text-xs mt-0.5 text-[var(--text-secondary)]">
+                      {opt.calories} ккал · {opt.proteinG} г
+                    </p>
+                    {impact && <ImpactLine text={impact} />}
+                  </PickChip>
+                );
+              })}
+            </PickStripSection>
           ))}
+          {mealCount > 4 && (
+            <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
+              Всего {mealCount} блюд на день
+            </p>
+          )}
         </div>
       )}
 
       {tab === "sport" && (
-        <div className="grid grid-cols-2 gap-2 max-h-[280px] overflow-y-auto pr-1">
+        <PickStripSection count={sportOptions.length}>
           {sportOptions.map((w) => {
             const id = w.id ?? w.title;
             const selected = selectedWorkoutId === id;
             const WIcon = workoutIcon(w.type);
             return (
-              <button
+              <PickChip
                 key={id}
-                type="button"
+                selected={selected}
                 onClick={() => {
                   hapticLight();
                   onWorkoutSelect(id);
                 }}
-                className={`rounded-xl p-3 text-left border transition-all ${
-                  selected
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                    : "border-[var(--border)] bg-[var(--elevated)]"
-                }`}
               >
-                <WIcon size={16} className="text-[var(--accent)] mb-1.5" />
-                <p className="text-[12px] font-semibold leading-tight line-clamp-2">{w.title}</p>
-                <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">{w.durationMin} мин</p>
+                <div className="vc-pick-chip-row">
+                  <WIcon size={16} className="text-[var(--accent)] shrink-0" />
+                  <p className="vc-pick-chip-title line-clamp-2">{w.title}</p>
+                </div>
+                <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">{w.durationMin} мин</p>
                 {w.impact && <ImpactLine text={w.impact} />}
-              </button>
+              </PickChip>
             );
           })}
-        </div>
+        </PickStripSection>
       )}
 
       {tab === "leisure" && (
-        <div className="flex flex-wrap gap-2 max-h-[280px] overflow-y-auto pr-1">
-          {leisure.map((l) => (
-            <div
-              key={l.id}
-              className="rounded-xl border border-[var(--border)] bg-[var(--elevated)] px-3 py-2 min-w-[46%] flex-1"
-            >
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <LeisureIcon name={l.icon} color={l.color} />
-                <span className="text-[12px] font-semibold">{l.label}</span>
-              </div>
-              <p className="text-[10px] text-[var(--text-secondary)] leading-snug">{l.why}</p>
-              <ImpactLine text={l.impact} />
-            </div>
-          ))}
-        </div>
+        <>
+          {leisure.length === 0 ? (
+            <p className="vc-text-sm py-4 text-center text-[var(--text-secondary)]">
+              Подборка появится после загрузки плана
+            </p>
+          ) : (
+            <PickStripSection count={leisure.length}>
+              {leisure.map((l) => {
+                const selected = selectedLeisureId === l.id;
+                return (
+                  <PickChip
+                    key={l.id}
+                    selected={selected}
+                    onClick={() => {
+                      hapticLight();
+                      onLeisureSelect(l.id);
+                    }}
+                  >
+                    <div className="vc-pick-chip-row">
+                      <LeisureIcon name={l.icon} color={l.color} />
+                      <span className="vc-pick-chip-title line-clamp-2">{l.label}</span>
+                    </div>
+                    <p className="vc-text-xs text-[var(--text-secondary)] leading-snug line-clamp-2 mt-0.5">
+                      {l.why}
+                    </p>
+                    <ImpactLine text={l.impact} />
+                  </PickChip>
+                );
+              })}
+            </PickStripSection>
+          )}
+        </>
       )}
     </div>
   );

@@ -1,8 +1,8 @@
 /**
- * Единая продуктовая терминология Vital.
+ * Единая продуктовая терминология приложения.
  * Маркетинг · UX · UI — один источник правды.
  */
-import { GENERIC_MODE } from "./app-config";
+import { APP_NAME, GENERIC_MODE } from "./app-config";
 
 export const CHECKUP = {
   section: "Чекап",
@@ -68,7 +68,7 @@ export const UI = {
 
 /** Структура приложения — для подсказок в UI */
 export const APP_FLOW = {
-  title: "Как устроено Vital",
+  title: `Как устроено ${APP_NAME}`,
   steps: [
     { label: "Сегодня", desc: "Выбери еду и движение — без жёстких диет" },
     { label: "Дневник", desc: "Настроение, вода, сон — 2 минуты вечером" },
