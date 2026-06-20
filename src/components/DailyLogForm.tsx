@@ -82,6 +82,9 @@ interface Profile {
   proteinTargetG: number;
   sleepTargetMin: number;
   trackingTagsJson?: string;
+  cycleLength?: number;
+  lastPeriodStart?: string | null;
+  thyroidMedication?: string;
 }
 
 interface LogData {
@@ -246,6 +249,15 @@ export function DailyLogForm() {
   }, []);
 
   const update = (patch: Partial<LogData>) => setLog((l) => ({ ...l, ...patch }));
+
+  const patchProfile = async (patch: Partial<Profile>) => {
+    setProfile((p) => (p ? { ...p, ...patch } : p));
+    await apiClient("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+  };
 
   const toggleWin = (id: string) => {
     hapticLight();
@@ -497,7 +509,7 @@ export function DailyLogForm() {
                       hapticLight();
                       update({ energy: preset.energy, mood: preset.mood, stress: preset.stress });
                     }}
-                    className={`flex-1 flex flex-col items-center justify-center py-2.5 min-h-[var(--touch-min)] rounded-2xl transition-all ${
+                    className={`flex-1 flex flex-col items-center justify-center py-2 min-h-[var(--touch-compact)] rounded-xl transition-all ${
                       active
                         ? "bg-[var(--accent)] shadow-md scale-[1.02]"
                         : "bg-[var(--bg-subtle)] hover:bg-[var(--surface)]"
@@ -523,7 +535,7 @@ export function DailyLogForm() {
             <input
               type="number"
               step={0.1}
-              className="apple-input text-center text-[24px] font-bold"
+              className="apple-input apple-input--metric"
               placeholder="—"
               value={log.weightKg ?? ""}
               onChange={(e) =>
@@ -537,7 +549,7 @@ export function DailyLogForm() {
             <input
               type="number"
               step={100}
-              className="apple-input text-center text-[20px] font-bold"
+              className="apple-input apple-input--metric"
               placeholder="8000"
               value={log.steps ?? ""}
               onChange={(e) =>
@@ -564,7 +576,7 @@ export function DailyLogForm() {
                 <button
                   key={ml}
                   type="button"
-                  className="flex flex-col items-center justify-center rounded-2xl px-4 py-2.5 min-h-[var(--touch-min)] min-w-[4.5rem] bg-[var(--accent-soft)] hover:bg-[var(--accent)]/20 transition-colors"
+                  className="flex flex-col items-center justify-center rounded-xl px-3 py-2 min-h-[var(--touch-compact)] min-w-[3.75rem] bg-[var(--accent-soft)] hover:bg-[var(--accent)]/20 transition-colors"
                   onClick={() => update({ waterMl: (log.waterMl ?? 0) + ml })}
                 >
                   <Droplets size={18} className="text-[var(--accent)]" />
@@ -584,7 +596,7 @@ export function DailyLogForm() {
                 <PickChip
                   key={w.id}
                   selected={wins.includes(w.id)}
-                  className="!min-h-0 px-3 py-2"
+                  className="!min-h-0 px-2.5 py-1.5"
                   onClick={() => toggleWin(w.id)}
                 >
                   <span className="vc-text-sm font-medium text-[var(--text)]">{w.label}</span>
@@ -637,17 +649,20 @@ export function DailyLogForm() {
           )}
 
           <IconCard icon={Moon} iconColor={CARD_ICON} title="Сон и вечер" subtitle="Закрой день за 2 минуты">
-            <input
-              type="number"
-              className="apple-input mb-3"
-              placeholder="Минут сна"
-              value={log.sleepMinutes ?? ""}
-              onChange={(e) =>
-                update({
-                  sleepMinutes: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                })
-              }
-            />
+            <label className="block mb-3">
+              <span className="vc-label">Минут сна</span>
+              <input
+                type="number"
+                className="apple-input apple-input--metric mt-1"
+                placeholder="420"
+                value={log.sleepMinutes ?? ""}
+                onChange={(e) =>
+                  update({
+                    sleepMinutes: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                  })
+                }
+              />
+            </label>
             <SliderField
               label="Качество сна"
               value={log.sleepQuality ?? 7}
@@ -670,7 +685,7 @@ export function DailyLogForm() {
                   <input
                     type="number"
                     step={0.5}
-                    className="apple-input mt-1 text-center text-[15px] font-semibold"
+                    className="apple-input apple-input--metric mt-1"
                     placeholder="—"
                     value={log[key] ?? ""}
                     onChange={(e) =>
@@ -692,26 +707,50 @@ export function DailyLogForm() {
             />
           </IconCard>
 
-          {GENERIC_FEATURES.cycle && (
-          <IconCard icon={Droplets} iconColor={CARD_ICON} title="Цикл">
+          <IconCard icon={Pill} iconColor={CARD_ICON} title="Цикл и лекарства" subtitle="Профиль · можно править здесь">
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <label className="block">
+                <span className="vc-label">Длина цикла, дн.</span>
+                <input
+                  type="number"
+                  className="apple-input mt-1"
+                  defaultValue={profile.cycleLength ?? 28}
+                  key={`cycle-${profile.cycleLength ?? 28}`}
+                  onBlur={(e) =>
+                    void patchProfile({ cycleLength: parseInt(e.target.value, 10) || 28 })
+                  }
+                />
+              </label>
+              <label className="block">
+                <span className="vc-label">Начало месячных</span>
+                <input
+                  type="date"
+                  className="apple-input mt-1"
+                  value={profile.lastPeriodStart?.split("T")[0] ?? ""}
+                  onChange={(e) =>
+                    void patchProfile({ lastPeriodStart: e.target.value || null })
+                  }
+                />
+              </label>
+            </div>
             <button
               type="button"
-              className="apple-btn apple-btn-secondary w-full"
-              onClick={async () => {
-                await apiClient("/api/profile", {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ lastPeriodStart: format(new Date(), "yyyy-MM-dd") }),
-                });
-              }}
+              className="apple-btn apple-btn-secondary w-full mb-3"
+              onClick={() => void patchProfile({ lastPeriodStart: format(new Date(), "yyyy-MM-dd") })}
             >
               Начались месячные сегодня
             </button>
-            <p className="text-[11px] text-[var(--text-tertiary)] mt-2 text-center">
-              Длина цикла — в Профиле
-            </p>
+            <label className="block">
+              <span className="vc-label">Лекарства</span>
+              <input
+                className="apple-input mt-1"
+                placeholder="Что принимаешь регулярно…"
+                defaultValue={profile.thyroidMedication ?? ""}
+                key={`meds-${profile.thyroidMedication ?? ""}`}
+                onBlur={(e) => void patchProfile({ thyroidMedication: e.target.value })}
+              />
+            </label>
           </IconCard>
-          )}
 
           <EveningRitualCard
             done={eveningRitual}
@@ -745,7 +784,7 @@ export function DailyLogForm() {
             {activePrompt && (
               <div className="flex gap-2 mb-3">
                 <input
-                  className="apple-input flex-1"
+                  className="apple-input apple-input--compact flex-1"
                   placeholder="Коротко…"
                   value={reflectionDraft}
                   onChange={(e) => setReflectionDraft(e.target.value)}
@@ -766,7 +805,7 @@ export function DailyLogForm() {
               </div>
             )}
             <textarea
-              className="apple-input min-h-[80px] resize-none"
+              className="apple-input min-h-[4.5rem] resize-none"
               value={log.notes ?? ""}
               onChange={(e) => update({ notes: e.target.value })}
               placeholder="Помогло / мешало / завтра…"

@@ -57,6 +57,8 @@ export const UI = {
   kanbanLink: "Открыть канбан в дневнике →",
   calendarMood: "Календарь настроения",
   trendsSubtitle: "Динамика за период",
+  recommendationsTitle: "Рекомендации",
+  recommendationsSubtitle: "Еда · движение · досуг · сон · вода · настроение",
   badgesSubtitle: "За привычки и серию дней",
   eveningReflection: "Три коротких вопроса",
   movementDone: "Движение из «Сегодня» сделано",

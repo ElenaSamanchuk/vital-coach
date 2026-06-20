@@ -48,7 +48,7 @@ import type { WheelScores } from "./life-spheres";
 import { labMealHints, mealMatchesLabHint } from "./lab-meal-bridge";
 import { syndromeInsight } from "./syndrome-coach";
 import { currentExperiment } from "./weekly-experiment";
-import { defaultDayRings } from "./day-rings";
+import { buildTodayRings } from "./day-rings";
 import { computeVitalityScore } from "./vitality-score";
 import type {
   CoachTask,
@@ -147,8 +147,10 @@ export function generateDailyPlan(
   const nutritionMeta = deriveNutritionMeta(profileToDerivationInput(profile));
 
   const mealChoices = parseMealChoices(todayLog?.mealChoices);
+  const leisureChoiceId = mealChoices._leisure ?? "";
   const softDay = todayLog?.softDay === true;
   delete mealChoices._softDay;
+  delete mealChoices._leisure;
 
   let psychology = getPsychologyCoach(
     { energy, mood, stress, cortisolFeeling },
@@ -578,30 +580,15 @@ export function generateDailyPlan(
 
   const syndrome = syndromeInsight(conditions, phase, stress);
 
-  const mealsDone = rawMealPlan.filter((m) => mealChoices[m.slot] || m.selected).length;
-  let lifeSelfcare = 0;
-  let lifeHome = 0;
-  try {
-    const la = JSON.parse(todayLog?.lifeActionsJson || "{}") as {
-      selfcare?: string[];
-      home?: string[];
-    };
-    lifeSelfcare = la.selfcare?.length ?? 0;
-    lifeHome = la.home?.length ?? 0;
-  } catch {
-    /* */
-  }
-  const careBoost = Math.min(0.35, (lifeSelfcare > 0 ? 0.2 : 0) + (lifeHome > 0 ? 0.15 : 0));
   const vitalityScore = computeVitalityScore(
-    defaultDayRings({
-      mealsDone,
-      mealsTotal: 4,
-      workoutDone: Boolean(todayLog?.workouts?.some((w) => w.completed) || workoutChoiceId),
+    buildTodayRings({
+      mealSlots: rawMealPlan.map((m) => m.slot),
+      mealChoices,
+      workoutChoice: workoutChoiceId,
       diaryDone: todayLog?.mood != null || todayLog?.weightKg != null,
-      wellbeingProgress:
-        (todayLog?.mood != null ? 0.35 : 0) +
-        (parseWellbeingDone(todayLog?.lifeActionsJson).length > 0 ? 0.3 : 0) +
-        careBoost,
+      moodLogged: todayLog?.mood != null,
+      wellbeingActionsDone: parseWellbeingDone(todayLog?.lifeActionsJson).length,
+      leisureChoice: leisureChoiceId,
     }),
   );
 

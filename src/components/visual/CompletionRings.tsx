@@ -1,18 +1,21 @@
 "use client";
 
-import { defaultDayRings, type RingSegment } from "@/lib/day-rings";
+import { type RingSegment } from "@/lib/day-rings";
 
 export type { RingSegment };
-export { defaultDayRings };
+export { defaultDayRings, buildTodayRings } from "@/lib/day-rings";
 
 const SIZE = 168;
 const CX = SIZE / 2;
-const STROKES = [12, 10, 8, 6];
-const RADII = [70, 56, 42, 28];
+const STROKES = [6, 5, 4, 3];
+const RADII = [72, 58, 44, 30];
 
 function arcPath(r: number, progress: number) {
   const p = Math.min(1, Math.max(0, progress));
   if (p <= 0) return "";
+  if (p >= 0.999) {
+    return `M ${CX} ${CX - r} A ${r} ${r} 0 1 1 ${CX - 0.01} ${CX - r}`;
+  }
   const start = -90;
   const end = start + p * 360;
   const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -38,60 +41,49 @@ export function CompletionRings({
   const ordered = rings.slice(0, 4);
 
   return (
-    <div
-      className={`flex flex-col items-center ${celebrate ? "vc-celebrate-rings" : ""}`}
-    >
-      <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="block">
-        {ordered.map((ring, i) => {
-          const r = RADII[i];
-          const sw = STROKES[i];
-          const track = `M ${CX} ${CX - r} A ${r} ${r} 0 1 1 ${CX - 0.01} ${CX - r}`;
-          const fill = arcPath(r, ring.progress);
-          return (
-            <g key={ring.id}>
-              <path
-                d={track}
-                fill="none"
-                stroke="var(--ring-track)"
-                strokeWidth={sw}
-                strokeLinecap="round"
-              />
-              {fill && (
+    <div className={`flex flex-col items-center ${celebrate ? "vc-celebrate-rings" : ""}`}>
+      <div className="relative" style={{ width: SIZE, height: SIZE }}>
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} className="block" aria-hidden>
+          {ordered.map((ring, i) => {
+            const r = RADII[i];
+            const sw = STROKES[i];
+            const track = `M ${CX} ${CX - r} A ${r} ${r} 0 1 1 ${CX - 0.01} ${CX - r}`;
+            const fill = arcPath(r, ring.progress);
+            return (
+              <g key={ring.id}>
                 <path
-                  d={fill}
+                  d={track}
                   fill="none"
-                  stroke={ring.color}
+                  stroke="var(--ring-track)"
                   strokeWidth={sw}
                   strokeLinecap="round"
-                  className="transition-all duration-500"
                 />
-              )}
-            </g>
-          );
-        })}
-        <text
-          x={CX}
-          y={CX - 4}
-          textAnchor="middle"
-          className="fill-[var(--text)] text-[22px] font-bold"
-          style={{ fontSize: 22 }}
-        >
-          {centerLabel}
-        </text>
-        <text
-          x={CX}
-          y={CX + 16}
-          textAnchor="middle"
-          className="fill-[var(--text-secondary)]"
-          style={{ fontSize: 11 }}
-        >
-          {centerSub ?? "сегодня"}
-        </text>
-      </svg>
+                {fill && (
+                  <path
+                    d={fill}
+                    fill="none"
+                    stroke={ring.color}
+                    strokeWidth={sw}
+                    strokeLinecap="round"
+                    className="transition-all duration-500"
+                  />
+                )}
+              </g>
+            );
+          })}
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span className="text-[26px] font-bold leading-none text-[var(--text)] tabular-nums">
+            {centerLabel}
+          </span>
+        </div>
+      </div>
 
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3 w-full justify-center max-w-[280px] mx-auto">
+      <p className="text-center vc-text-sm text-[var(--text-secondary)] mt-1">{centerSub ?? "сегодня"}</p>
+
+      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 w-full justify-center max-w-[300px] mx-auto">
         {ordered.map((ring) => (
-          <div key={ring.id} className="flex items-center gap-1.5 text-[11px]">
+          <div key={ring.id} className="flex items-center gap-1.5 text-[11px] min-w-[42%]">
             <span
               className="w-2 h-2 rounded-full shrink-0"
               style={{ backgroundColor: ring.color }}
@@ -99,10 +91,12 @@ export function CompletionRings({
             <span className={ring.done ? "text-[var(--text)] font-medium" : "text-[var(--text-secondary)]"}>
               {ring.label}
             </span>
+            {ring.hint && (
+              <span className="text-[var(--text-tertiary)] ml-auto tabular-nums">{ring.hint}</span>
+            )}
           </div>
         ))}
       </div>
     </div>
   );
 }
-

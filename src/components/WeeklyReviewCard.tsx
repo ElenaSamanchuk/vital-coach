@@ -45,7 +45,7 @@ export function WeeklyReviewCard() {
           <div key={p.key}>
             <label className="text-[12px] font-medium">{p.label}</label>
             <textarea
-              className="apple-input mt-1 min-h-[60px] text-[13px]"
+              className="apple-input apple-input--compact mt-1 min-h-[3.75rem]"
               placeholder={p.placeholder}
               value={answers[p.key]}
               onChange={(e) => setAnswers({ ...answers, [p.key]: e.target.value })}

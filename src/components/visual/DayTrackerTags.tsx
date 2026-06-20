@@ -47,7 +47,7 @@ export function DayTrackerTags({
                       hapticLight();
                       onToggle(tag.id);
                     }}
-                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-semibold border transition-all ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-semibold border transition-all ${
                       active
                         ? `${TAG_COLOR_CLASS[tag.color]} shadow-sm scale-[1.02]`
                         : "bg-[var(--elevated)] text-[var(--text-secondary)] border-[var(--border)]"

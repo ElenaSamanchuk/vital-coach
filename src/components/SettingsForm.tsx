@@ -115,8 +115,7 @@ export function SettingsForm() {
   const settingsTabs = SETTINGS_TABS.filter((t) => {
     if (!GENERIC_MODE) return true;
     if (t.id === "body" || t.id === "system") return true;
-    if (showAdvanced && GENERIC_FEATURES.checkupTab && t.id === "health") return true;
-    if (showAdvanced && GENERIC_FEATURES.deepPsychology && t.id === "life") return true;
+    if (showAdvanced && (t.id === "life" || t.id === "health")) return true;
     return false;
   });
 
@@ -128,7 +127,7 @@ export function SettingsForm() {
 
   const num = (key: keyof Profile, label: string) => (
     <label className="block">
-      <span className="text-[13px] text-[var(--text-secondary)]">{label}</span>
+      <span className="vc-label">{label}</span>
       <input
         type="number"
         className="apple-input mt-1"
@@ -150,11 +149,27 @@ export function SettingsForm() {
 
       {tab === "body" && (
         <>
-          <KeyParametersForm />
+          {GENERIC_MODE && (
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="apple-btn apple-btn-secondary w-full text-[13px] mb-3"
+            >
+              {showAdvanced ? "Скрыть расширенные настройки" : UI.advancedSettings}
+            </button>
+          )}
+
+          {GENERIC_MODE && showAdvanced && (
+            <p className="text-[12px] text-[var(--text-secondary)] mb-3 -mt-1">
+              Появились вкладки «Жизнь» и «Чекап», чекбоксы здоровья и цели замеров
+            </p>
+          )}
+
+          <KeyParametersForm showAdvanced={showAdvanced} />
           <Card title="Основное" subtitle="Вес и здоровье — в блоке «Ключевые параметры» выше">
             <div className="space-y-3">
               <label className="block">
-                <span className="text-[13px] text-[var(--text-secondary)]">Имя</span>
+                <span className="vc-label">Имя</span>
                 <input
                   className="apple-input mt-1"
                   value={profile.name}
@@ -162,7 +177,7 @@ export function SettingsForm() {
                 />
               </label>
               <label className="block">
-                <span className="text-[13px] text-[var(--text-secondary)]">Работа</span>
+                <span className="vc-label">Работа</span>
                 <input
                   className="apple-input mt-1"
                   value={profile.occupation}
@@ -171,6 +186,30 @@ export function SettingsForm() {
               </label>
               {num("heightCm", "Рост, см")}
             </div>
+          </Card>
+
+          <Card title="Цикл" subtitle="Длина и начало — для рекомендаций">
+            {num("cycleLength", "Длина цикла, дней")}
+            <label className="block mt-3">
+              <span className="vc-label">Начало последних месячных</span>
+              <input
+                type="date"
+                className="apple-input mt-1"
+                value={profile.lastPeriodStart?.split("T")[0] ?? ""}
+                onChange={(e) =>
+                  setProfile({ ...profile, lastPeriodStart: e.target.value || null })
+                }
+              />
+            </label>
+          </Card>
+
+          <Card title="Лекарства" subtitle="Что принимаешь регулярно">
+            <input
+              className="apple-input"
+              placeholder="Тироксин, витамин D, доза…"
+              value={profile.thyroidMedication}
+              onChange={(e) => setProfile({ ...profile, thyroidMedication: e.target.value })}
+            />
           </Card>
 
           <TrackingTagsEditor
@@ -185,45 +224,17 @@ export function SettingsForm() {
             }}
           />
 
-          {GENERIC_MODE && (
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((v) => !v)}
-              className="apple-btn apple-btn-secondary w-full text-[13px]"
-            >
-              {showAdvanced ? "Скрыть расширенные настройки" : UI.advancedSettings}
-            </button>
+          {GENERIC_MODE && showAdvanced && (
+            <Card title="Цели замеров" subtitle="Талия · бёдра · грудь">
+              <div className="grid grid-cols-3 gap-2">
+                {num("targetWaistCm", "Талия, см")}
+                {num("targetHipsCm", "Бёдра, см")}
+                {num("targetChestCm", "Грудь, см")}
+              </div>
+            </Card>
           )}
 
-          {(!GENERIC_MODE || showAdvanced) && (
-            <>
-              <Card title="Цикл">
-                {num("cycleLength", "Длина цикла, дней")}
-                <label className="block mt-3">
-                  <span className="text-[13px] text-[#86868b]">Начало последних месячных</span>
-                  <input
-                    type="date"
-                    className="apple-input mt-1"
-                    value={profile.lastPeriodStart?.split("T")[0] ?? ""}
-                    onChange={(e) =>
-                      setProfile({ ...profile, lastPeriodStart: e.target.value || null })
-                    }
-                  />
-                </label>
-              </Card>
-
-              <Card title="Лекарства">
-                <input
-                  className="apple-input"
-                  placeholder="Тироксин, доза…"
-                  value={profile.thyroidMedication}
-                  onChange={(e) => setProfile({ ...profile, thyroidMedication: e.target.value })}
-                />
-              </Card>
-            </>
-          )}
-
-          <button type="button" onClick={saveProfile} className="apple-btn apple-btn-primary w-full py-4">
+          <button type="button" onClick={saveProfile} className="apple-btn apple-btn-primary w-full">
             {saved ? "Сохранено ✓" : GENERIC_MODE ? UI.saveProfile : "Сохранить тело"}
           </button>
         </>

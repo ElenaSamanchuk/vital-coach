@@ -70,7 +70,7 @@ export function StyleCapsuleCard({
         ))}
       </div>
       <select
-        className="apple-input text-[12px]"
+        className="apple-input apple-input--compact"
         value={profile.faceShape ?? ""}
         onChange={(e) => onChange({ ...profile, faceShape: e.target.value || undefined })}
       >

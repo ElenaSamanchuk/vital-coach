@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/cn";
@@ -19,21 +19,21 @@ export function AppShellLayout({ children }: { children: ReactNode }) {
   const dock = useShellDock();
   const mainRef = useRef<HTMLElement>(null);
   const prevTabRef = useRef(tabIndex(route));
+  const [direction, setDirection] = useState<"forward" | "back" | "neutral">("neutral");
 
-  const currentTab = tabIndex(route);
-  const direction =
-    currentTab >= 0 && prevTabRef.current >= 0 && currentTab !== prevTabRef.current
-      ? currentTab > prevTabRef.current
-        ? "forward"
-        : "back"
-      : "neutral";
+  useLayoutEffect(() => {
+    const current = tabIndex(route);
+    const prev = prevTabRef.current;
+    if (current >= 0 && prev >= 0 && current !== prev) {
+      setDirection(current > prev ? "forward" : "back");
+    } else {
+      setDirection("neutral");
+    }
+    prevTabRef.current = current;
+  }, [route]);
 
   useEffect(() => {
-    prevTabRef.current = currentTab;
-  }, [currentTab]);
-
-  useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    mainRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [route]);
 
   return (

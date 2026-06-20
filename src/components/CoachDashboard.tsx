@@ -24,7 +24,7 @@ import { PlanWhyCard } from "./ui/PlanWhyCard";
 import { WellbeingCoachCard } from "./visual/WellbeingCoachCard";
 import { CyclePhaseBar } from "./visual/CyclePhaseBar";
 import { StreakBadge } from "./visual/StreakBadge";
-import { CompletionRings, defaultDayRings } from "./visual/CompletionRings";
+import { CompletionRings, buildTodayRings } from "./visual/CompletionRings";
 import { BodyBudgetCard } from "./visual/BodyBudgetCard";
 import { SyndromeCoachCard } from "./visual/SyndromeCoachCard";
 import { WeeklyExperimentCard } from "./visual/WeeklyExperimentCard";
@@ -46,7 +46,7 @@ import { PlacesCard } from "./visual/PlacesCard";
 import { ReminderBoot } from "./ReminderBoot";
 import { parseLeisureQuiz } from "@/lib/leisure-quiz";
 import { BreathingTimer } from "./visual/BreathingTimer";
-import { vitalityLabel } from "@/lib/vitality-score";
+import { computeVitalityScore, vitalityLabel } from "@/lib/vitality-score";
 import { CARD_ICON } from "@/lib/design-tokens";
 import {
   getHealthContextTip,
@@ -55,7 +55,8 @@ import {
   getNutritionDayEvidence,
 } from "@/lib/evidence-why";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
-import type { DailyCoachPlan } from "@/lib/types";
+import type { DailyCoachPlan, WeeklyInsights } from "@/lib/types";
+import { AnalyticsRecommendationsCard } from "./visual/AnalyticsRecommendationsCard";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { PageSkeleton } from "@/components/ui/Skeleton";
 import type { ReactNode } from "react";
@@ -105,9 +106,27 @@ export function CoachDashboard({
   const [todayStress, setTodayStress] = useState<number | undefined>();
   const [notificationPrefsJson, setNotificationPrefsJson] = useState<string>("{}");
   const [leisureQuizJson, setLeisureQuizJson] = useState<string>("{}");
+  const [weeklyInsights, setWeeklyInsights] = useState<WeeklyInsights | null>(null);
+  const [weekRecLogs, setWeekRecLogs] = useState<
+    {
+      mealChoices?: string | null;
+      leisureJson?: string | null;
+      workoutChoice?: string | null;
+      mood?: number | null;
+      weightKg?: number | null;
+      steps?: number | null;
+      waterMl?: number | null;
+      sleepMinutes?: number | null;
+      postMealWalks?: number | null;
+    }[]
+  >([]);
 
   const load = useCallback(() => {
-    Promise.all([apiClient("/api/coach"), apiClient("/api/journey")]).then(async ([c, j]) => {
+    Promise.all([
+      apiClient("/api/coach"),
+      apiClient("/api/journey"),
+      apiClient("/api/analytics?days=7"),
+    ]).then(async ([c, j, a]) => {
       const d = await c.json();
       const journey = await j.json();
       setPlan(d.plan);
@@ -142,6 +161,11 @@ export function CoachDashboard({
         }
       }
       setWorkoutChoice(d.todayLog?.workoutChoice ?? "");
+      if (a.ok) {
+        const analytics = await a.json();
+        setWeeklyInsights(analytics.insights ?? null);
+        setWeekRecLogs((analytics.logs ?? []).slice(-7));
+      }
     }).finally(() => setLoading(false));
   }, []);
 
@@ -313,18 +337,19 @@ export function CoachDashboard({
 
   const mealsDone = useMemo(() => {
     if (!plan) return 0;
-    return plan.mealPlan.filter((s) => mealChoicesForSlots[s.slot] || s.selected?.id).length;
+    return plan.mealPlan.filter((s) => Boolean(mealChoicesForSlots[s.slot])).length;
   }, [plan, mealChoicesForSlots]);
 
   const mealsTotal = plan?.mealPlan.length ?? 4;
-  const workoutPicked = Boolean(workoutChoice || plan?.workout.recommended.id);
+  const workoutPicked = Boolean(workoutChoice);
   const wellbeingProgress = useMemo(() => {
     if (!plan) return 0;
     let p = 0;
-    if (plan.wellbeing.moodLogged || diaryDone) p += 0.5;
-    if (plan.wellbeing.actionsDone.length > 0) p += 0.5;
-    return p;
-  }, [plan, diaryDone]);
+    if (plan.wellbeing.moodLogged || diaryDone) p += 0.34;
+    if (plan.wellbeing.actionsDone.length > 0) p += 0.33;
+    if (leisureChoice) p += 0.33;
+    return Math.min(1, p);
+  }, [plan, diaryDone, leisureChoice]);
   const allComplete =
     mealsDone >= mealsTotal &&
     workoutPicked &&
@@ -352,13 +377,16 @@ export function CoachDashboard({
   }
   if (!plan || !profile) return null;
 
-  const rings = defaultDayRings({
-    mealsDone,
-    mealsTotal,
-    workoutDone: workoutPicked,
+  const rings = buildTodayRings({
+    mealSlots: plan.mealPlan.map((m) => m.slot),
+    mealChoices: mealChoicesForSlots,
+    workoutChoice: workoutChoice || null,
     diaryDone,
-    wellbeingProgress,
+    moodLogged: plan.wellbeing.moodLogged,
+    wellbeingActionsDone: plan.wellbeing.actionsDone.length,
+    leisureChoice,
   });
+  const vitalityScore = computeVitalityScore(rings);
 
   const healthTip = getHealthContextTip({
     ...profile,
@@ -461,8 +489,8 @@ export function CoachDashboard({
         <div className="mt-5">
           <CompletionRings
             rings={rings}
-            centerLabel={String(plan.vitalityScore)}
-            centerSub={vitalityLabel(plan.vitalityScore)}
+            centerLabel={String(vitalityScore)}
+            centerSub={vitalityLabel(vitalityScore)}
             celebrate={celebrate}
           />
         </div>
@@ -532,6 +560,24 @@ export function CoachDashboard({
           onStepsSet={setStepsCount}
         />
       </div>
+
+      {(weeklyInsights || weekRecLogs.length > 0) && (
+        <IconCard
+          icon={Sparkles}
+          iconColor={CARD_ICON}
+          title="Рекомендации"
+          subtitle="Из аналитики за неделю"
+        >
+          <AnalyticsRecommendationsCard
+            insights={weeklyInsights}
+            logs={weekRecLogs}
+            waterTargetMl={plan.dayTargets.waterTargetMl}
+            sleepTargetMin={480}
+            proteinTargetG={plan.dayTargets.proteinTargetG}
+            compact
+          />
+        </IconCard>
+      )}
 
       {!GENERIC_FEATURES.dayRhythm ? null : (
       <DayRhythmCard

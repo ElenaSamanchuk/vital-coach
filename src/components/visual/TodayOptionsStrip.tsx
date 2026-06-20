@@ -93,13 +93,13 @@ export function TodayOptionsStrip({
           Листай влево — вариантов много · подпись — что получишь
         </p>
       </div>
-      <div className="flex gap-1 p-1 rounded-xl bg-[var(--bg-subtle)]">
+      <div className="flex gap-1 p-0.5 rounded-xl bg-[var(--bg-subtle)]">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setTab(id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[var(--touch-min)] rounded-lg vc-text-sm font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[var(--touch-compact)] py-1.5 rounded-lg vc-text-sm font-semibold transition-colors ${
               tab === id
                 ? "bg-[var(--elevated)] text-[var(--text)] shadow-sm"
                 : "text-[var(--text-secondary)]"

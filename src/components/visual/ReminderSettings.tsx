@@ -55,7 +55,7 @@ export function ReminderSettings({
               type="number"
               min={6}
               max={11}
-              className="apple-input mt-1"
+              className="apple-input apple-input--compact mt-1"
               value={prefs.morningHour}
               onChange={(e) => update({ morningHour: parseInt(e.target.value, 10) || 9 })}
             />
@@ -66,7 +66,7 @@ export function ReminderSettings({
               type="number"
               min={18}
               max={23}
-              className="apple-input mt-1"
+              className="apple-input apple-input--compact mt-1"
               value={prefs.eveningHour}
               onChange={(e) => update({ eveningHour: parseInt(e.target.value, 10) || 21 })}
             />

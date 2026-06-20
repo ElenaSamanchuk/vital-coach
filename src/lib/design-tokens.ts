@@ -16,10 +16,11 @@ export const VC = {
   pink: "#D4869C",
   pinkSoft: "rgba(212, 134, 156, 0.14)",
 
-  ringMeals: "#6BB892",
+  /* Кольца «Сегодня» — контрастные, не смешиваются визуально */
+  ringMeals: "#E08B47",
   ringMove: "#3D9B6E",
-  ringLog: "#8B6F47",
-  ringWellbeing: "#7C6BA8",
+  ringLog: "#4A7FD4",
+  ringWellbeing: "#C45C9A",
 
   success: "#3D9B6E",
   successSoft: "rgba(61, 155, 110, 0.12)",

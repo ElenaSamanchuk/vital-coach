@@ -33,7 +33,7 @@ export function AppShell({
 
   return (
     <div className="vc-app-shell">
-      <header className="shrink-0 z-40 vc-header vc-header-safe px-4 pb-2.5">
+      <header className="shrink-0 z-40 vc-header vc-header-safe px-4 pb-2">
         <div className="flex items-center gap-2.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
@@ -72,7 +72,7 @@ export function AppShell({
                   active ? "vc-nav-item--active" : "vc-nav-item--idle",
                 )}
               >
-                <Icon size={20} strokeWidth={active ? 2.5 : 1.75} aria-hidden />
+                <Icon size={18} strokeWidth={active ? 2.5 : 1.75} aria-hidden />
                 <span className="text-[10px] font-semibold truncate w-full text-center">{label}</span>
               </Link>
             );

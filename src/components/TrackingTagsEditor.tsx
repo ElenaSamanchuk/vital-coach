@@ -57,7 +57,7 @@ export function TrackingTagsEditor({
       </div>
       <div className="flex gap-2 mb-2">
         <input
-          className="apple-input flex-1"
+          className="apple-input apple-input--compact flex-1"
           placeholder="Новая плашка…"
           value={label}
           onChange={(e) => setLabel(e.target.value)}

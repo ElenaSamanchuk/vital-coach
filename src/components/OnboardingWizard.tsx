@@ -40,20 +40,20 @@ export function OnboardingWizard() {
 
   return (
     <div className="vc-app-shell vc-app-shell--page">
-      <main className="vc-app-main flex flex-col justify-center px-4 py-10 pb-16 vc-header-safe">
-        <div className="vc-surface p-6 space-y-6 w-full">
+      <main className="vc-app-main flex flex-col justify-center px-4 py-8 pb-14 vc-header-safe">
+        <div className="vc-surface p-5 space-y-5 w-full">
           <div className="text-center">
             <div
-              className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"
+              className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-3"
               style={{ background: BRAND_GRADIENT }}
             >
-              <Leaf className="text-white" size={32} />
+              <Leaf className="text-white" size={28} />
             </div>
             <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1 rounded-full mb-3">
               <ShieldCheck size={14} />
               {UI.onboardingBadge}
             </p>
-            <h1 className="vc-display text-[26px]">{UI.onboardingTitle}</h1>
+            <h1 className="vc-display text-[1.375rem]">{UI.onboardingTitle}</h1>
             <p className="vc-subtitle mt-2">
               {APP_NAME} · {APP_TAGLINE}
             </p>

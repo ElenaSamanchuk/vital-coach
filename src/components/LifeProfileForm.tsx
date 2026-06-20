@@ -123,7 +123,7 @@ export function LifeProfileForm() {
           ].map(([key, label]) => (
             <input
               key={key}
-              className="apple-input text-[12px]"
+              className="apple-input apple-input--compact"
               placeholder={label}
               value={ikigai[key as keyof typeof ikigai]}
               onChange={(e) => setIkigai({ ...ikigai, [key]: e.target.value })}
@@ -231,7 +231,7 @@ export function LifeProfileForm() {
         </div>
       </Card>
 
-      <button type="button" onClick={save} className="apple-btn apple-btn-primary w-full py-4">
+      <button type="button" onClick={save} className="apple-btn apple-btn-primary w-full">
         {saved ? "Сохранено ✓" : "Сохранить жизненный профиль"}
       </button>
     </div>

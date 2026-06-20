@@ -36,7 +36,7 @@ export function ShoppingPanel({
       </div>
       <div className="flex gap-2">
         <input
-          className="apple-input flex-1 text-[13px]"
+          className="apple-input apple-input--compact flex-1"
           placeholder="Добавить…"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

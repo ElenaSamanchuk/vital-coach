@@ -14,6 +14,7 @@ import {
   type ProfilePreferences,
 } from "@/lib/profile-preferences";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import { GENERIC_MODE } from "@/lib/app-config";
 import type { BodyGoal } from "@/lib/profile-derivation";
 
 interface KeyProfile {
@@ -60,7 +61,7 @@ const FOCUS_OPTIONS = [
   { id: "relationships", label: "Отношения" },
 ];
 
-export function KeyParametersForm() {
+export function KeyParametersForm({ showAdvanced = false }: { showAdvanced?: boolean }) {
   const [data, setData] = useState<KeyProfile | null>(null);
   const [saved, setSaved] = useState(false);
   const [preview, setPreview] = useState<NutritionMeta | null>(null);
@@ -220,7 +221,7 @@ export function KeyParametersForm() {
         </select>
       </label>
 
-      {GENERIC_FEATURES.medical && (
+      {(GENERIC_FEATURES.medical || (GENERIC_MODE && showAdvanced)) && (
         <>
           <p className="vc-label mb-2">Здоровье</p>
           <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">

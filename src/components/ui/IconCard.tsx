@@ -22,12 +22,12 @@ export function IconCard({
 
   return (
     <div className={`vc-glass-card vc-animate-in ${className}`}>
-      <div className="flex gap-3 mb-3">
+      <div className="flex gap-2.5 mb-2">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: bg, color: iconColor }}
         >
-          <Icon size={20} strokeWidth={2} />
+          <Icon size={18} strokeWidth={2} />
         </div>
         <div className="min-w-0 flex flex-col justify-center">
           <h3 className="vc-text-lg">{title}</h3>

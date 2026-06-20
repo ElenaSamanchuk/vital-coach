@@ -11,6 +11,7 @@ import { JourneyTimeline } from "./visual/JourneyTimeline";
 import { LifeMatrixBoard } from "./visual/LifeMatrixBoard";
 import { WeightSparkline } from "./visual/WeightSparkline";
 import { WeeklyDigest } from "./visual/WeeklyDigest";
+import { AnalyticsRecommendationsCard } from "./visual/AnalyticsRecommendationsCard";
 import { StreakBadge } from "./visual/StreakBadge";
 import { WeekSummaryRings } from "./visual/WeekSummaryRings";
 import { WellbeingTrend } from "./visual/WellbeingTrend";
@@ -72,6 +73,24 @@ export function PathDashboard() {
   const [mediaPicks, setMediaPicks] = useState<ReturnType<typeof pickMedia> | null>(null);
   const [recipePicks, setRecipePicks] = useState<RecipeCard[]>([]);
   const [placePicks, setPlacePicks] = useState<PlaceSpot[]>([]);
+  const [weekRecLogs, setWeekRecLogs] = useState<
+    {
+      mealChoices?: string | null;
+      leisureJson?: string | null;
+      workoutChoice?: string | null;
+      mood?: number | null;
+      weightKg?: number | null;
+      steps?: number | null;
+      waterMl?: number | null;
+      sleepMinutes?: number | null;
+      postMealWalks?: number | null;
+    }[]
+  >([]);
+  const [profileTargets, setProfileTargets] = useState({
+    waterTargetMl: 2000,
+    sleepTargetMin: 480,
+    proteinTargetG: 120,
+  });
 
   useEffect(() => {
     Promise.all([
@@ -89,6 +108,13 @@ export function PathDashboard() {
       const analytics = await a.json();
       const profile = p.ok ? await p.json() : null;
       setTrackingTags(parseTrackingTags(profile?.trackingTagsJson));
+      if (profile) {
+        setProfileTargets({
+          waterTargetMl: profile.waterTargetMl ?? 2000,
+          sleepTargetMin: profile.sleepTargetMin ?? 480,
+          proteinTargetG: profile.proteinTargetG ?? 120,
+        });
+      }
       const allLogs = (analytics.logs ?? []) as {
         date: string;
         mood?: number;
@@ -98,8 +124,14 @@ export function PathDashboard() {
         dayPhoto?: string;
         weightKg?: number;
         mealChoices?: string;
+        leisureJson?: string;
         workoutChoice?: string;
+        steps?: number;
+        waterMl?: number;
+        sleepMinutes?: number;
+        postMealWalks?: number;
       }[];
+      setWeekRecLogs(allLogs.slice(-7));
       setCalendarDays(logsToCalendarDays(allLogs));
       setTagCounts(countTagUsage(allLogs));
 
@@ -225,6 +257,17 @@ export function PathDashboard() {
           <TrendArrows items={trends} />
         </GlassCard>
       )}
+
+      <GlassCard title={UI.recommendationsTitle} subtitle={UI.recommendationsSubtitle}>
+        <AnalyticsRecommendationsCard
+          insights={weekly}
+          logs={weekRecLogs}
+          waterTargetMl={profileTargets.waterTargetMl}
+          sleepTargetMin={profileTargets.sleepTargetMin}
+          proteinTargetG={profileTargets.proteinTargetG}
+          limit={8}
+        />
+      </GlassCard>
 
       {GENERIC_FEATURES.lifeCatalog && lifeSuggestions.length > 0 && (
         <GlassCard title="Компас жизни" subtitle="Что попробовать — из данных и интересов">

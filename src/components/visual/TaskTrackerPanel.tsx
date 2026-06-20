@@ -89,7 +89,7 @@ export function TaskTrackerPanel({
 
       <div className="flex gap-2">
         <input
-          className="apple-input flex-1 text-[13px]"
+          className="apple-input apple-input--compact flex-1"
           placeholder="Новая задача…"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
