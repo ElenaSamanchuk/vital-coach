@@ -2,6 +2,8 @@
  * Доказательные объяснения «почему» — коротко, с источником.
  */
 
+import { CHECKUP } from "./product-copy";
+
 export interface EvidenceBlock {
   title: string;
   why: string;
@@ -132,12 +134,12 @@ export function getLabEvidence(label: string, urgency: string): EvidenceBlock {
     return { ...hit.block, action };
   }
   return {
-    title: label || "Анализы",
+    title: label || CHECKUP.section,
     why: "Без актуальных маркеров коуч использует средние нормы, а не твои значения.",
     source: "Персонализированная медицина",
     action:
       urgency === "overdue"
-        ? "Добавь результат в Профиль → Анализы."
+        ? CHECKUP.addResultHint
         : "Запланируй сдачу в ближайшие недели.",
   };
 }

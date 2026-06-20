@@ -1,10 +1,11 @@
 import { Calendar, BookOpen, Route, User } from "lucide-react";
+import { CHECKUP } from "@/lib/product-copy";
 
 const TABS = [
   { Icon: Calendar, label: "Сегодня", desc: "План и выбор еды / тренировки" },
   { Icon: BookOpen, label: "Дневник", desc: "Единственное место для записей" },
   { Icon: Route, label: "Путь", desc: "Прогресс и аналитика" },
-  { Icon: User, label: "Профиль", desc: "Настройки и анализы" },
+  { Icon: User, label: "Профиль", desc: CHECKUP.overviewDesc },
 ];
 
 export function AppOverviewVisual() {

@@ -5,7 +5,7 @@
 import type { DailyLog, Examination, HabitCheck, LabResult, Meal, Profile, Workout } from "@prisma/client";
 import { buildProfileFromAssessment } from "./profile-save";
 import { DEFAULT_ASSESSMENT } from "./onboarding-assessment";
-import { GENERIC_PROFILE } from "./app-config";
+import { GENERIC_PROFILE, GENERIC_MODE } from "./app-config";
 import { startOfDayDate } from "./dates";
 
 const LS_KEY = "vital_local_v1";
@@ -90,6 +90,14 @@ export async function initStore(): Promise<void> {
   initPromise = (async () => {
     const migrated = migrateFromLocalStorage();
     if (migrated) await writeDb(migrated);
+
+    if (GENERIC_MODE && typeof localStorage !== "undefined") {
+      const db = await readDb();
+      if (db.profile?.onboardingDone && !db.profile.name?.trim()) {
+        db.profile.onboardingDone = false;
+        await writeDb(db);
+      }
+    }
   })();
   return initPromise;
 }
@@ -143,7 +151,10 @@ export async function ensureProfile(): Promise<Profile> {
     ...GENERIC_PROFILE,
     name: "",
   });
-  db.profile = defaultProfileFields(data);
+  db.profile = {
+    ...defaultProfileFields(data),
+    onboardingDone: false,
+  };
   await writeDb(db);
   return db.profile;
 }

@@ -3,6 +3,8 @@
  * Домены отобраны из идей пользователя, без перегруза UI.
  */
 
+import { CHECKUP } from "./product-copy";
+
 export type LifeDomain =
   | "work"
   | "learn"
@@ -104,7 +106,7 @@ export const LIFE_CATALOG: CatalogItem[] = [
   { id: "shop", label: "Что купить — список", domain: "home", emoji: "🛒" },
   { id: "declutter", label: "Разобрать / выбросить", domain: "home", emoji: "📦", minutes: 15 },
   // Здоровье
-  { id: "checkup", label: "Чекап / анализы", domain: "health", emoji: "🔬" },
+  { id: "checkup", label: CHECKUP.catalogLabel, domain: "health", emoji: "🔬" },
   { id: "ultrasound", label: "УЗИ", domain: "health", emoji: "📡" },
   // Питомцы
   { id: "cat_care", label: "Кот — уход", domain: "pets", emoji: "🐱" },

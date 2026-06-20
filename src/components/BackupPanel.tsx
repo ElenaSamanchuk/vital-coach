@@ -1,5 +1,6 @@
 "use client";
 
+import { CHECKUP } from "@/lib/product-copy";
 import { apiClient } from "@/lib/api-client";
 import { STANDALONE_MODE } from "@/lib/app-config";
 import { useEffect, useRef, useState } from "react";
@@ -77,7 +78,7 @@ export function BackupPanel() {
             на новый телефон.
           </p>
           <p className="text-[var(--text-secondary)] mt-2">
-            Профиль, дневники, фото дня, анализы, XP.
+            Профиль, дневники, фото дня, {CHECKUP.backupIncludes}, XP.
           </p>
         </div>
       </div>

@@ -100,7 +100,7 @@ export const HEALTH_OPTIONS: { key: keyof OnboardingAssessment; label: string; h
   { key: "pcosSuspected", label: "СПКЯ", hint: "УЗИ таза, силовая, день 3 гормоны" },
   { key: "endometriosis", label: "Эндометриоз", hint: "МРТ при боли, мягкая лютеиновая" },
   { key: "cortisolIssues", label: "Стресс / кортизол", hint: "Сон, без HIIT, минимальный день" },
-  { key: "vitaminDDeficiency", label: "Дефицит витамина D", hint: "Анализ + доза с врачом" },
+  { key: "vitaminDDeficiency", label: "Дефицит витамина D", hint: "Чекап + доза с врачом" },
   { key: "b12Deficiency", label: "Дефицит B12", hint: "ФГДС при низком несмотря на приём" },
   { key: "vitaminAbsorption", label: "Проблемы всасывания", hint: "Формы витаминов, ФГДС" },
   { key: "hormoneIssues", label: "Гормональные колебания веса", hint: "Панель гормонов день 3/21" },

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ConditionCard } from "@/lib/health-matrix";
+import { CHECKUP } from "@/lib/product-copy";
 
 export function ConditionMatrix({ conditions }: { conditions: ConditionCard[] }) {
   const active = conditions.filter((c) => c.active);
@@ -54,7 +55,7 @@ function ConditionRow({ card, dimmed }: { card: ConditionCard; dimmed?: boolean 
           <Row label="Вес" text={card.impact} />
           <Row label="Еда" text={card.nutrition} icon="🥗" />
           <Row label="Движение" text={card.movement} icon="🏃" />
-          <Row label="Анализы" text={card.labs} icon="🔬" />
+          <Row label={CHECKUP.matrixRow} text={card.labs} icon="🔬" />
         </div>
       )}
     </div>

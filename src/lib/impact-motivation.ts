@@ -3,6 +3,8 @@
  * Питание — нутриенты и эффект; спорт — мышцы и срок; досуг/ритуалы — восстановление.
  */
 
+import { CHECKUP } from "./product-copy";
+
 export interface ImpactLabel {
   /** Короткая мотивация «что получишь» */
   effect: string;
@@ -296,6 +298,6 @@ export function actionImpact(domain: string, title: string): string {
   if (domain === "nutrition" || lower.includes("белок") || lower.includes("ккал"))
     return "Форма без потери мышц · ежедневно";
   if (lower.includes("сон")) return "Вес и ИР стабильнее · с этой ночи";
-  if (lower.includes("анализ")) return "Точный план под твоё тело · 1 раз/квартал";
+  if (lower.includes("чекап")) return CHECKUP.motivation;
   return "Баланс колеса жизни · 2–4 нед";
 }

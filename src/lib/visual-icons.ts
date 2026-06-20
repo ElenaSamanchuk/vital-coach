@@ -21,6 +21,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { VC } from "./design-tokens";
+import { CHECKUP } from "./product-copy";
 
 /** 4 зоны приложения — визуальная карта */
 export const ZONE_VISUAL = [
@@ -99,7 +100,7 @@ export const MOOD_VISUAL = [
 export const SETTINGS_TABS = [
   { id: "body", label: "Тело", Icon: Heart, color: VC.accent },
   { id: "life", label: "Жизнь", Icon: Sparkles, color: VC.accentMuted },
-  { id: "health", label: "Анализы", Icon: FlaskConical, color: VC.ringLog },
+  { id: "health", label: CHECKUP.section, Icon: FlaskConical, color: VC.ringLog },
   { id: "system", label: "Ещё", Icon: Settings, color: VC.textSecondary },
 ] as const;
 

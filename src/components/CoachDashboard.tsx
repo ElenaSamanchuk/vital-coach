@@ -56,6 +56,7 @@ import {
 } from "@/lib/evidence-why";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import type { DailyCoachPlan } from "@/lib/types";
+import { GENERIC_FEATURES } from "@/lib/generic-ui";
 
 interface ProfileFlags {
   pcosSuspected: boolean;
@@ -345,11 +346,11 @@ export function CoachDashboard() {
         taskLabels={taskLabels}
         briefing={briefingLine}
       />
-      {plan.healthBriefing?.length > 0 && (
+      {GENERIC_FEATURES.medical && plan.healthBriefing?.length > 0 && (
         <HealthBriefingCard briefs={plan.healthBriefing} />
       )}
 
-      <TimeHorizonRings birthYear={profile.birthYear} />
+      {GENERIC_FEATURES.timeRings && <TimeHorizonRings birthYear={profile.birthYear} />}
 
       {plan.suggestSoftDay && !softDay && !plan.softDay && (
         <button
@@ -400,18 +401,24 @@ export function CoachDashboard() {
           />
         </div>
 
-        {plan.bodyBudget && <BodyBudgetCard budget={plan.bodyBudget} />}
+        {GENERIC_FEATURES.bodyAnalytics && plan.bodyBudget && (
+          <BodyBudgetCard budget={plan.bodyBudget} />
+        )}
 
-        {plan.compensation && <CompensationCard plan={plan.compensation} />}
+        {GENERIC_FEATURES.bodyAnalytics && plan.compensation && (
+          <CompensationCard plan={plan.compensation} />
+        )}
 
-        <CyclePhaseBar phase={plan.cyclePhase} day={plan.cycleDay} />
+        {GENERIC_FEATURES.cycle && (
+          <CyclePhaseBar phase={plan.cyclePhase} day={plan.cycleDay} />
+        )}
 
         {plan.nutritionMeta && (
           <div className="mt-3">
             <NutritionMetaCard meta={plan.nutritionMeta} compact />
           </div>
         )}
-        {plan.labCalorieNote && (
+        {plan.labCalorieNote && GENERIC_FEATURES.medical && (
           <p className="text-[11px] text-[var(--text-secondary)] mt-2">{plan.labCalorieNote}</p>
         )}
 
@@ -468,7 +475,7 @@ export function CoachDashboard() {
       <WellbeingPainCard
         painLevel={painLevel}
         painZones={painZones}
-        endometriosis={profile.endometriosis}
+        endometriosis={GENERIC_FEATURES.cycle && profile.endometriosis}
         wellbeing={plan.wellbeing}
         energy={todayEnergy}
         mood={todayMood}
@@ -503,66 +510,70 @@ export function CoachDashboard() {
         </Link>
       </IconCard>
 
-      <TodayDetailsPanel
-        subtitle="Аналитика · идеи · культура · плашки дня"
-      >
-        {plan.lifeSuggestions?.length > 0 && (
-          <LifeDiscoverPanel
-            suggestions={plan.lifeSuggestions.slice(0, 4)}
-            onAddTask={(task) => saveTasks([...dayTasks, task])}
-          />
-        )}
-        <LeisureQuizCard
-          initial={parseLeisureQuiz(leisureQuizJson)}
-          onSave={saveLeisureQuiz}
-        />
-        {plan.mediaPicks && <MediaPicksCard media={plan.mediaPicks} />}
-        {plan.placePicks?.length > 0 && <PlacesCard places={plan.placePicks} />}
-        {plan.recipePicks?.length > 0 && <RecipesCard recipes={plan.recipePicks} />}
-        {trackingTags.length > 0 && (
-          <div>
-            <p className="text-[10px] text-[var(--text-tertiary)] mb-2 uppercase">Сегодня было</p>
-            <QuickDayTags tags={trackingTags} selected={dayTags} onChange={setDayTags} />
-          </div>
-        )}
-        {(plan.wellbeing.focus === "stress" || plan.warnings.some((w) => w.includes("стресс"))) && (
-          <BreathingTimer />
-        )}
-        {plan.syndromeInsight && (
-          <SyndromeCoachCard headline={plan.syndromeInsight.headline} tip={plan.syndromeInsight.tip} />
-        )}
-        {plan.calorieExplainer && <CalorieExplainerCard explainer={plan.calorieExplainer} />}
-        {plan.inflammationLoad && <InflammationScoreCard load={plan.inflammationLoad} />}
-        {plan.weeklyExperiment && <WeeklyExperimentCard exp={plan.weeklyExperiment} />}
-        {plan.labMealHints.length > 0 && (
-          <p className="text-[11px] text-[var(--text-secondary)]">
-            <span className="font-semibold text-[var(--accent)]">Лаборатория → тарелка: </span>
-            {plan.labMealHints[0].message}
-          </p>
-        )}
-        <PlanWhyCard
-          blocks={[healthTip, nutritionEvidence, workoutEvidence, plan.wellbeing.evidence].filter(
-            (b): b is NonNullable<typeof b> => Boolean(b),
+      {GENERIC_FEATURES.lifeCatalog ? (
+        <TodayDetailsPanel subtitle="Аналитика · идеи · культура · плашки дня">
+          {plan.lifeSuggestions?.length > 0 && (
+            <LifeDiscoverPanel
+              suggestions={plan.lifeSuggestions.slice(0, 4)}
+              onAddTask={(task) => saveTasks([...dayTasks, task])}
+            />
           )}
-        />
-        <WellbeingCoachCard plan={plan.wellbeing} onToggleAction={toggleWellbeingAction} />
-        {profile.hypothyroidism && plan.warnings.some((w) => w.includes("тироксин")) && (
-          <Link href="/log" className="text-[12px] font-semibold text-[var(--purple)] block">
-            Отметить тироксин в дневнике →
-          </Link>
-        )}
-        {overdueLab && labEvidence && (
-          <Link href="/settings?tab=health" className="block text-[11px] text-[var(--warning)]">
-            {overdueLab.label} · {overdueLab.dueText} →
-          </Link>
-        )}
-      </TodayDetailsPanel>
+          <LeisureQuizCard
+            initial={parseLeisureQuiz(leisureQuizJson)}
+            onSave={saveLeisureQuiz}
+          />
+          {plan.mediaPicks && <MediaPicksCard media={plan.mediaPicks} />}
+          {plan.placePicks?.length > 0 && <PlacesCard places={plan.placePicks} />}
+          {plan.recipePicks?.length > 0 && <RecipesCard recipes={plan.recipePicks} />}
+          {trackingTags.length > 0 && (
+            <div>
+              <p className="text-[10px] text-[var(--text-tertiary)] mb-2 uppercase">Сегодня было</p>
+              <QuickDayTags tags={trackingTags} selected={dayTags} onChange={setDayTags} />
+            </div>
+          )}
+          {(plan.wellbeing.focus === "stress" || plan.warnings.some((w) => w.includes("стресс"))) && (
+            <BreathingTimer />
+          )}
+          {plan.syndromeInsight && (
+            <SyndromeCoachCard headline={plan.syndromeInsight.headline} tip={plan.syndromeInsight.tip} />
+          )}
+          {plan.calorieExplainer && <CalorieExplainerCard explainer={plan.calorieExplainer} />}
+          {plan.inflammationLoad && <InflammationScoreCard load={plan.inflammationLoad} />}
+          {plan.weeklyExperiment && <WeeklyExperimentCard exp={plan.weeklyExperiment} />}
+          {plan.labMealHints.length > 0 && (
+            <p className="text-[11px] text-[var(--text-secondary)]">
+              <span className="font-semibold text-[var(--accent)]">Чекап → тарелка: </span>
+              {plan.labMealHints[0].message}
+            </p>
+          )}
+          <PlanWhyCard
+            blocks={[healthTip, nutritionEvidence, workoutEvidence, plan.wellbeing.evidence].filter(
+              (b): b is NonNullable<typeof b> => Boolean(b),
+            )}
+          />
+          <WellbeingCoachCard plan={plan.wellbeing} onToggleAction={toggleWellbeingAction} />
+          {profile.hypothyroidism && plan.warnings.some((w) => w.includes("тироксин")) && (
+            <Link href="/log" className="text-[12px] font-semibold text-[var(--purple)] block">
+              Отметить тироксин в дневнике →
+            </Link>
+          )}
+          {overdueLab && labEvidence && (
+            <Link href="/settings?tab=health" className="block text-[11px] text-[var(--warning)]">
+              {overdueLab.label} · {overdueLab.dueText} →
+            </Link>
+          )}
+        </TodayDetailsPanel>
+      ) : (
+        plan.warnings[0] && (
+          <p className="text-[12px] text-[var(--text-secondary)] px-1">{plan.warnings[0]}</p>
+        )
+      )}
 
       <p className="text-[12px] text-[var(--text-secondary)] px-1 leading-relaxed">
         {plan.encouragement}
       </p>
 
-      <div className="fixed bottom-[calc(var(--nav-height)+8px)] left-0 right-0 z-30 px-4 max-w-none md:max-w-2xl lg:max-w-3xl mx-auto">
+      <div className="fixed bottom-[calc(var(--nav-height)+8px)] vc-nav-fixed z-30 px-4">
         <Link
           href="/log"
           className={`apple-btn w-full py-4 text-[16px] shadow-lg ${

@@ -16,6 +16,7 @@ import {
 } from "./life-spheres";
 import type { WeeklyInsights, LabDueItem } from "./types";
 import type { WeeklyExperiment } from "./weekly-experiment";
+import { checkupReminderTitle } from "./product-copy";
 
 export type HorizonKind = "day" | "week" | "month";
 export type HorizonDomain =
@@ -292,7 +293,7 @@ export function buildHorizonPlan(ctx: {
   if (overdueLab) {
     push(month, {
       horizon: "month",
-      title: `Анализы: ${overdueLab.label}`,
+      title: checkupReminderTitle(overdueLab.label),
       why: overdueLab.reason || overdueLab.dueText,
       domain: "health",
       sphere: "health",

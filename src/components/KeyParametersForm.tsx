@@ -13,6 +13,7 @@ import {
   mergePreferencesIntoAssessment,
   type ProfilePreferences,
 } from "@/lib/profile-preferences";
+import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import type { BodyGoal } from "@/lib/profile-derivation";
 
 interface KeyProfile {
@@ -219,20 +220,24 @@ export function KeyParametersForm() {
         </select>
       </label>
 
-      <p className="vc-label mb-2">Здоровье</p>
-      <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
-        {HEALTH_OPTIONS.map((opt) => (
-          <label key={opt.key} className="flex items-center gap-2 text-[13px]">
-            <input
-              type="checkbox"
-              checked={data[opt.key as keyof KeyProfile] as boolean}
-              onChange={(e) => setData({ ...data, [opt.key]: e.target.checked } as KeyProfile)}
-              className="accent-[var(--accent)]"
-            />
-            {opt.label}
-          </label>
-        ))}
-      </div>
+      {GENERIC_FEATURES.medical && (
+        <>
+          <p className="vc-label mb-2">Здоровье</p>
+          <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
+            {HEALTH_OPTIONS.map((opt) => (
+              <label key={opt.key} className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="checkbox"
+                  checked={data[opt.key as keyof KeyProfile] as boolean}
+                  onChange={(e) => setData({ ...data, [opt.key]: e.target.checked } as KeyProfile)}
+                  className="accent-[var(--accent)]"
+                />
+                {opt.label}
+              </label>
+            ))}
+          </div>
+        </>
+      )}
 
       <button type="button" onClick={save} className="apple-btn apple-btn-primary w-full">
         {saved ? "Сохранено — план пересчитан ✓" : "Сохранить и пересчитать план"}

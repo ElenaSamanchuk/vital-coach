@@ -3,6 +3,8 @@
  * Основа: коучинг Wheel of Life, PERMA (Seligman), SDT (Ryan & Deci).
  */
 
+import { CHECKUP } from "./product-copy";
+
 export type SphereKey =
   | "health"
   | "career"
@@ -30,7 +32,7 @@ export const LIFE_SPHERES: LifeSphere[] = [
     label: "Здоровье",
     emoji: "❤️",
     color: "#ff3b30",
-    description: "Тело, анализы, сон, энергия",
+    description: "Тело, чекап, сон, энергия",
     research: "WHO: физическая активность 150 мин/нед снижает риски НИЗ",
   },
   {
@@ -162,7 +164,7 @@ export function getSphereAdvice(
       actions: [
         "Белок 150 г + вода 2,5 л — база",
         "2 силовые + 2 кардио (вело/бассейн)",
-        "Анализы по расписанию во вкладке «Анализы»",
+        CHECKUP.sphereHint,
       ],
       weeklyGoal: "4 тренировки + 5 дней дневника",
       research: "Дефицит 500–750 ккал + белок сохраняет мышцы",

@@ -33,6 +33,7 @@ import { computeInflammationLoad } from "./inflammation-score";
 import { parseDayTags } from "./tracking-tags";
 import { computeCompensation } from "./compensation-plan";
 import { buildHealthBriefing } from "./health-briefing";
+import { CHECKUP, checkupReminderTitle } from "./product-copy";
 import { parseDayTasks, taskStats } from "./day-tasks";
 import { parseLifeActions } from "./life-actions";
 import { mealImpact, workoutImpact } from "./impact-motivation";
@@ -396,7 +397,7 @@ export function generateDailyPlan(
     tasks.push({
       id: "labs_due",
       category: "labs",
-      title: `Анализы: ${labsDue[0].label}`,
+      title: checkupReminderTitle(labsDue[0].label),
       description: labsDue[0].reason,
       priority: labsDue[0].urgency === "overdue" ? "must" : "should",
       completed: false,
@@ -434,7 +435,7 @@ export function generateDailyPlan(
 
   const labCalorieNote =
     dynamic.calorieAdjustment !== 0
-      ? `Корректировка по анализам/состоянию: ${dynamic.calorieAdjustment > 0 ? "+" : ""}${dynamic.calorieAdjustment} ккал`
+      ? `${CHECKUP.adjustmentNote}/состоянию: ${dynamic.calorieAdjustment > 0 ? "+" : ""}${dynamic.calorieAdjustment} ккал`
       : undefined;
 
   const doneCount = tasks.filter((t) => t.completed).length;

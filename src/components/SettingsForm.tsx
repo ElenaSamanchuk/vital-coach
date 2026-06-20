@@ -107,6 +107,17 @@ export function SettingsForm() {
     setSavingWheel(false);
   };
 
+  const settingsTabs = SETTINGS_TABS.filter((t) => {
+    if (!GENERIC_MODE) return true;
+    if (t.id === "body" || t.id === "system") return true;
+    if (showAdvanced && (t.id === "life" || t.id === "health")) return true;
+    return false;
+  });
+
+  useEffect(() => {
+    if (!settingsTabs.some((t) => t.id === tab)) setTab("body");
+  }, [settingsTabs, tab]);
+
   if (!profile) return <div className="text-center py-8 text-[var(--text-secondary)]">Загрузка…</div>;
 
   const num = (key: keyof Profile, label: string) => (
@@ -126,7 +137,7 @@ export function SettingsForm() {
   return (
     <div className="space-y-4 pb-8">
       <IconSegmentTabs
-        tabs={SETTINGS_TABS.map((t) => ({ ...t, id: t.id as Tab }))}
+        tabs={settingsTabs.map((t) => ({ ...t, id: t.id as Tab }))}
         value={tab}
         onChange={setTab}
       />
@@ -264,9 +275,11 @@ export function SettingsForm() {
             />
           </Card>
           <BackupPanel />
-          <Link href="/guide" className="apple-btn apple-btn-secondary w-full text-center">
-            Справочник: кейсы и исследования →
-          </Link>
+          {!GENERIC_MODE && (
+            <Link href="/guide" className="apple-btn apple-btn-secondary w-full text-center">
+              Справочник: кейсы и исследования →
+            </Link>
+          )}
           <Link href="/progress" className="apple-btn apple-btn-secondary w-full text-center">
             Графики динамики →
           </Link>

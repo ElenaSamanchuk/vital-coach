@@ -3,6 +3,7 @@
 import { apiClient } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { CHECKUP } from "@/lib/product-copy";
 import { Card } from "./ui/Card";
 import { LAB_MARKERS } from "@/lib/analytics";
 import { LAB_BUNDLES, buildLabSchedule, getDoctorOrderText } from "@/lib/labs-schedule";
@@ -86,7 +87,7 @@ export function LabsPanel() {
 
   return (
     <div className="space-y-4 pb-8">
-      <Card title="Комплексы анализов" subtitle="Что сдавать вместе — меньше визитов">
+      <Card title={CHECKUP.bundlesTitle} subtitle={CHECKUP.bundlesSubtitle}>
         <div className="space-y-3">
           {LAB_BUNDLES.map((bundle) => (
             <div key={bundle.id} className="p-3 bg-[#fbfbfd] rounded-xl">

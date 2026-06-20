@@ -36,46 +36,48 @@ export function OnboardingWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg)] vc-container py-10 pb-16 flex flex-col justify-center">
-      <div className="vc-surface p-6 md:p-8 space-y-6 max-w-md mx-auto w-full">
-        <div className="text-center">
-          <div
-            className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"
-            style={{ background: BRAND_GRADIENT }}
-          >
-            <Sparkles className="text-white" size={32} />
+    <div className="min-h-screen bg-[var(--bg)] md:bg-[#ebebeb] flex justify-center">
+      <div className="vc-app-shell min-h-screen w-full flex flex-col justify-center py-10 pb-16 px-4">
+        <div className="vc-surface p-6 space-y-6 w-full">
+          <div className="text-center">
+            <div
+              className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: BRAND_GRADIENT }}
+            >
+              <Sparkles className="text-white" size={32} />
+            </div>
+            <h1 className="vc-display text-[26px]">{APP_NAME}</h1>
+            <p className="vc-subtitle mt-2">{APP_TAGLINE}</p>
           </div>
-          <h1 className="vc-display text-[26px]">{APP_NAME}</h1>
-          <p className="vc-subtitle mt-2">{APP_TAGLINE}</p>
+
+          <label className="block">
+            <span className="vc-label">Как к вам обращаться? (необязательно)</span>
+            <input
+              className="apple-input mt-2"
+              placeholder="Имя"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="given-name"
+            />
+          </label>
+
+          <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
+            Регистрация не нужна — всё хранится на этом устройстве. Вес и цели можно задать позже в «Профиле».
+          </p>
+
+          {error && (
+            <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl">{error}</p>
+          )}
+
+          <button
+            type="button"
+            onClick={start}
+            disabled={saving}
+            className="apple-btn apple-btn-primary w-full py-4 text-[16px] font-semibold"
+          >
+            {saving ? "Запуск…" : "Начать"}
+          </button>
         </div>
-
-        <label className="block">
-          <span className="vc-label">Как к вам обращаться? (необязательно)</span>
-          <input
-            className="apple-input mt-2"
-            placeholder="Имя"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="given-name"
-          />
-        </label>
-
-        <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
-          Данные хранятся на этом устройстве. Вес, цели и здоровье — в разделе «Профиль».
-        </p>
-
-        {error && (
-          <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl">{error}</p>
-        )}
-
-        <button
-          type="button"
-          onClick={start}
-          disabled={saving}
-          className="apple-btn apple-btn-primary w-full py-4 text-[16px] font-semibold"
-        >
-          {saving ? "Запуск…" : "Начать"}
-        </button>
       </div>
     </div>
   );

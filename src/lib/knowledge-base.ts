@@ -3,6 +3,8 @@
  * Офлайн-база; каждый блок ссылается на evidence-library где применимо.
  */
 
+import { CHECKUP } from "./product-copy";
+
 export type KnowledgeDomain =
   | "medicine"
   | "nutrition"
@@ -67,7 +69,7 @@ export const KNOWLEDGE_ARTICLES: KnowledgeArticle[] = [
       "УЗИ щитовидки ежегодно при узлах/гипотиреозе",
       "Дефицит >750 ккал может ухудшить конверсию T4→T3",
     ],
-    actions: ["Внести анализы", "УЗИ в разделе «Здоровье»", "Чип тироксина в дневнике"],
+    actions: [CHECKUP.knowledgeAction, "УЗИ в разделе «Здоровье»", "Чип тироксина в дневнике"],
     evidence: "ATA Guidelines",
   },
   {

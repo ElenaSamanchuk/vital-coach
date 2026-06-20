@@ -3,6 +3,7 @@
 import { apiClient } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
+import { CHECKUP } from "@/lib/product-copy";
 import { Card } from "./ui/Card";
 import { Badge } from "./ui/Badge";
 import { LAB_MARKERS } from "@/lib/analytics";
@@ -129,7 +130,7 @@ export function HealthHub() {
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "schedule", label: "План" },
-    { id: "labs", label: "Анализы" },
+    { id: "labs", label: CHECKUP.markersTab },
     { id: "imaging", label: "УЗИ / обслед." },
     { id: "knowledge", label: "База" },
   ];
@@ -156,9 +157,9 @@ export function HealthHub() {
 
       {tab === "schedule" && (
         <>
-          <Card title="Анализы крови" subtitle="Расписание пересдач">
+          <Card title={CHECKUP.bloodScheduleTitle} subtitle={CHECKUP.bloodScheduleSubtitle}>
             {labSchedule.length === 0 ? (
-              <p className="text-[13px] text-[var(--text-secondary)]">Все актуально или добавь первые анализы</p>
+              <p className="text-[13px] text-[var(--text-secondary)]">{CHECKUP.emptySchedule}</p>
             ) : (
               <ul className="space-y-2">
                 {labSchedule.slice(0, 6).map((s) => (
@@ -189,7 +190,7 @@ export function HealthHub() {
               </ul>
             )}
           </Card>
-          <Card title="Визиты (анализы)">
+          <Card title={CHECKUP.visitBundles}>
             {LAB_BUNDLES.slice(0, 4).map((b) => (
               <div key={b.id} className="mb-3 text-[13px]">
                 <p className="font-semibold">{b.title}</p>
@@ -206,7 +207,7 @@ export function HealthHub() {
             ))}
           </Card>
           <details className="vc-surface p-4">
-            <summary className="vc-title text-[14px] cursor-pointer">Текст для врача (анализы)</summary>
+            <summary className="vc-title text-[14px] cursor-pointer">{CHECKUP.doctorTextLabs}</summary>
             <pre className="text-[11px] mt-2 whitespace-pre-wrap text-[var(--text-secondary)]">{getDoctorOrderText()}</pre>
           </details>
           <details className="vc-surface p-4">
@@ -218,7 +219,7 @@ export function HealthHub() {
 
       {tab === "labs" && (
         <>
-          <Card title="Добавить анализ">
+          <Card title={CHECKUP.addMarkerCard}>
             <div className="space-y-3">
               <select className="apple-input" value={labForm.marker} onChange={(e) => setLabForm({ ...labForm, marker: e.target.value })}>
                 {LAB_MARKERS.map((m) => (

@@ -4,6 +4,7 @@ import type { InflammationLoad } from "./inflammation-score";
 import type { HealthConditions, CyclePhase } from "./types";
 import type { DayTask } from "./day-tasks";
 import { taskStats } from "./day-tasks";
+import { checkupReminderTitle } from "./product-copy";
 
 export type BriefLevel = "info" | "attention" | "action";
 
@@ -80,7 +81,7 @@ export function buildHealthBriefing(input: {
       id: "calorie_adjust",
       level: "info",
       title: `Калории сегодня: ${input.calorieTarget}`,
-      body: delta < 0 ? "Мягкая компенсация после переедания" : "Чуть больше из‑за мягкого дня или анализов",
+      body: delta < 0 ? "Мягкая компенсация после переедания" : "Чуть больше из‑за мягкого дня или чекапа",
       why:
         delta < 0
           ? "Не наказываем голодом — распределяем дефицит на несколько дней"
@@ -161,7 +162,7 @@ export function buildHealthBriefing(input: {
     briefs.push({
       id: "labs",
       level: "action",
-      title: `Анализы: ${input.labsDue[0].label}`,
+      title: checkupReminderTitle(input.labsDue[0].label),
       body: "Запланируй сдачу — коуч подстроит питание под результаты",
       why: input.labsDue[0].reason,
       domain: "labs",

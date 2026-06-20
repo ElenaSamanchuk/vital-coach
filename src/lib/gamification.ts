@@ -2,6 +2,8 @@
  * Sims-style life progression: XP, levels, achievements.
  */
 
+import { CHECKUP } from "./product-copy";
+
 export type LifeStatKey =
   | "body"
   | "fuel"
@@ -77,7 +79,7 @@ export const ACHIEVEMENT_DEFS: Omit<Achievement, "unlocked" | "unlockedAt" | "pr
   { id: "code_builder", title: "Код-мастер", description: "10 сессий программирования", emoji: "💻", category: "mind", xpReward: 200 },
   { id: "leisure_week", title: "Жизнь вне KPI", description: "7 дней с досугом", emoji: "🎨", category: "soul", xpReward: 150 },
   { id: "waist_down", title: "Талия минус", description: "Талия −3 см от старта", emoji: "📏", category: "body", xpReward: 300 },
-  { id: "labs_done", title: "Знаю своё тело", description: "Внесла 5+ анализов", emoji: "🔬", category: "balance", xpReward: 100 },
+  { id: "labs_done", title: CHECKUP.badgeTitle, description: CHECKUP.badgeDescription, emoji: "🔬", category: "balance", xpReward: 100 },
   { id: "pcos_week", title: "СПКЯ под контролем", description: "Неделя: ходьба после еды + белок", emoji: "🌸", category: "balance", xpReward: 180 },
   { id: "minimum_day", title: "Мягкость к себе", description: "Минимальный день без срыва", emoji: "💜", category: "soul", xpReward: 80 },
   { id: "finance_week", title: "Финансовая дисциплина", description: "5 дней финансовых действий", emoji: "💰", category: "balance", xpReward: 150 },

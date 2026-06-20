@@ -25,6 +25,8 @@ export const JOURNEY_PHASES: { phase: JourneyPhase; label: string; weeks: string
   { phase: 5, label: "Мастерство", weeks: "Постоянно" },
 ];
 
+import { CHECKUP } from "./product-copy";
+
 export const JOURNEY_STEPS: JourneyStep[] = [
   {
     id: "onboarding",
@@ -89,11 +91,11 @@ export const JOURNEY_STEPS: JourneyStep[] = [
   {
     id: "labs_first",
     phase: 3,
-    title: "Внести анализы",
+    title: CHECKUP.journeyTitle,
     subtitle: "Хотя бы ТТГ + глюкоза",
     description: "Коуч подстроит питание и расписание пересдач.",
     href: "/settings?tab=health",
-    hrefLabel: "Анализы",
+    hrefLabel: CHECKUP.journeyHref,
     icon: "🩸",
   },
   {

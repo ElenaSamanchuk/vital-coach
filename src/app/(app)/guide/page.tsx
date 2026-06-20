@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { Card } from "@/components/ui/Card";
+import { CHECKUP } from "@/lib/product-copy";
 import { getWeeklyMovementPlan } from "@/lib/fitness";
 import { LAB_BUNDLES } from "@/lib/labs-schedule";
 import { RESEARCH_FRAMEWORKS } from "@/lib/evidence-library";
@@ -40,7 +41,7 @@ export default function GuidePage() {
           </ul>
         </Card>
 
-        <Card title="Анализы — 3 визита">
+        <Card title={CHECKUP.guideTitle}>
           {LAB_BUNDLES.slice(0, 4).map((b) => (
             <div key={b.id} className="mb-3 text-[13px]">
               <p className="font-semibold">{b.title}</p>
@@ -70,7 +71,7 @@ export default function GuidePage() {
             <li>Цикл и фаза</li>
             <li>Тренировки и прогулки после еды</li>
             <li>Тироксин и привычки</li>
-            <li>Анализы с расписанием пересдач</li>
+            <li>Чекап с расписанием пересдач</li>
             <li>Динамика: что проседает → коуч корректирует</li>
             <li>Колесо жизни, PERMA, SDT, WHO-5, Ryff, Big Five, Икигай</li>
             <li>Работа, финансы, отношения, духовность, среда, творчество, рост</li>

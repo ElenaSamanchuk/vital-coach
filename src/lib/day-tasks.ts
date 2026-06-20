@@ -1,5 +1,7 @@
 /** Универсальный трекер дел — работа, жизнь, канбан */
 
+import { CHECKUP } from "./product-copy";
+
 export type TaskSphere =
   | "work"
   | "personal"
@@ -62,7 +64,7 @@ export const TASK_QUICK_ADD: { label: string; sphere: TaskSphere; schedule?: Tas
   { label: "Уход: маска + ванна", sphere: "care", schedule: "daily" },
   { label: "15 мин уборки", sphere: "home", schedule: "daily" },
   { label: "Список покупок", sphere: "shop" },
-  { label: "Анализы / УЗИ", sphere: "health" },
+  { label: CHECKUP.dayTask, sphere: "health" },
   { label: "Кот / растения", sphere: "personal" },
 ];
 

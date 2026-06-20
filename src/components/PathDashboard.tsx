@@ -35,6 +35,7 @@ import type { TrackingTag } from "@/lib/tracking-tags";
 import type { JourneyProgress } from "@/lib/user-journey";
 import type { WheelScores } from "@/lib/life-spheres";
 import type { WeeklyInsights } from "@/lib/types";
+import { GENERIC_FEATURES } from "@/lib/generic-ui";
 
 export function PathDashboard() {
   const [journey, setJourney] = useState<{
@@ -204,7 +205,7 @@ export function PathDashboard() {
         <StreakBadge days={journey.streak} freezeUsed={journey.freezeUsed} />
       </div>
 
-      {!journey.who5Filled && (
+      {GENERIC_FEATURES.deepPsychology && !journey.who5Filled && (
         <Link href="/settings?tab=life" className="block">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)] p-4">
             <p className="text-[13px] font-semibold">WHO-5 — 1 минута</p>
@@ -221,37 +222,37 @@ export function PathDashboard() {
         </GlassCard>
       )}
 
-      {lifeSuggestions.length > 0 && (
+      {GENERIC_FEATURES.lifeCatalog && lifeSuggestions.length > 0 && (
         <GlassCard title="Компас жизни" subtitle="Что попробовать — из данных и интересов">
           <LifeDiscoverPanel suggestions={lifeSuggestions} showCatalog />
         </GlassCard>
       )}
 
-      {mediaPicks && (
+      {GENERIC_FEATURES.lifeCatalog && mediaPicks && (
         <GlassCard title="Культура" subtitle="Кино · музыка · книги по настроению">
           <MediaPicksCard media={mediaPicks} />
         </GlassCard>
       )}
 
-      {recipePicks.length > 0 && (
+      {GENERIC_FEATURES.lifeCatalog && recipePicks.length > 0 && (
         <GlassCard title="Рецепты" subtitle="ИР · гипотиреоз">
           <RecipesCard recipes={recipePicks} />
         </GlassCard>
       )}
 
-      {placePicks.length > 0 && (
+      {GENERIC_FEATURES.lifeCatalog && placePicks.length > 0 && (
         <GlassCard title="Места" subtitle="Куда сходить">
           <PlacesCard places={placePicks} />
         </GlassCard>
       )}
 
-      {inflammationLoad && (
+      {GENERIC_FEATURES.bodyAnalytics && inflammationLoad && (
         <GlassCard title="Нагрузка на тело" subtitle="Стресс · сон · цикл · уход">
           <InflammationScoreCard load={inflammationLoad} />
         </GlassCard>
       )}
 
-      {weeklyExp && <WeeklyExperimentCard exp={weeklyExp} />}
+      {GENERIC_FEATURES.medical && weeklyExp && <WeeklyExperimentCard exp={weeklyExp} />}
 
       <GlassCard title="Бейджи" subtitle="За привычки и streak">
         <BadgeStrip unlockedIds={badges} />
@@ -294,27 +295,29 @@ export function PathDashboard() {
         )}
       </GlassCard>
 
-      {insight && (
+      {GENERIC_FEATURES.deepPsychology && insight && (
         <GlassCard title="Фокус" subtitle="Из твоих данных">
           <p className="text-[14px] leading-relaxed">{insight}</p>
         </GlassCard>
       )}
 
-      <details className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)]">
-        <summary className="p-4 text-[13px] font-semibold cursor-pointer list-none flex items-center justify-between">
-          Шаги пути
-          {journey.next && (
-            <Link href={journey.next.href} className="text-[11px] text-[var(--accent)] font-medium">
-              {journey.next.title} →
-            </Link>
-          )}
-        </summary>
-        <div className="px-4 pb-4 border-t border-[var(--border)] pt-3">
-          <JourneyTimeline progress={journey.progress} />
-        </div>
-      </details>
+      {GENERIC_FEATURES.deepPsychology && (
+        <details className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)]">
+          <summary className="p-4 text-[13px] font-semibold cursor-pointer list-none flex items-center justify-between">
+            Шаги пути
+            {journey.next && (
+              <Link href={journey.next.href} className="text-[11px] text-[var(--accent)] font-medium">
+                {journey.next.title} →
+              </Link>
+            )}
+          </summary>
+          <div className="px-4 pb-4 border-t border-[var(--border)] pt-3">
+            <JourneyTimeline progress={journey.progress} />
+          </div>
+        </details>
+      )}
 
-      {Object.keys(wheelScores).length > 0 && (
+      {GENERIC_FEATURES.deepPsychology && Object.keys(wheelScores).length > 0 && (
         <GlassCard title="Сферы" subtitle="Слабые зоны ярче">
           <LifeMatrixBoard scores={wheelScores} />
           <Link href="/settings" className="text-[12px] text-[var(--accent)] mt-3 inline-flex items-center gap-1">
