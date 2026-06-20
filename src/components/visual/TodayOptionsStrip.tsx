@@ -117,7 +117,7 @@ export function TodayOptionsStrip({
             <PickStripSection key={slot.slot} label={slot.slotLabel} count={slot.options.length}>
               {slot.options.map((opt) => {
                 const id = (opt as { id?: string }).id ?? opt.title;
-                const selected = (mealChoices[slot.slot] ?? slot.selected?.id) === id;
+                const selected = mealChoices[slot.slot] === id;
                 const short = opt.title.split("+")[0].trim().slice(0, 40);
                 const impact = (opt as { impact?: string }).impact;
                 return (

@@ -119,9 +119,7 @@ export function SettingsForm() {
     return false;
   });
 
-  useEffect(() => {
-    if (!settingsTabs.some((t) => t.id === tab)) setTab("body");
-  }, [settingsTabs, tab]);
+  const activeTab: Tab = settingsTabs.some((t) => t.id === tab) ? tab : "body";
 
   if (!profile) return <div className="text-center py-8 text-[var(--text-secondary)]">Загрузка…</div>;
 
@@ -143,11 +141,11 @@ export function SettingsForm() {
     <div className="vc-page">
       <IconSegmentTabs
         tabs={settingsTabs.map((t) => ({ ...t, id: t.id as Tab }))}
-        value={tab}
+        value={activeTab}
         onChange={setTab}
       />
 
-      {tab === "body" && (
+      {activeTab === "body" && (
         <>
           {GENERIC_MODE && (
             <button
@@ -240,7 +238,7 @@ export function SettingsForm() {
         </>
       )}
 
-      {tab === "life" && (
+      {activeTab === "life" && (
         <>
           <Card title="Колесо жизни" subtitle="Единственное место редактирования сфер">
             <WheelOfLife scores={wheel} onChange={setWheel} />
@@ -280,9 +278,9 @@ export function SettingsForm() {
         </>
       )}
 
-      {tab === "health" && <HealthHub />}
+      {activeTab === "health" && <HealthHub />}
 
-      {tab === "system" && (
+      {activeTab === "system" && (
         <>
           {GENERIC_MODE && <AppFlowCard />}
           <Card title="Напоминания" subtitle="Утро и вечер">

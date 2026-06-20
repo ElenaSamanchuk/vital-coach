@@ -1,4 +1,5 @@
 import { VC } from "./design-tokens";
+import { isSportLeisureId } from "./leisure";
 
 export interface RingSegment {
   id: string;
@@ -10,15 +11,38 @@ export interface RingSegment {
   hint?: string;
 }
 
+export function computeMovementRing(opts: {
+  workoutChoice?: string | null;
+  steps?: number | null;
+  leisureChoice?: string;
+}): Pick<RingSegment, "progress" | "done" | "hint"> {
+  if (opts.workoutChoice) {
+    return { progress: 1, done: true, hint: "выбрано" };
+  }
+  if (isSportLeisureId(opts.leisureChoice)) {
+    return { progress: 1, done: true, hint: "досуг" };
+  }
+  const steps = opts.steps ?? 0;
+  if (steps >= 5000) {
+    return { progress: 1, done: true, hint: `${steps}` };
+  }
+  if (steps >= 1500) {
+    const progress = Math.min(1, steps / 8000);
+    return { progress, done: progress >= 0.625, hint: `${steps}` };
+  }
+  return { progress: 0, done: false, hint: "—" };
+}
+
 export function defaultDayRings(opts: {
   mealsDone: number;
   mealsTotal: number;
-  workoutDone: boolean;
+  movement: Pick<RingSegment, "progress" | "done" | "hint">;
   diaryDone: boolean;
   wellbeingProgress?: number;
 }): RingSegment[] {
   const mealP = opts.mealsTotal > 0 ? opts.mealsDone / opts.mealsTotal : 0;
   const wb = Math.min(1, opts.wellbeingProgress ?? 0);
+  const move = opts.movement;
   return [
     {
       id: "meals",
@@ -31,10 +55,10 @@ export function defaultDayRings(opts: {
     {
       id: "move",
       label: "Движение",
-      progress: opts.workoutDone ? 1 : 0,
+      progress: move.progress,
       color: VC.ringMove,
-      done: opts.workoutDone,
-      hint: opts.workoutDone ? "выбрано" : "—",
+      done: move.done,
+      hint: move.hint,
     },
     {
       id: "log",
@@ -55,11 +79,12 @@ export function defaultDayRings(opts: {
   ];
 }
 
-/** Единая логика колец для «Сегодня» — только явный выбор пользователя */
+/** Единая логика колец для «Сегодня» — явный выбор + шаги + спорт в досуге */
 export function buildTodayRings(opts: {
   mealSlots: string[];
   mealChoices: Record<string, string>;
   workoutChoice?: string | null;
+  steps?: number | null;
   diaryDone: boolean;
   moodLogged: boolean;
   wellbeingActionsDone: number;
@@ -73,10 +98,16 @@ export function buildTodayRings(opts: {
   if (opts.wellbeingActionsDone > 0) wellbeingProgress += 0.33;
   if (opts.leisureChoice) wellbeingProgress += 0.33;
 
+  const movement = computeMovementRing({
+    workoutChoice: opts.workoutChoice,
+    steps: opts.steps,
+    leisureChoice: opts.leisureChoice,
+  });
+
   return defaultDayRings({
     mealsDone,
     mealsTotal,
-    workoutDone: Boolean(opts.workoutChoice),
+    movement,
     diaryDone: opts.diaryDone,
     wellbeingProgress: Math.min(1, wellbeingProgress),
   });

@@ -585,6 +585,7 @@ export function generateDailyPlan(
       mealSlots: rawMealPlan.map((m) => m.slot),
       mealChoices,
       workoutChoice: workoutChoiceId,
+      steps: todayLog?.steps,
       diaryDone: todayLog?.mood != null || todayLog?.weightKg != null,
       moodLogged: todayLog?.mood != null,
       wellbeingActionsDone: parseWellbeingDone(todayLog?.lifeActionsJson).length,

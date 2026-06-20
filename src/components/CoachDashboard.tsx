@@ -57,6 +57,7 @@ import {
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import type { DailyCoachPlan, WeeklyInsights } from "@/lib/types";
 import { AnalyticsRecommendationsCard } from "./visual/AnalyticsRecommendationsCard";
+import { isSportLeisureId } from "@/lib/leisure";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { PageSkeleton } from "@/components/ui/Skeleton";
 import type { ReactNode } from "react";
@@ -302,11 +303,12 @@ export function CoachDashboard({
 
   const saveWorkoutChoice = async (id: string) => {
     hapticLight();
-    setWorkoutChoice(id);
+    const next = workoutChoice === id ? "" : id;
+    setWorkoutChoice(next);
     await apiClient("/api/choices", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: format(new Date(), "yyyy-MM-dd"), workoutChoice: id }),
+      body: JSON.stringify({ date: format(new Date(), "yyyy-MM-dd"), workoutChoice: next }),
     });
     load();
   };
@@ -341,7 +343,7 @@ export function CoachDashboard({
   }, [plan, mealChoicesForSlots]);
 
   const mealsTotal = plan?.mealPlan.length ?? 4;
-  const workoutPicked = Boolean(workoutChoice);
+  const workoutPicked = Boolean(workoutChoice) || isSportLeisureId(leisureChoice) || (todaySteps ?? 0) >= 5000;
   const wellbeingProgress = useMemo(() => {
     if (!plan) return 0;
     let p = 0;
@@ -381,6 +383,7 @@ export function CoachDashboard({
     mealSlots: plan.mealPlan.map((m) => m.slot),
     mealChoices: mealChoicesForSlots,
     workoutChoice: workoutChoice || null,
+    steps: todaySteps,
     diaryDone,
     moodLogged: plan.wellbeing.moodLogged,
     wellbeingActionsDone: plan.wellbeing.actionsDone.length,
@@ -398,7 +401,7 @@ export function CoachDashboard({
     plan.nutritionFramework.calorieNote,
   );
 
-  const selectedWorkoutId = workoutChoice || plan.workout.recommended.id;
+  const selectedWorkoutId = workoutChoice;
   const selectedWorkoutType =
     [plan.workout.recommended, ...plan.workout.alternatives].find(
       (w) => (w.id ?? w.title) === selectedWorkoutId,

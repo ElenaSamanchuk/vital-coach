@@ -50,6 +50,11 @@ export const INTELLECT_ACTIVITIES: ActivityItem[] = [
   { id: "reading_intel", label: "Нон-фикшн", category: "intellect", moodBoost: 6, xpStat: "mind", icon: "GraduationCap", color: "#34c759" },
 ];
 
+export function isSportLeisureId(id: string | undefined): boolean {
+  if (!id) return false;
+  return LEISURE_ACTIVITIES.some((a) => a.id === id && a.category === "sport");
+}
+
 export function countActivityInLogs(
   logs: { leisureJson?: string | null; intellectJson?: string | null }[],
   activityId: string,
