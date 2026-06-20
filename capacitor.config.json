@@ -1,0 +1,12 @@
+{
+  "appId": "com.elenasamanchuk.vital",
+  "appName": "Vital",
+  "webDir": "public",
+  "server": {
+    "url": "https://elenasamanchuk.github.io/vital-coach/",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

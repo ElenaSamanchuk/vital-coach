@@ -1,0 +1,82 @@
+-- AlterTable
+ALTER TABLE "DailyLog" ADD COLUMN "steps" INTEGER;
+
+-- RedefineTables
+PRAGMA defer_foreign_keys=ON;
+PRAGMA foreign_keys=OFF;
+CREATE TABLE "new_Profile" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL DEFAULT '',
+    "heightCm" INTEGER NOT NULL DEFAULT 180,
+    "currentWeightKg" REAL NOT NULL DEFAULT 92,
+    "targetWeightKg" REAL NOT NULL DEFAULT 78,
+    "targetWaistCm" REAL NOT NULL DEFAULT 76,
+    "targetHipsCm" REAL NOT NULL DEFAULT 110,
+    "targetChestCm" REAL NOT NULL DEFAULT 100,
+    "birthYear" INTEGER NOT NULL DEFAULT 1991,
+    "calorieTarget" INTEGER NOT NULL DEFAULT 1750,
+    "proteinTargetG" INTEGER NOT NULL DEFAULT 150,
+    "fatTargetG" INTEGER NOT NULL DEFAULT 60,
+    "carbTargetG" INTEGER NOT NULL DEFAULT 140,
+    "fiberTargetG" INTEGER NOT NULL DEFAULT 30,
+    "waterTargetMl" INTEGER NOT NULL DEFAULT 2000,
+    "trackingTagsJson" TEXT NOT NULL DEFAULT '[]',
+    "sleepTargetMin" INTEGER NOT NULL DEFAULT 480,
+    "insulinResistance" BOOLEAN NOT NULL DEFAULT true,
+    "hypothyroidism" BOOLEAN NOT NULL DEFAULT true,
+    "cortisolIssues" BOOLEAN NOT NULL DEFAULT true,
+    "vitaminDDeficiency" BOOLEAN NOT NULL DEFAULT true,
+    "b12Deficiency" BOOLEAN NOT NULL DEFAULT true,
+    "hormoneIssues" BOOLEAN NOT NULL DEFAULT true,
+    "pcosSuspected" BOOLEAN NOT NULL DEFAULT false,
+    "endometriosis" BOOLEAN NOT NULL DEFAULT false,
+    "vitaminAbsorption" BOOLEAN NOT NULL DEFAULT false,
+    "surgeryRecovery" BOOLEAN NOT NULL DEFAULT true,
+    "surgeryDate" DATETIME,
+    "occupation" TEXT NOT NULL DEFAULT '',
+    "workActivityLevel" TEXT NOT NULL DEFAULT 'sedentary',
+    "activityLevel" TEXT NOT NULL DEFAULT 'moderate',
+    "primaryFocus" TEXT NOT NULL DEFAULT 'balance',
+    "assessmentJson" TEXT NOT NULL DEFAULT '{}',
+    "weeklyExperimentJson" TEXT NOT NULL DEFAULT '{}',
+    "xpBody" INTEGER NOT NULL DEFAULT 0,
+    "xpFuel" INTEGER NOT NULL DEFAULT 0,
+    "xpMind" INTEGER NOT NULL DEFAULT 0,
+    "xpSoul" INTEGER NOT NULL DEFAULT 0,
+    "xpEnergy" INTEGER NOT NULL DEFAULT 0,
+    "xpBalance" INTEGER NOT NULL DEFAULT 0,
+    "xpCareer" INTEGER NOT NULL DEFAULT 0,
+    "xpFinance" INTEGER NOT NULL DEFAULT 0,
+    "xpRelations" INTEGER NOT NULL DEFAULT 0,
+    "relationshipStatus" TEXT NOT NULL DEFAULT 'single_open',
+    "wheelScores" TEXT NOT NULL DEFAULT '{}',
+    "permaScores" TEXT NOT NULL DEFAULT '{}',
+    "bigFiveScores" TEXT NOT NULL DEFAULT '{}',
+    "ikigaiJson" TEXT NOT NULL DEFAULT '{}',
+    "financeGoal" TEXT NOT NULL DEFAULT '',
+    "careerGoal" TEXT NOT NULL DEFAULT '',
+    "who5Scores" TEXT NOT NULL DEFAULT '{}',
+    "sdtScores" TEXT NOT NULL DEFAULT '{}',
+    "ryffScores" TEXT NOT NULL DEFAULT '{}',
+    "coreValuesJson" TEXT NOT NULL DEFAULT '[]',
+    "weeklyReviewJson" TEXT NOT NULL DEFAULT '{}',
+    "unlockedAchievements" TEXT NOT NULL DEFAULT '[]',
+    "leisureFavorites" TEXT NOT NULL DEFAULT '[]',
+    "intellectFavorites" TEXT NOT NULL DEFAULT '[]',
+    "cycleLength" INTEGER NOT NULL DEFAULT 28,
+    "lastPeriodStart" DATETIME,
+    "thyroidMedication" TEXT NOT NULL DEFAULT '',
+    "otherMedications" TEXT NOT NULL DEFAULT '',
+    "onboardingDone" BOOLEAN NOT NULL DEFAULT false,
+    "onboardingVersion" INTEGER NOT NULL DEFAULT 1,
+    "lastBackupAt" DATETIME,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+INSERT INTO "new_Profile" ("activityLevel", "assessmentJson", "b12Deficiency", "bigFiveScores", "birthYear", "calorieTarget", "carbTargetG", "careerGoal", "coreValuesJson", "cortisolIssues", "currentWeightKg", "cycleLength", "endometriosis", "fatTargetG", "fiberTargetG", "financeGoal", "heightCm", "hormoneIssues", "hypothyroidism", "id", "ikigaiJson", "insulinResistance", "intellectFavorites", "lastBackupAt", "lastPeriodStart", "leisureFavorites", "name", "occupation", "onboardingDone", "onboardingVersion", "otherMedications", "pcosSuspected", "permaScores", "primaryFocus", "proteinTargetG", "relationshipStatus", "ryffScores", "sdtScores", "sleepTargetMin", "surgeryDate", "surgeryRecovery", "targetChestCm", "targetHipsCm", "targetWaistCm", "targetWeightKg", "thyroidMedication", "trackingTagsJson", "unlockedAchievements", "updatedAt", "userId", "vitaminAbsorption", "vitaminDDeficiency", "waterTargetMl", "weeklyReviewJson", "wheelScores", "who5Scores", "workActivityLevel", "xpBalance", "xpBody", "xpCareer", "xpEnergy", "xpFinance", "xpFuel", "xpMind", "xpRelations", "xpSoul") SELECT "activityLevel", "assessmentJson", "b12Deficiency", "bigFiveScores", "birthYear", "calorieTarget", "carbTargetG", "careerGoal", "coreValuesJson", "cortisolIssues", "currentWeightKg", "cycleLength", "endometriosis", "fatTargetG", "fiberTargetG", "financeGoal", "heightCm", "hormoneIssues", "hypothyroidism", "id", "ikigaiJson", "insulinResistance", "intellectFavorites", "lastBackupAt", "lastPeriodStart", "leisureFavorites", "name", "occupation", "onboardingDone", "onboardingVersion", "otherMedications", "pcosSuspected", "permaScores", "primaryFocus", "proteinTargetG", "relationshipStatus", "ryffScores", "sdtScores", "sleepTargetMin", "surgeryDate", "surgeryRecovery", "targetChestCm", "targetHipsCm", "targetWaistCm", "targetWeightKg", "thyroidMedication", "trackingTagsJson", "unlockedAchievements", "updatedAt", "userId", "vitaminAbsorption", "vitaminDDeficiency", "waterTargetMl", "weeklyReviewJson", "wheelScores", "who5Scores", "workActivityLevel", "xpBalance", "xpBody", "xpCareer", "xpEnergy", "xpFinance", "xpFuel", "xpMind", "xpRelations", "xpSoul" FROM "Profile";
+DROP TABLE "Profile";
+ALTER TABLE "new_Profile" RENAME TO "Profile";
+CREATE UNIQUE INDEX "Profile_userId_key" ON "Profile"("userId");
+PRAGMA foreign_keys=ON;
+PRAGMA defer_foreign_keys=OFF;

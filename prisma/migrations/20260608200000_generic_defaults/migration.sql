@@ -1,0 +1,2 @@
+-- Neutral defaults for mass-market profiles (new rows only; existing data unchanged)
+-- SQLite: defaults apply on INSERT; this migration documents the schema change.

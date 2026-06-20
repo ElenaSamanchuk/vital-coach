@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  profile   Profile?
+  dailyLogs DailyLog[]
+  labResults LabResult[]
+  examinations Examination[]
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name String @default("")
+
+  heightCm        Int   @default(170)
+  currentWeightKg Float @default(70)
+  targetWeightKg  Float @default(65)
+  targetWaistCm   Float @default(75)
+  targetHipsCm    Float @default(95)
+  targetChestCm   Float @default(90)
+  birthYear       Int   @default(1990)
+
+  calorieTarget  Int @default(1900)
+  proteinTargetG Int @default(120)
+  fatTargetG     Int @default(65)
+  carbTargetG    Int @default(180)
+  fiberTargetG   Int @default(28)
+  waterTargetMl  Int @default(2200)
+  trackingTagsJson String @default("[]")
+  backlogTasksJson String @default("[]")
+  interestsJson    String @default("[]")
+  leisureQuizJson  String @default("{}")
+  styleJson        String @default("{}")
+  notificationPrefsJson String @default("{}")
+  sleepTargetMin Int @default(480)
+
+  insulinResistance    Boolean @default(false)
+  hypothyroidism       Boolean @default(false)
+  cortisolIssues       Boolean @default(false)
+  vitaminDDeficiency   Boolean @default(false)
+  b12Deficiency        Boolean @default(false)
+  hormoneIssues        Boolean @default(false)
+  pcosSuspected        Boolean @default(false)
+  endometriosis        Boolean @default(false)
+  vitaminAbsorption    Boolean @default(false)
+  surgeryRecovery      Boolean @default(false)
+  surgeryDate          DateTime?
+
+  occupation        String @default("")
+  workActivityLevel String @default("sedentary")
+  activityLevel     String @default("moderate")
+  primaryFocus      String @default("balance")
+  assessmentJson    String @default("{}")
+  weeklyExperimentJson String @default("{}")
+
+  xpBody    Int @default(0)
+  xpFuel    Int @default(0)
+  xpMind    Int @default(0)
+  xpSoul    Int @default(0)
+  xpEnergy  Int @default(0)
+  xpBalance Int @default(0)
+  xpCareer    Int @default(0)
+  xpFinance   Int @default(0)
+  xpRelations Int @default(0)
+
+  relationshipStatus String @default("single_open")
+  wheelScores   String @default("{}")
+  permaScores   String @default("{}")
+  bigFiveScores String @default("{}")
+  ikigaiJson    String @default("{}")
+  financeGoal   String @default("")
+  careerGoal    String @default("")
+
+  who5Scores       String @default("{}")
+  sdtScores        String @default("{}")
+  ryffScores       String @default("{}")
+  coreValuesJson   String @default("[]")
+  weeklyReviewJson String @default("{}")
+
+  unlockedAchievements String @default("[]")
+  leisureFavorites   String @default("[]")
+  intellectFavorites String @default("[]")
+
+  cycleLength     Int  @default(28)
+  lastPeriodStart DateTime?
+
+  thyroidMedication String @default("")
+  otherMedications  String @default("")
+
+  onboardingDone    Boolean @default(false)
+  onboardingVersion Int     @default(1)
+  lastBackupAt      DateTime?
+  updatedAt         DateTime @updatedAt
+}
+
+model Examination {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date          DateTime
+  studyKey      String
+  category      String
+  status        String @default("done")
+  resultSummary String @default("")
+  findings      String @default("")
+  notes         String @default("")
+
+  createdAt DateTime @default(now())
+}
+
+model DailyLog {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime
+
+  weightKg Float?
+  waistCm  Float?
+  hipsCm   Float?
+  chestCm  Float?
+
+  cycleDay   Int?
+  cyclePhase String?
+
+  calories  Int?
+  proteinG  Int?
+  fatG      Int?
+  carbsG    Int?
+  fiberG    Int?
+  waterMl   Int?
+  steps     Int?
+
+  sleepMinutes  Int?
+  sleepQuality  Int?
+  energy        Int?
+  mood          Int?
+  stress        Int?
+  cortisolFeeling Int?
+
+  postMealWalks     Int     @default(0)
+  thyroidMedTaken   Boolean @default(false)
+  thyroidMedOnTime  Boolean @default(false)
+  supplementsTaken  Boolean @default(false)
+
+  mealChoices   String @default("{}")
+  workoutChoice String @default("")
+  softDay       Boolean @default(false)
+  dayPhoto      String @default("")
+  dayTagsJson   String @default("[]")
+  tasksJson     String @default("[]")
+  shoppingJson  String @default("[]")
+
+  leisureJson   String @default("[]")
+  intellectJson String @default("[]")
+  leisureMinutes Int?
+  lifeActionsJson String @default("{}")
+  workSatisfaction Int?
+
+  notes String @default("")
+
+  meals    Meal[]
+  workouts Workout[]
+  habits   HabitCheck[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+}
+
+model Meal {
+  id         String   @id @default(cuid())
+  dailyLogId String
+  dailyLog   DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+
+  mealType    String
+  description String
+  calories    Int?
+  proteinG    Int?
+  carbsG      Int?
+  fatG        Int?
+  hadProtein  Boolean @default(true)
+  hadVeggies  Boolean @default(false)
+  hadWalkAfter Boolean @default(false)
+  orderIndex  Int     @default(0)
+}
+
+model Workout {
+  id         String   @id @default(cuid())
+  dailyLogId String
+  dailyLog   DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+
+  type        String
+  durationMin Int
+  intensity   String
+  completed   Boolean @default(false)
+  notes       String  @default("")
+}
+
+model HabitCheck {
+  id         String   @id @default(cuid())
+  dailyLogId String
+  dailyLog   DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+
+  habitKey  String
+  completed Boolean @default(false)
+
+  @@unique([dailyLogId, habitKey])
+}
+
+model LabResult {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  date   DateTime
+  marker String
+  value  Float
+  unit   String
+  refMin Float?
+  refMax Float?
+  notes  String @default("")
+}

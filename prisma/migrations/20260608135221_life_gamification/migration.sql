@@ -1,0 +1,97 @@
+-- RedefineTables
+PRAGMA defer_foreign_keys=ON;
+PRAGMA foreign_keys=OFF;
+CREATE TABLE "new_DailyLog" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "date" DATETIME NOT NULL,
+    "weightKg" REAL,
+    "waistCm" REAL,
+    "hipsCm" REAL,
+    "chestCm" REAL,
+    "cycleDay" INTEGER,
+    "cyclePhase" TEXT,
+    "calories" INTEGER,
+    "proteinG" INTEGER,
+    "fatG" INTEGER,
+    "carbsG" INTEGER,
+    "fiberG" INTEGER,
+    "waterMl" INTEGER,
+    "sleepMinutes" INTEGER,
+    "sleepQuality" INTEGER,
+    "energy" INTEGER,
+    "mood" INTEGER,
+    "stress" INTEGER,
+    "cortisolFeeling" INTEGER,
+    "postMealWalks" INTEGER NOT NULL DEFAULT 0,
+    "thyroidMedTaken" BOOLEAN NOT NULL DEFAULT false,
+    "thyroidMedOnTime" BOOLEAN NOT NULL DEFAULT false,
+    "supplementsTaken" BOOLEAN NOT NULL DEFAULT false,
+    "mealChoices" TEXT NOT NULL DEFAULT '{}',
+    "workoutChoice" TEXT NOT NULL DEFAULT '',
+    "leisureJson" TEXT NOT NULL DEFAULT '[]',
+    "intellectJson" TEXT NOT NULL DEFAULT '[]',
+    "leisureMinutes" INTEGER,
+    "notes" TEXT NOT NULL DEFAULT '',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "DailyLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+INSERT INTO "new_DailyLog" ("calories", "carbsG", "chestCm", "cortisolFeeling", "createdAt", "cycleDay", "cyclePhase", "date", "energy", "fatG", "fiberG", "hipsCm", "id", "mealChoices", "mood", "notes", "postMealWalks", "proteinG", "sleepMinutes", "sleepQuality", "stress", "supplementsTaken", "thyroidMedOnTime", "thyroidMedTaken", "updatedAt", "userId", "waistCm", "waterMl", "weightKg", "workoutChoice") SELECT "calories", "carbsG", "chestCm", "cortisolFeeling", "createdAt", "cycleDay", "cyclePhase", "date", "energy", "fatG", "fiberG", "hipsCm", "id", "mealChoices", "mood", "notes", "postMealWalks", "proteinG", "sleepMinutes", "sleepQuality", "stress", "supplementsTaken", "thyroidMedOnTime", "thyroidMedTaken", "updatedAt", "userId", "waistCm", "waterMl", "weightKg", "workoutChoice" FROM "DailyLog";
+DROP TABLE "DailyLog";
+ALTER TABLE "new_DailyLog" RENAME TO "DailyLog";
+CREATE UNIQUE INDEX "DailyLog_userId_date_key" ON "DailyLog"("userId", "date");
+CREATE TABLE "new_Profile" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "name" TEXT NOT NULL DEFAULT '',
+    "heightCm" INTEGER NOT NULL DEFAULT 180,
+    "currentWeightKg" REAL NOT NULL DEFAULT 92,
+    "targetWeightKg" REAL NOT NULL DEFAULT 78,
+    "targetWaistCm" REAL NOT NULL DEFAULT 76,
+    "targetHipsCm" REAL NOT NULL DEFAULT 110,
+    "targetChestCm" REAL NOT NULL DEFAULT 100,
+    "birthYear" INTEGER NOT NULL DEFAULT 1991,
+    "calorieTarget" INTEGER NOT NULL DEFAULT 1750,
+    "proteinTargetG" INTEGER NOT NULL DEFAULT 150,
+    "fatTargetG" INTEGER NOT NULL DEFAULT 60,
+    "carbTargetG" INTEGER NOT NULL DEFAULT 140,
+    "fiberTargetG" INTEGER NOT NULL DEFAULT 30,
+    "waterTargetMl" INTEGER NOT NULL DEFAULT 2500,
+    "sleepTargetMin" INTEGER NOT NULL DEFAULT 480,
+    "insulinResistance" BOOLEAN NOT NULL DEFAULT true,
+    "hypothyroidism" BOOLEAN NOT NULL DEFAULT true,
+    "cortisolIssues" BOOLEAN NOT NULL DEFAULT true,
+    "vitaminDDeficiency" BOOLEAN NOT NULL DEFAULT true,
+    "b12Deficiency" BOOLEAN NOT NULL DEFAULT true,
+    "hormoneIssues" BOOLEAN NOT NULL DEFAULT true,
+    "pcosSuspected" BOOLEAN NOT NULL DEFAULT false,
+    "endometriosis" BOOLEAN NOT NULL DEFAULT false,
+    "vitaminAbsorption" BOOLEAN NOT NULL DEFAULT false,
+    "surgeryRecovery" BOOLEAN NOT NULL DEFAULT true,
+    "surgeryDate" DATETIME,
+    "occupation" TEXT NOT NULL DEFAULT '',
+    "workActivityLevel" TEXT NOT NULL DEFAULT 'sedentary',
+    "xpBody" INTEGER NOT NULL DEFAULT 0,
+    "xpFuel" INTEGER NOT NULL DEFAULT 0,
+    "xpMind" INTEGER NOT NULL DEFAULT 0,
+    "xpSoul" INTEGER NOT NULL DEFAULT 0,
+    "xpEnergy" INTEGER NOT NULL DEFAULT 0,
+    "xpBalance" INTEGER NOT NULL DEFAULT 0,
+    "unlockedAchievements" TEXT NOT NULL DEFAULT '[]',
+    "leisureFavorites" TEXT NOT NULL DEFAULT '[]',
+    "intellectFavorites" TEXT NOT NULL DEFAULT '[]',
+    "cycleLength" INTEGER NOT NULL DEFAULT 28,
+    "lastPeriodStart" DATETIME,
+    "thyroidMedication" TEXT NOT NULL DEFAULT '',
+    "otherMedications" TEXT NOT NULL DEFAULT '',
+    "onboardingDone" BOOLEAN NOT NULL DEFAULT false,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+INSERT INTO "new_Profile" ("b12Deficiency", "birthYear", "calorieTarget", "carbTargetG", "cortisolIssues", "currentWeightKg", "cycleLength", "fatTargetG", "fiberTargetG", "heightCm", "hormoneIssues", "hypothyroidism", "id", "insulinResistance", "lastPeriodStart", "name", "onboardingDone", "otherMedications", "pcosSuspected", "proteinTargetG", "sleepTargetMin", "surgeryDate", "surgeryRecovery", "targetChestCm", "targetHipsCm", "targetWaistCm", "targetWeightKg", "thyroidMedication", "updatedAt", "userId", "vitaminDDeficiency", "waterTargetMl") SELECT "b12Deficiency", "birthYear", "calorieTarget", "carbTargetG", "cortisolIssues", "currentWeightKg", "cycleLength", "fatTargetG", "fiberTargetG", "heightCm", "hormoneIssues", "hypothyroidism", "id", "insulinResistance", "lastPeriodStart", "name", "onboardingDone", "otherMedications", "pcosSuspected", "proteinTargetG", "sleepTargetMin", "surgeryDate", "surgeryRecovery", "targetChestCm", "targetHipsCm", "targetWaistCm", "targetWeightKg", "thyroidMedication", "updatedAt", "userId", "vitaminDDeficiency", "waterTargetMl" FROM "Profile";
+DROP TABLE "Profile";
+ALTER TABLE "new_Profile" RENAME TO "Profile";
+CREATE UNIQUE INDEX "Profile_userId_key" ON "Profile"("userId");
+PRAGMA foreign_keys=ON;
+PRAGMA defer_foreign_keys=OFF;
