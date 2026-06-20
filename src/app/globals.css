@@ -46,6 +46,8 @@
   --radius-sm: 12px;
   --radius-xs: 8px;
   --nav-height: 72px;
+  --fab-height: 56px;
+  --shell-max: 480px;
 }
 
 @theme inline {
@@ -80,26 +82,61 @@ body {
 
 .vc-app-shell {
   width: 100%;
-  max-width: 480px;
+  max-width: var(--shell-max);
   margin-left: auto;
   margin-right: auto;
   min-height: 100dvh;
+  max-height: 100dvh;
   background: var(--bg);
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .vc-app-shell {
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.vc-app-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.vc-shell-dock {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem 0.25rem;
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+}
+
+.vc-shell-dock .apple-btn {
+  width: 100%;
+  display: flex;
+}
+
+/* Legacy: только если где-то остался fixed — центрируем без transform */
+.vc-nav-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  width: 100%;
+  max-width: var(--shell-max);
+  margin-inline: auto;
+  box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
   .vc-app-shell {
     box-shadow: 0 0 0 1px var(--border), 0 8px 40px rgba(0, 0, 0, 0.08);
   }
-}
-
-.vc-nav-fixed {
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  right: auto;
 }
 
 .vc-surface {
@@ -191,7 +228,11 @@ textarea.apple-input {
 }
 
 .safe-bottom {
-  padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
+}
+
+.safe-bottom--fab {
+  padding-bottom: calc(var(--nav-height) + var(--fab-height) + env(safe-area-inset-bottom, 0px) + 16px);
 }
 
 .vc-header {

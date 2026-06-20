@@ -57,6 +57,7 @@ import {
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import type { DailyCoachPlan } from "@/lib/types";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import type { ReactNode } from "react";
 
 interface ProfileFlags {
   pcosSuspected: boolean;
@@ -67,7 +68,15 @@ interface ProfileFlags {
   birthYear?: number;
 }
 
-export function CoachDashboard() {
+export function CoachDashboard({
+  renderShell,
+}: {
+  /** Оборачивает контент в AppShell с dock — кнопка остаётся в рамке 480px */
+  renderShell?: (
+    content: React.ReactNode,
+    dock: { diaryDone: boolean; isEvening: boolean },
+  ) => React.ReactNode;
+}) {
   const [plan, setPlan] = useState<DailyCoachPlan | null>(null);
   const [profile, setProfile] = useState<ProfileFlags | null>(null);
   const [loading, setLoading] = useState(true);
@@ -282,7 +291,12 @@ export function CoachDashboard() {
   }, [allComplete, prevComplete]);
 
   if (loading) {
-    return <div className="text-center py-16 text-[var(--text-secondary)]">Считаю план…</div>;
+    const loadingEl = (
+      <div className="text-center py-16 text-[var(--text-secondary)]">Считаю план…</div>
+    );
+    return renderShell
+      ? renderShell(loadingEl, { diaryDone: false, isEvening: new Date().getHours() >= 18 })
+      : loadingEl;
   }
   if (!plan || !profile) return null;
 
@@ -339,8 +353,8 @@ export function CoachDashboard() {
   const taskLabels = dayTasks.filter((t) => !t.done).map((t) => t.label);
   const briefingLine = plan.healthBriefing?.[0]?.title;
 
-  return (
-    <div className="space-y-4 pb-28 vc-stagger">
+  const inner = (
+    <div className="space-y-4 pb-2 vc-stagger">
       <ReminderBoot
         prefsJson={notificationPrefsJson}
         taskLabels={taskLabels}
@@ -578,22 +592,10 @@ export function CoachDashboard() {
       <p className="text-[12px] text-[var(--text-secondary)] px-1 leading-relaxed">
         {plan.encouragement}
       </p>
-
-      <div className="fixed bottom-[calc(var(--nav-height)+8px)] vc-nav-fixed z-30 px-4">
-        <Link
-          href="/log"
-          className={`apple-btn w-full py-4 text-[16px] shadow-lg ${
-            diaryDone ? "apple-btn-secondary" : "apple-btn-primary"
-          }`}
-        >
-          {diaryDone
-            ? "День записан"
-            : isEvening
-              ? "Закрыть день в дневнике"
-              : "Записать в дневнике"}
-          <ChevronRight size={18} />
-        </Link>
-      </div>
     </div>
   );
+
+  return renderShell
+    ? renderShell(inner, { diaryDone, isEvening })
+    : inner;
 }

@@ -1,10 +1,5 @@
-import { AppShell } from "@/components/AppShell";
-import { CoachDashboard } from "@/components/CoachDashboard";
+import { HomeScreen } from "@/components/HomeScreen";
 
 export default function HomePage() {
-  return (
-    <AppShell>
-      <CoachDashboard />
-    </AppShell>
-  );
+  return <HomeScreen />;
 }

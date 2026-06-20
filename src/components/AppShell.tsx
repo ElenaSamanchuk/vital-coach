@@ -11,21 +11,30 @@ import { BRAND_GRADIENT } from "@/lib/design-tokens";
 
 const ICONS = [Home, ClipboardList, Map, Settings];
 
+/**
+ * Mobile-first shell: header · scroll · dock (optional) · tab bar.
+ * Без viewport-fixed — всё в колонке 480px, как в Ionic / native tab apps.
+ */
 export function AppShell({
   children,
   title,
   subtitle,
+  dock,
+  mainClassName,
 }: {
   children: ReactNode;
   title?: string;
   subtitle?: string;
+  /** Кнопка над таб-баром (например «Записать в дневник») */
+  dock?: ReactNode;
+  mainClassName?: string;
 }) {
   const pathname = usePathname();
   const meta = PAGE_META[pathname] ?? { title: APP_NAME, subtitle: "" };
 
   return (
-    <div className="vc-app-shell min-h-screen flex flex-col">
-      <header className="sticky top-0 z-40 vc-header px-4 py-3">
+    <div className="vc-app-shell">
+      <header className="shrink-0 z-40 vc-header px-4 py-3">
         <div className="flex items-center gap-2">
           <div
             className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
@@ -33,17 +42,23 @@ export function AppShell({
           >
             <Map size={16} className="text-white" />
           </div>
-          <div>
-            <h1 className="vc-display text-[20px]">{title ?? meta.title}</h1>
+          <div className="min-w-0">
+            <h1 className="vc-display text-[20px] truncate">{title ?? meta.title}</h1>
             {(subtitle ?? meta.subtitle) && (
-              <p className="vc-subtitle text-[12px]">{subtitle ?? meta.subtitle}</p>
+              <p className="vc-subtitle text-[12px] truncate">{subtitle ?? meta.subtitle}</p>
             )}
           </div>
         </div>
       </header>
-      <main className="flex-1 px-4 pt-2 safe-bottom vc-page-enter">{children}</main>
-      <nav className="fixed bottom-0 z-50 vc-nav vc-nav-fixed">
-        <div className="flex justify-around py-2 pb-[max(8px,env(safe-area-inset-bottom))] px-2">
+
+      <main className={cn("vc-app-main px-4 pt-2 pb-4 vc-page-enter", mainClassName)}>
+        {children}
+      </main>
+
+      {dock}
+
+      <nav className="shrink-0 vc-nav pb-[max(8px,env(safe-area-inset-bottom))]">
+        <div className="flex justify-around py-2 px-2">
           {NAV_ITEMS.map(({ href, label }, i) => {
             const Icon = ICONS[i];
             const active = pathname === href;

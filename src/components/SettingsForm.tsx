@@ -26,6 +26,7 @@ import { GENERIC_MODE, STANDALONE_MODE } from "@/lib/app-config";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { UI } from "@/lib/product-copy";
 import { WeeklyReviewCard } from "./WeeklyReviewCard";
+import { AppFlowCard } from "./AppFlowCard";
 
 interface Profile {
   name: string;
@@ -272,6 +273,7 @@ export function SettingsForm() {
 
       {tab === "system" && (
         <>
+          {GENERIC_MODE && <AppFlowCard />}
           <Card title="Напоминания" subtitle="Утро и вечер">
             <ReminderSettings
               value={profile.notificationPrefsJson ?? "{}"}

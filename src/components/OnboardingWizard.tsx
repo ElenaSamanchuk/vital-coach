@@ -3,13 +3,13 @@
 import { apiClient } from "@/lib/api-client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ShieldCheck } from "lucide-react";
 import { DEFAULT_ASSESSMENT } from "@/lib/onboarding-assessment";
 import { APP_NAME, APP_TAGLINE, GENERIC_PROFILE } from "@/lib/app-config";
-import { UI } from "@/lib/product-copy";
+import { APP_FLOW, UI } from "@/lib/product-copy";
 import { BRAND_GRADIENT } from "@/lib/design-tokens";
 
-/** Один экран: имя + старт. Всё остальное — в Профиле. */
+/** Один экран: имя + старт. Без регистрации и пароля. */
 export function OnboardingWizard() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -40,7 +40,7 @@ export function OnboardingWizard() {
 
   return (
     <div className="min-h-screen bg-[var(--bg)] md:bg-[#ebebeb] flex justify-center">
-      <div className="vc-app-shell min-h-screen w-full flex flex-col justify-center py-10 pb-16 px-4">
+      <div className="vc-app-shell min-h-screen w-full flex flex-col justify-center py-10 pb-16 px-4 max-h-none overflow-visible">
         <div className="vc-surface p-6 space-y-6 w-full">
           <div className="text-center">
             <div
@@ -49,9 +49,24 @@ export function OnboardingWizard() {
             >
               <Sparkles className="text-white" size={32} />
             </div>
-            <h1 className="vc-display text-[26px]">{APP_NAME}</h1>
-            <p className="vc-subtitle mt-2">{APP_TAGLINE}</p>
+            <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1 rounded-full mb-3">
+              <ShieldCheck size={14} />
+              {UI.onboardingBadge}
+            </p>
+            <h1 className="vc-display text-[26px]">{UI.onboardingTitle}</h1>
+            <p className="vc-subtitle mt-2">{APP_NAME} · {APP_TAGLINE}</p>
           </div>
+
+          <ol className="space-y-2 text-[12px] text-[var(--text-secondary)]">
+            {APP_FLOW.steps.map((s, i) => (
+              <li key={s.label} className="flex gap-2">
+                <span className="font-semibold text-[var(--accent)] shrink-0">{i + 1}.</span>
+                <span>
+                  <strong className="text-[var(--text)]">{s.label}</strong> — {s.desc}
+                </span>
+              </li>
+            ))}
+          </ol>
 
           <label className="block">
             <span className="vc-label">{UI.onboardingName}</span>
@@ -78,7 +93,7 @@ export function OnboardingWizard() {
             disabled={saving}
             className="apple-btn apple-btn-primary w-full py-4 text-[16px] font-semibold"
           >
-            {saving ? "Запуск…" : "Начать"}
+            {saving ? "Запуск…" : UI.onboardingCta}
           </button>
         </div>
       </div>

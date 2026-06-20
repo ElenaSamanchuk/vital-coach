@@ -39,9 +39,12 @@ export const CHECKUP = {
 
 /** Тексты mass-market версии (GitHub Pages / APK) */
 export const UI = {
+  onboardingTitle: "Добро пожаловать",
+  onboardingBadge: "Без пароля и регистрации",
   onboardingName: "Как к тебе обращаться? (необязательно)",
   onboardingPrivacy:
-    "Регистрация не нужна — всё хранится на этом устройстве. Вес и цели можно задать позже в «Профиле».",
+    "Это не аккаунт — имя только для приветствия. Все данные остаются на этом устройстве.",
+  onboardingCta: "Продолжить",
   pathSubtitle: "Серия дней и динамика",
   backupIncludes: "профиль и дневники",
   backupTech: "Скачай файл копии — перенесёшь на новый телефон.",
@@ -58,6 +61,21 @@ export const UI = {
   eveningReflection: "Три коротких вопроса",
   movementDone: "Движение из «Сегодня» сделано",
   thyroidTaken: "Принял(а) натощак",
+  diaryOpen: "Записать в дневник",
+  diaryClose: "Закрыть день",
+  diaryDone: "День записан",
+} as const;
+
+/** Структура приложения — для подсказок в UI */
+export const APP_FLOW = {
+  title: "Как устроено Vital",
+  steps: [
+    { label: "Сегодня", desc: "Выбери еду и движение — без жёстких диет" },
+    { label: "Дневник", desc: "Настроение, вода, сон — 2 минуты вечером" },
+    { label: "Прогресс", desc: "Серия дней, вес, календарь настроения" },
+    { label: "Профиль", desc: "Цели, имя, резервная копия" },
+  ],
+  note: "Нет входа по паролю. Можно пользоваться сразу после первого экрана.",
 } as const;
 
 export function checkupReminderTitle(label: string): string {
