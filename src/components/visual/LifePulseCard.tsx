@@ -15,7 +15,7 @@ import {
   setPulseMinutes,
   addPulseMinutes,
 } from "@/lib/life-pulse";
-import { hapticLight, hapticSuccess } from "@/lib/haptics";
+import { hapticLight } from "@/lib/haptics";
 import { PickChip } from "@/components/ui/PickChip";
 
 const FEEL_OPTIONS = [
@@ -98,7 +98,6 @@ export function LifePulseCard({
   const sphere = pulse[activeKey];
 
   const patch = (next: LifePulseDay) => {
-    hapticSuccess();
     onChange(next);
   };
 

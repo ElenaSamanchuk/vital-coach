@@ -270,7 +270,7 @@ export function PathDashboard() {
             action={
               totalDiaryEntries === 0 ? (
                 <Link
-                  href="/log?tab=quick"
+                  href="/"
                   className="apple-btn apple-btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-[13px]"
                 >
                   <BookOpen size={16} />
@@ -411,14 +411,14 @@ export function PathDashboard() {
       </div>
 
       {GENERIC_MODE && totalDiaryEntries === 0 && (
-        <Link href="/log?tab=quick" className="block">
+        <Link href="/" className="block">
           <div className="rounded-2xl border border-[var(--accent)]/40 bg-[var(--accent-soft)] p-4 text-center">
             <p className="text-[14px] font-semibold text-[var(--text)]">Начни с одной записи</p>
             <p className="text-[12px] text-[var(--text-secondary)] mt-1">
-              2 минуты в дневнике — и прогресс оживёт
+              Открой «Мой день» — всё на одном экране
             </p>
             <span className="inline-block mt-3 text-[13px] font-semibold text-[var(--accent)]">
-              Открыть дневник →
+              Заполнить день →
             </span>
           </div>
         </Link>

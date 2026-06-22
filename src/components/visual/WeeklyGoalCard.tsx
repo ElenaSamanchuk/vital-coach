@@ -31,7 +31,7 @@ export function WeeklyGoalCard({
         </div>
         <ProgressBar value={diaryDaysThisWeek} max={DIARY_GOAL} />
         {diaryDaysThisWeek < DIARY_GOAL && (
-          <Link href="/log?tab=quick" className="text-[11px] text-[var(--accent)] font-medium mt-2 inline-block">
+          <Link href="/" className="text-[11px] text-[var(--accent)] font-medium mt-2 inline-block">
             Записать сегодня →
           </Link>
         )}

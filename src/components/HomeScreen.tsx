@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { GENERIC_MODE } from "@/lib/app-config";
+import { UnifiedDayScreen } from "./UnifiedDayScreen";
 import { CoachDashboard } from "./CoachDashboard";
 import { ShellDockSlot } from "./layout/ShellDockContext";
 import { UI } from "@/lib/product-copy";
 
 export function HomeScreen() {
+  if (GENERIC_MODE) {
+    return <UnifiedDayScreen />;
+  }
+
   return (
     <CoachDashboard
       renderDock={({ diaryDone, isEvening }) => (

@@ -6,14 +6,16 @@ import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/cn";
 import { AppPromoBanners } from "@/components/AppPromoBanners";
 import { ReminderBootContainer } from "@/components/ReminderBootContainer";
-import { STANDALONE_MODE } from "@/lib/app-config";
+import { STANDALONE_MODE, GENERIC_MODE } from "@/lib/app-config";
 import { normalizeAppPath } from "@/lib/routes";
 import { useShellDock } from "./ShellDockContext";
 
-const TAB_ROUTES = ["/", "/log", "/path", "/settings"] as const;
+const TAB_ROUTES = GENERIC_MODE
+  ? (["/", "/path", "/settings"] as const)
+  : (["/", "/log", "/path", "/settings"] as const);
 
 function tabIndex(route: string): number {
-  return TAB_ROUTES.indexOf(route as (typeof TAB_ROUTES)[number]);
+  return (TAB_ROUTES as readonly string[]).indexOf(route);
 }
 
 export function AppShellLayout({ children }: { children: ReactNode }) {

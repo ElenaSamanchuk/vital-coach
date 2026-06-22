@@ -79,6 +79,7 @@ export function TodayOptionsStrip({
   recommendedWorkouts,
   recommendedLeisure,
   genericFoodLayout = false,
+  layout = "tabs",
 }: {
   mealPlan: MealSlotPlan[];
   mealChoices: Record<string, string[]>;
@@ -92,9 +93,11 @@ export function TodayOptionsStrip({
   recommendedMeals?: Record<string, string[]>;
   recommendedWorkouts?: string[];
   recommendedLeisure?: string[];
-  /** Поток: продукты и блюда — один пул на любой приём */
   genericFoodLayout?: boolean;
+  /** stack — еда и движение подряд без переключателей */
+  layout?: "tabs" | "stack";
 }) {
+  const isStack = layout === "stack";
   const defaultTab = (): Tab => {
     const phase = activeRoutinePhase(new Date().getHours());
     if (phase === "morning") return "food";
@@ -114,6 +117,127 @@ export function TodayOptionsStrip({
   );
   const selectedSport = selectedWorkoutIds.length;
   const selectedLeisure = selectedLeisureIds.length;
+
+  const foodBlock = (
+    <div className="space-y-4">
+      {genericFoodLayout && (
+        <div className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-subtle)]">
+          {(
+            [
+              { id: "dish" as const, label: "Блюда" },
+              { id: "product" as const, label: "Продукты" },
+            ] as const
+          ).map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setFoodKind(id)}
+              className={`flex-1 py-1.5 rounded-md vc-text-xs font-semibold transition-colors ${
+                foodKind === id
+                  ? "bg-[var(--elevated)] text-[var(--text)] shadow-sm"
+                  : "text-[var(--text-secondary)]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {mealPlan.map((slot) => {
+        const options = genericFoodLayout ? filterByKind(slot.options, foodKind) : slot.options;
+        if (genericFoodLayout && options.length === 0) return null;
+        const slotLabel = genericFoodLayout ? `${slot.slotLabel} · что угодно` : slot.slotLabel;
+        return (
+          <PickStripSection key={slot.slot} label={slotLabel} count={options.length}>
+            {options.map((opt) => {
+              const id = (opt as { id?: string }).id ?? opt.title;
+              const selected = (mealChoices[slot.slot] ?? []).includes(id);
+              const recommended = (recommendedMeals?.[slot.slot] ?? []).includes(id);
+              const short = opt.title.split("+")[0].trim().slice(0, 40);
+              const impact = (opt as { impact?: string }).impact;
+              const nutritionLine = genericFoodLayout
+                ? (opt.description || formatGenericNutrition(opt))
+                : `${opt.calories} ккал · белок ${opt.proteinG} г`;
+              return (
+                <PickChip
+                  key={`${slot.slot}-${id}`}
+                  selected={selected}
+                  recommended={recommended}
+                  onClick={() => {
+                    if (!isStack) hapticLight();
+                    onMealSelect(slot.slot, id);
+                  }}
+                >
+                  <p className="vc-pick-chip-title line-clamp-2">{short}</p>
+                  <p className="vc-text-xs mt-0.5 text-[var(--text-secondary)]">{nutritionLine}</p>
+                  {impact && <ImpactLine text={impact} />}
+                </PickChip>
+              );
+            })}
+          </PickStripSection>
+        );
+      })}
+      {selectedMeals > 0 && (
+        <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
+          Выбрано {selectedMeals} · всего {mealCount} вариантов
+        </p>
+      )}
+    </div>
+  );
+
+  const sportBlock = (
+    <>
+      <PickStripSection count={sportOptions.length}>
+        {sportOptions.map((w) => {
+          const id = w.id ?? w.title;
+          const selected = selectedWorkoutIds.includes(id);
+          const recommended = (recommendedWorkouts ?? []).includes(id);
+          const WIcon = workoutIcon(w.type);
+          return (
+            <PickChip
+              key={id}
+              selected={selected}
+              recommended={recommended}
+              onClick={() => {
+                if (!isStack) hapticLight();
+                onWorkoutSelect(id);
+              }}
+            >
+              <div className="vc-pick-chip-row">
+                <WIcon size={16} className="text-[var(--accent)] shrink-0" />
+                <p className="vc-pick-chip-title line-clamp-2">{w.title}</p>
+              </div>
+              <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">
+                {w.durationMin} мин
+                {w.caloriesBurned != null ? ` · ~${w.caloriesBurned} ккал` : ""}
+              </p>
+              {w.impact && <ImpactLine text={w.impact} />}
+            </PickChip>
+          );
+        })}
+      </PickStripSection>
+      {selectedSport > 0 && (
+        <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
+          Выбрано: {selectedSport}
+        </p>
+      )}
+    </>
+  );
+
+  if (isStack) {
+    return (
+      <div className="space-y-4">
+        <div className="vc-glass-card rounded-2xl space-y-3">
+          <p className="vc-text-sm font-semibold">Еда</p>
+          {foodBlock}
+        </div>
+        <div className="vc-glass-card rounded-2xl space-y-3">
+          <p className="vc-text-sm font-semibold">Движение</p>
+          {sportBlock}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="vc-glass-card rounded-2xl space-y-3">
@@ -143,117 +267,9 @@ export function TodayOptionsStrip({
         ))}
       </div>
 
-      {tab === "food" && (
-        <div className="space-y-4">
-          {genericFoodLayout && (
-            <div className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-subtle)]">
-              {(
-                [
-                  { id: "dish" as const, label: "Блюда" },
-                  { id: "product" as const, label: "Продукты" },
-                ] as const
-              ).map(({ id, label }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setFoodKind(id)}
-                  className={`flex-1 py-1.5 rounded-md vc-text-xs font-semibold transition-colors ${
-                    foodKind === id
-                      ? "bg-[var(--elevated)] text-[var(--text)] shadow-sm"
-                      : "text-[var(--text-secondary)]"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-          {mealPlan.map((slot) => {
-            const options = genericFoodLayout
-              ? filterByKind(slot.options, foodKind)
-              : slot.options;
-            if (genericFoodLayout && options.length === 0) return null;
-            const slotLabel = genericFoodLayout
-              ? `${slot.slotLabel} · что угодно`
-              : slot.slotLabel;
-            return (
-            <PickStripSection key={slot.slot} label={slotLabel} count={options.length}>
-              {options.map((opt) => {
-                const id = (opt as { id?: string }).id ?? opt.title;
-                const selected = (mealChoices[slot.slot] ?? []).includes(id);
-                const recommended = (recommendedMeals?.[slot.slot] ?? []).includes(id);
-                const short = opt.title.split("+")[0].trim().slice(0, 40);
-                const impact = (opt as { impact?: string }).impact;
-                const nutritionLine = genericFoodLayout
-                  ? (opt.description || formatGenericNutrition(opt))
-                  : `${opt.calories} ккал · белок ${opt.proteinG} г`;
-                return (
-                  <PickChip
-                    key={`${slot.slot}-${id}`}
-                    selected={selected}
-                    recommended={recommended}
-                    onClick={() => {
-                      hapticLight();
-                      onMealSelect(slot.slot, id);
-                    }}
-                  >
-                    <p className="vc-pick-chip-title line-clamp-2">{short}</p>
-                    <p className="vc-text-xs mt-0.5 text-[var(--text-secondary)]">
-                      {nutritionLine}
-                    </p>
-                    {impact && <ImpactLine text={impact} />}
-                  </PickChip>
-                );
-              })}
-            </PickStripSection>
-            );
-          })}
-          {selectedMeals > 0 && (
-            <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
-              Выбрано {selectedMeals} · всего {mealCount} вариантов
-            </p>
-          )}
-        </div>
-      )}
+      {tab === "food" && foodBlock}
 
-      {tab === "sport" && (
-        <>
-          <PickStripSection count={sportOptions.length}>
-            {sportOptions.map((w) => {
-              const id = w.id ?? w.title;
-              const selected = selectedWorkoutIds.includes(id);
-            const recommended = (recommendedWorkouts ?? []).includes(id);
-              const WIcon = workoutIcon(w.type);
-              return (
-              <PickChip
-                key={id}
-                selected={selected}
-                recommended={recommended}
-                onClick={() => {
-                    hapticLight();
-                    onWorkoutSelect(id);
-                  }}
-                >
-                  <div className="vc-pick-chip-row">
-                    <WIcon size={16} className="text-[var(--accent)] shrink-0" />
-                    <p className="vc-pick-chip-title line-clamp-2">{w.title}</p>
-                  </div>
-                  <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">
-                    {w.durationMin} мин
-                    {w.caloriesBurned != null ? ` · ~${w.caloriesBurned} ккал` : ""}
-                  </p>
-                  {w.impact && <ImpactLine text={w.impact} />}
-                </PickChip>
-              );
-            })}
-          </PickStripSection>
-          {selectedSport > 0 && (
-            <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
-              Выбрано тренировок: {selectedSport}
-            </p>
-          )}
-        </>
-      )}
+      {tab === "sport" && sportBlock}
 
       {tab === "leisure" && (
         <>

@@ -1,6 +1,6 @@
 /** Локальные напоминания — PWA + Notification API */
 
-import { APP_NAME, BASE_PATH } from "./app-config";
+import { APP_NAME, BASE_PATH, GENERIC_MODE } from "./app-config";
 
 export interface NotificationPrefs {
   enabled: boolean;
@@ -57,7 +57,7 @@ export interface ReminderPayload {
 
 export function eveningDiaryHref(): string {
   const base = BASE_PATH.replace(/\/$/, "");
-  return `${base}/log?tab=quick`;
+  return GENERIC_MODE ? `${base}/` : `${base}/log?tab=quick`;
 }
 
 export function buildReminder(

@@ -13,12 +13,12 @@ export const APP_RULES = {
 
 export const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   "/": {
-    title: "Сегодня",
-    subtitle: GENERIC_MODE ? "Еда · баланс · движение" : "Выбери еду и движение",
+    title: GENERIC_MODE ? "Мой день" : "Сегодня",
+    subtitle: GENERIC_MODE ? "Всё про сегодня — один экран" : "Выбери еду и движение",
   },
   "/log": {
     title: "Дневник",
-    subtitle: GENERIC_MODE ? "Запись дня · баланс" : "Дела · уход · самочувствие",
+    subtitle: GENERIC_MODE ? "Перенесено в «Мой день»" : "Запись дня · баланс",
   },
   "/path": {
     title: "Прогресс",
@@ -36,8 +36,7 @@ export const PAGE_META: Record<string, { title: string; subtitle: string }> = {
 
 export const NAV_ITEMS = GENERIC_MODE
   ? ([
-      { href: "/", label: "Сегодня" },
-      { href: "/log", label: "Дневник" },
+      { href: "/", label: "Мой день" },
       { href: "/path", label: "Прогресс" },
       { href: "/settings", label: "Профиль" },
     ] as const)
