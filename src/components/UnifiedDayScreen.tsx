@@ -318,6 +318,7 @@ export function UnifiedDayScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           date: dateIso,
+          partial: true,
           energy: log.energy,
           mood: log.mood,
           stress: log.stress,
@@ -331,6 +332,7 @@ export function UnifiedDayScreen() {
           proteinG: totals?.proteinG,
           lifeActions: { _pulse: lifePulse },
           leisure: leisureIds,
+          workoutChoice,
         }),
       });
       const result = await dailyRes.json().catch(() => ({}));

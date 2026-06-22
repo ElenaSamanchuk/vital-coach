@@ -287,7 +287,10 @@ export async function upsertDailyLog(
     thyroidMedOnTime: pick(patch.thyroidMedOnTime, base.thyroidMedOnTime) ?? false,
     supplementsTaken: pick(patch.supplementsTaken, base.supplementsTaken) ?? false,
     mealChoices: patch.mealChoices ?? base.mealChoices,
-    workoutChoice: pick(patch.workoutChoice, base.workoutChoice) ?? "",
+    workoutChoice:
+      patch.workoutChoice !== undefined
+        ? (pick(patch.workoutChoice, base.workoutChoice) ?? "")
+        : base.workoutChoice,
     softDay: pick(patch.softDay, base.softDay) ?? false,
     dayPhoto: patch.dayPhoto ?? (partial ? base.dayPhoto : base.dayPhoto),
     dayTagsJson: patch.dayTagsJson ?? base.dayTagsJson,

@@ -12,6 +12,7 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
+  ComposedChart,
 } from "recharts";
 import { format, parseISO, subDays } from "date-fns";
 import { Card } from "./ui/Card";
@@ -23,6 +24,7 @@ import {
   cycleStatus,
 } from "@/lib/period-tracking";
 import { journalEntries } from "@/lib/day-memories";
+import { enrichLogsWithMovement, hasMovementData } from "@/lib/movement-analytics";
 
 interface LogRow {
   date: string;
@@ -32,8 +34,8 @@ interface LogRow {
   waterMl?: number;
   sleepMinutes?: number;
   mood?: number;
+  steps?: number;
   workoutChoice?: string;
-  workouts?: number;
   notes?: string;
   dayPhoto?: string;
 }
@@ -44,6 +46,7 @@ export function PotokAnalytics() {
     lastPeriodStart?: string | null;
     cycleLength?: number;
     assessmentJson?: string;
+    currentWeightKg?: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,7 +59,6 @@ export function PotokAnalytics() {
           (analytics.logs ?? []).map((l: LogRow) => ({
             ...l,
             dateLabel: format(parseISO(l.date.split("T")[0]), "d.M"),
-            workouts: l.workoutChoice ? 1 : 0,
           })),
         );
       })
@@ -82,6 +84,22 @@ export function PotokAnalytics() {
   }, [periodStarts, periodMeta.periodDays]);
 
   const journal = useMemo(() => journalEntries(logs, 24), [logs]);
+
+  const movementLogs = useMemo(
+    () => enrichLogsWithMovement(logs, profile?.currentWeightKg ?? 70),
+    [logs, profile?.currentWeightKg],
+  );
+
+  const movementSummary = useMemo(() => {
+    const withSteps = movementLogs.filter((l) => (l.steps ?? 0) > 0);
+    const withWorkouts = movementLogs.filter((l) => l.workoutCount > 0);
+    const avgSteps =
+      withSteps.length > 0
+        ? Math.round(withSteps.reduce((s, l) => s + (l.steps ?? 0), 0) / withSteps.length)
+        : null;
+    const totalBurn = movementLogs.reduce((s, l) => s + l.burnedKcal, 0);
+    return { avgSteps, workoutDays: withWorkouts.length, totalBurn };
+  }, [movementLogs]);
 
   const cycleLabel = cycleStatus(
     profile?.lastPeriodStart ?? null,
@@ -171,19 +189,52 @@ export function PotokAnalytics() {
         </Card>
       )}
 
-      {logs.some((l) => l.workoutChoice) && (
-        <Card title="Тренировки">
-          <div className="h-44">
+      {hasMovementData(movementLogs) && (
+        <Card
+          title="Движение"
+          subtitle={
+            [
+              movementSummary.avgSteps != null ? `~${movementSummary.avgSteps.toLocaleString("ru-RU")} шагов` : null,
+              movementSummary.workoutDays > 0
+                ? `${movementSummary.workoutDays} дн. с тренировкой`
+                : null,
+              movementSummary.totalBurn > 0 ? `~${movementSummary.totalBurn} ккал сожжено` : null,
+            ]
+              .filter(Boolean)
+              .join(" · ") || "Шаги и активность"
+          }
+        >
+          <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={logs}>
+              <ComposedChart data={movementLogs.filter((l) => l.hasMovement)}>
                 {chartProps.grid}
                 {chartProps.x}
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} domain={[0, 1]} />
-                {chartProps.tooltip}
-                <Bar dataKey="workouts" fill="#4A90D9" name="день с движением" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                <YAxis yAxisId="steps" tick={{ fontSize: 11 }} orientation="left" />
+                <YAxis yAxisId="burn" tick={{ fontSize: 11 }} orientation="right" />
+                <Tooltip />
+                <Bar
+                  yAxisId="burn"
+                  dataKey="burnedKcal"
+                  fill="#4A90D9"
+                  name="ккал сожжено"
+                  radius={[4, 4, 0, 0]}
+                  barSize={14}
+                />
+                <Line
+                  yAxisId="steps"
+                  type="monotone"
+                  dataKey="steps"
+                  stroke="#30D158"
+                  name="шаги"
+                  dot={false}
+                  strokeWidth={2}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
+          <p className="vc-text-xs text-[var(--text-tertiary)] mt-2">
+            Синие столбцы — расход от тренировок · зелёная линия — шаги
+          </p>
         </Card>
       )}
 
