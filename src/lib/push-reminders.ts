@@ -1,6 +1,6 @@
 /** Локальные напоминания — PWA + Notification API */
 
-import { APP_NAME } from "./app-config";
+import { APP_NAME, BASE_PATH } from "./app-config";
 
 export interface NotificationPrefs {
   enabled: boolean;
@@ -83,7 +83,7 @@ export function fireNotification(payload: ReminderPayload) {
   try {
     new Notification(payload.title, {
       body: payload.body,
-      icon: "/icons/icon-192.png",
+      icon: `${BASE_PATH}/icons/icon-192.png`,
       tag: `vital-${payload.kind}`,
     });
     const today = new Date().toISOString().slice(0, 10);

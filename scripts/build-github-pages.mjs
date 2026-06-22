@@ -46,6 +46,14 @@ try {
   const manifestBackup = fs.readFileSync(manifestPath, "utf8");
   const manifest = JSON.parse(manifestBackup);
   manifest.start_url = `${basePath}/`;
+  if (Array.isArray(manifest.icons)) {
+    manifest.icons = manifest.icons.map((icon) => ({
+      ...icon,
+      src: icon.src.startsWith("/")
+        ? `${basePath}${icon.src}`
+        : `${basePath}/${icon.src.replace(/^\//, "")}`,
+    }));
+  }
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
 
   execSync("npm run build", {
@@ -75,6 +83,12 @@ try {
     try {
       const m = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
       m.start_url = "/";
+      if (Array.isArray(m.icons)) {
+        m.icons = m.icons.map((icon) => ({
+          ...icon,
+          src: icon.src.replace(/^\/vital-coach\//, "").replace(/^\//, ""),
+        }));
+      }
       fs.writeFileSync(manifestPath, JSON.stringify(m, null, 2) + "\n");
     } catch {
       /* */

@@ -30,6 +30,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Generate app icons
+        run: npm run generate:icons
+
       - name: Add Capacitor Android
         run: |
           npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6

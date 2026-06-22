@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: `${APP_NAME} — здоровье и привычки`,
   description: APP_TAGLINE,
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/icon-180.png", sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -25,9 +29,6 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru">
-      <head>
-        <link rel="apple-touch-icon" href="/icons/icon.svg" />
-      </head>
       <body className="min-h-screen antialiased" suppressHydrationWarning>
         <Providers>
           <DesktopStage>{children}</DesktopStage>
