@@ -65,7 +65,7 @@ export function LifePulseWeekCard({
 
       {totalDays === 0 && (
         <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
-          Отмечай сферы на «Сегодня» — здесь появится недельная картина
+          Отмечай сферы в «Мой день» — здесь появится недельная картина
         </p>
       )}
     </div>

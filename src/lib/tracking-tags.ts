@@ -4,7 +4,7 @@ import { GENERIC_MODE } from "./app-config";
 
 export type TagColor = "green" | "gray" | "brown" | "purple" | "pink" | "black";
 
-export type TagCategory = "health" | "care" | "home" | "mood";
+export type TagCategory = "health" | "care" | "home" | "mood" | "work" | "leisure";
 
 export type TagIcon =
   | "footprints"
@@ -38,6 +38,8 @@ export const TAG_CATEGORY_LABEL: Record<TagCategory, string> = {
   care: "Уход",
   home: "Быт",
   mood: "Настроение",
+  work: "Работа",
+  leisure: "Досуг",
 };
 
 export const TAG_ICON_BY_ID: Record<string, TagIcon> = {
@@ -95,6 +97,19 @@ export const DEFAULT_TRACKING_TAGS: TrackingTag[] = [
   { id: "social", label: "Общение", color: "purple", category: "mood", icon: "users" },
   { id: "rest", label: "Отдых", color: "brown", category: "mood", icon: "coffee" },
   { id: "stress", label: "Стресс", color: "gray", category: "mood", icon: "frown" },
+  { id: "work_focus", label: "Фокус", color: "gray", category: "work", icon: "footprints" },
+  { id: "work_meeting", label: "Встречи", color: "gray", category: "work" },
+  { id: "work_overload", label: "Перегруз", color: "gray", category: "work", icon: "frown" },
+  { id: "work_remote", label: "Удалёнка", color: "gray", category: "work" },
+  { id: "work_done", label: "Работа закрыта", color: "green", category: "work" },
+  { id: "dacha", label: "Дача", color: "green", category: "leisure" },
+  { id: "cinema_day", label: "Кино", color: "purple", category: "leisure" },
+  { id: "music_day", label: "Музыка", color: "purple", category: "leisure" },
+  { id: "books_day", label: "Книга", color: "purple", category: "leisure", icon: "moon" },
+  { id: "nature_day", label: "Природа", color: "green", category: "leisure", icon: "footprints" },
+  { id: "friends_day", label: "Друзья", color: "pink", category: "leisure", icon: "users" },
+  { id: "creative_day", label: "Творчество", color: "pink", category: "leisure", icon: "sparkles" },
+  { id: "banya_day", label: "Баня / спа", color: "brown", category: "leisure", icon: "bath" },
 ];
 
 /** Дефолтные метки дня — без медицинских в mass-market */
@@ -148,6 +163,8 @@ export function tagsByCategory(tags: TrackingTag[]): Record<TagCategory, Trackin
     care: [],
     home: [],
     mood: [],
+    work: [],
+    leisure: [],
   };
   for (const t of enrichTags(tags)) {
     const cat = t.category ?? "health";

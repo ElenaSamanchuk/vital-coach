@@ -13,7 +13,7 @@ import { hapticLight } from "@/lib/haptics";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 
-const CATEGORY_ORDER: TagCategory[] = ["health", "care", "home", "mood"];
+const CATEGORY_ORDER: TagCategory[] = ["health", "work", "care", "leisure", "home", "mood"];
 
 export function DayTrackerTags({
   tags,

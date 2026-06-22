@@ -82,6 +82,7 @@ export function PathDashboard() {
     {
       mealChoices?: string | null;
       leisureJson?: string | null;
+      lifeActionsJson?: string | null;
       workoutChoice?: string | null;
       mood?: number | null;
       weightKg?: number | null;

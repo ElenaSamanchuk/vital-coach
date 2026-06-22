@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   type LifePulseDay,
   type LifePulseKey,
@@ -15,6 +15,13 @@ import {
   setPulseMinutes,
   addPulseMinutes,
 } from "@/lib/life-pulse";
+import {
+  type MoodContext,
+  moodBannerForPulse,
+  suggestedPulseItems,
+  pulseItemTip,
+  leisureMoodBoostFromPulse,
+} from "@/lib/life-pulse-mood";
 import { hapticLight } from "@/lib/haptics";
 import { PickChip } from "@/components/ui/PickChip";
 
@@ -82,20 +89,65 @@ function PulseTile({
   );
 }
 
+function PulseChip({
+  item,
+  selected,
+  recommended,
+  onClick,
+}: {
+  item: (typeof LIFE_PULSE_ITEMS)[LifePulseKey][number];
+  selected: boolean;
+  recommended: boolean;
+  onClick: () => void;
+}) {
+  const tip = item.tip;
+  return (
+    <PickChip selected={selected} recommended={recommended} onClick={onClick}>
+      <div className="flex items-start justify-between gap-1">
+        <p className="vc-pick-chip-title">{item.label}</p>
+        {item.moodBoost != null && (
+          <span className="vc-text-xs font-bold text-[var(--accent)] shrink-0">↑{item.moodBoost}</span>
+        )}
+      </div>
+      {item.minutes != null && (
+        <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">~{item.minutes} мин</p>
+      )}
+      {selected && tip && (
+        <p className="vc-text-xs text-[var(--accent)] mt-1 leading-snug">{tip}</p>
+      )}
+      {recommended && !selected && (
+        <p className="vc-text-xs text-[var(--text-tertiary)] mt-0.5">под настроение</p>
+      )}
+    </PickChip>
+  );
+}
+
 export function LifePulseCard({
   pulse,
   onChange,
   compact = false,
+  moodContext,
 }: {
   pulse: LifePulseDay;
   onChange: (next: LifePulseDay) => void;
   compact?: boolean;
+  moodContext?: MoodContext;
 }) {
-  const [activeKey, setActiveKey] = useState<LifePulseKey>("work");
+  const [activeKey, setActiveKey] = useState<LifePulseKey>("leisure");
   const balance = dayBalanceScore(pulse);
   const touched = spheresTouched(pulse);
   const meta = LIFE_PULSE_META[activeKey];
   const sphere = pulse[activeKey];
+
+  const suggested = useMemo(
+    () => (moodContext ? suggestedPulseItems(moodContext, activeKey) : []),
+    [moodContext, activeKey],
+  );
+
+  const suggestedSet = useMemo(() => new Set(suggested), [suggested]);
+  const allItems = LIFE_PULSE_ITEMS[activeKey];
+  const restItems = allItems.filter((i) => !suggestedSet.has(i.id));
+  const leisureBoost = activeKey === "leisure" ? leisureMoodBoostFromPulse(pulse) : null;
 
   const patch = (next: LifePulseDay) => {
     onChange(next);
@@ -114,11 +166,21 @@ export function LifePulseCard({
           <p className="text-[22px] font-bold leading-none tabular-nums text-[var(--accent)]">
             {balance}
           </p>
-          <p className="vc-text-xs text-[var(--text-tertiary)] mt-0.5">
-            {touched}/4
-          </p>
+          <p className="vc-text-xs text-[var(--text-tertiary)] mt-0.5">{touched}/4</p>
         </div>
       </div>
+
+      {moodContext && (
+        <p className="text-[12px] leading-relaxed text-[var(--text-secondary)] bg-[var(--bg-subtle)] rounded-xl px-3 py-2">
+          {moodBannerForPulse(moodContext)}
+        </p>
+      )}
+
+      {leisureBoost != null && leisureBoost >= 7 && (
+        <p className="text-[12px] text-[var(--accent)] font-medium px-1">
+          Досуг сегодня · средний эффект на настроение ↑{leisureBoost}/10
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-2">
         {LIFE_PULSE_KEYS.map((key) => (
@@ -146,27 +208,56 @@ export function LifePulseCard({
             </span>
           </div>
 
-          <div className="vc-pick-strip-wrap">
-            <div className="vc-pick-strip">
-              {LIFE_PULSE_ITEMS[activeKey].map((item) => {
-                const selected = sphere.items.includes(item.id);
-                return (
-                  <PickChip
-                    key={item.id}
-                    selected={selected}
-                    onClick={() => patch(togglePulseItem(pulse, activeKey, item.id))}
-                  >
-                    <p className="vc-pick-chip-title whitespace-nowrap">{item.label}</p>
-                    {item.minutes != null && (
-                      <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">
-                        ~{item.minutes} мин
-                      </p>
-                    )}
-                  </PickChip>
-                );
-              })}
+          {suggested.length > 0 && (
+            <div>
+              <p className="vc-overline mb-2">Под настроение</p>
+              <div className="flex flex-wrap gap-2">
+                {suggested.map((id) => {
+                  const item = allItems.find((i) => i.id === id);
+                  if (!item) return null;
+                  return (
+                    <PulseChip
+                      key={item.id}
+                      item={item}
+                      selected={sphere.items.includes(item.id)}
+                      recommended
+                      onClick={() => patch(togglePulseItem(pulse, activeKey, item.id))}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <p className="vc-overline mb-2">{suggested.length > 0 ? "Все плашки" : "Что было?"}</p>
+            <div className="flex flex-wrap gap-2">
+              {restItems.map((item) => (
+                <PulseChip
+                  key={item.id}
+                  item={item}
+                  selected={sphere.items.includes(item.id)}
+                  recommended={false}
+                  onClick={() => patch(togglePulseItem(pulse, activeKey, item.id))}
+                />
+              ))}
             </div>
           </div>
+
+          {sphere.items.length > 0 && (
+            <div className="rounded-xl bg-[var(--elevated)] px-3 py-2 space-y-1">
+              <p className="vc-text-xs font-semibold text-[var(--text-secondary)]">Выбрано</p>
+              {sphere.items.map((id) => {
+                const tip = pulseItemTip(activeKey, id);
+                const label = allItems.find((i) => i.id === id)?.label ?? id;
+                return tip ? (
+                  <p key={id} className="vc-text-xs text-[var(--text-secondary)] leading-snug">
+                    <span className="font-semibold text-[var(--text)]">{label}</span> — {tip}
+                  </p>
+                ) : null;
+              })}
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-1.5">
             {[15, 30, 45, 60].map((m) => (

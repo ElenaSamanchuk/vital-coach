@@ -22,6 +22,7 @@ import {
   emptyLifePulseDay,
   type LifePulseDay,
 } from "@/lib/life-pulse";
+import { leisureIdsFromPulse } from "@/lib/life-pulse-mood";
 import { DayTrackerTags } from "./visual/DayTrackerTags";
 import { parseDayTags, parseTrackingTags, type TrackingTag } from "@/lib/tracking-tags";
 import {
@@ -191,6 +192,7 @@ export function UnifiedDayScreen() {
           proteinG: totals?.proteinG,
           lifeActions: { _pulse: lifePulse },
           dayTags,
+          leisure: leisureIdsFromPulse(lifePulse),
         }),
       });
       const result = await dailyRes.json().catch(() => ({}));
@@ -303,6 +305,7 @@ export function UnifiedDayScreen() {
         <p className="vc-overline px-1 mb-2">3 · Баланс — работа · уход · досуг · быт</p>
         <LifePulseCard
           pulse={lifePulse}
+          moodContext={{ mood: log.mood, energy: log.energy, stress: log.stress }}
           onChange={(p) => {
             setLifePulse(p);
             markDirty();

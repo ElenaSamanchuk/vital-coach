@@ -3,6 +3,10 @@
  */
 import { parseWorkoutChoices, leisureChoices, parseMealChoicesRaw } from "./today-choices";
 import type { WeeklyInsights } from "./types";
+import { GENERIC_MODE } from "./app-config";
+import { parseLifePulseFromLog } from "./life-pulse";
+
+const DAY_SCREEN = GENERIC_MODE ? "«Мой день»" : "«Сегодня»";
 
 export type RecCategory =
   | "nutrition"
@@ -42,6 +46,7 @@ export const REC_CATEGORY_META: Record<
 type LogRow = {
   mealChoices?: string | null;
   leisureJson?: string | null;
+  lifeActionsJson?: string | null;
   workoutChoice?: string | null;
   mood?: number | null;
   weightKg?: number | null;
@@ -65,10 +70,13 @@ function hasLeisure(log: LogRow): boolean {
   }
   try {
     const leisure = JSON.parse(log.leisureJson || "[]") as unknown[];
-    return leisure.length > 0;
+    if (leisure.length > 0) return true;
   } catch {
-    return false;
+    /* */
   }
+  const pulse = parseLifePulseFromLog(log.lifeActionsJson);
+  if (pulse.leisure.items.length > 0) return true;
+  return false;
 }
 
 function slippingToCategory(key: string): RecCategory | null {
@@ -116,9 +124,9 @@ export function buildAnalyticsRecommendations(
     pushRec(recs, seen, {
       id: "start-logging",
       category: "diary",
-      title: "Начни с дневника",
+      title: GENERIC_MODE ? "Начни с записи дня" : "Начни с дневника",
       detail: "3–4 дня записей — и рекомендации станут точнее",
-      action: "Отметь настроение и воду сегодня",
+      action: `Отметь настроение и воду в ${DAY_SCREEN}`,
       priority: "high",
     });
     return recs;
@@ -146,7 +154,7 @@ export function buildAnalyticsRecommendations(
       category: "leisure",
       title: "Мало досуга",
       detail: `За неделю отдых отмечен ${leisureDays} из ${weekLogs.length} дн.`,
-      action: "Выбери досуг на «Сегодня» — прогулка, книга, встреча",
+      action: `Блок «Баланс» в ${DAY_SCREEN} → Досуг: прогулка, книга, друзья`,
       priority: "medium",
     });
   } else if (leisureDays >= 4) {
@@ -169,7 +177,7 @@ export function buildAnalyticsRecommendations(
       category: "movement",
       title: "Мало шагов",
       detail: `В среднем ~${Math.round(avgSteps)} шагов`,
-      action: "10 мин ходьбы после обеда или выбери прогулку в досуге",
+      action: "10 мин ходьбы или плашка «Прогулка» в балансе дня",
       priority: "medium",
     });
   } else if (avgSteps != null && avgSteps >= 8000) {
@@ -189,7 +197,7 @@ export function buildAnalyticsRecommendations(
     pushRec(recs, seen, {
       id: "diary-gap",
       category: "diary",
-      title: "Пропуски в дневнике",
+      title: GENERIC_MODE ? "Пропуски в записи дня" : "Пропуски в дневнике",
       detail: `Записей ${logDays} из ${weekLogs.length} дн. — картина неполная`,
       action: "Вечером: настроение + сон — 30 секунд",
       priority: "high",
@@ -211,7 +219,7 @@ export function buildAnalyticsRecommendations(
       category: "water",
       title: "Вода ниже цели",
       detail: `~${Math.round(avgWater)} мл при цели ${waterTarget}`,
-      action: "Стакан после каждого приёма пищи — на «Сегодня» кнопки +250",
+      action: `Кнопки +250 мл в ${DAY_SCREEN}`,
       priority: "medium",
     });
   }
@@ -244,7 +252,7 @@ export function buildAnalyticsRecommendations(
       category: "workout",
       title: "Редко выбираешь движение",
       detail: `Тренировка выбрана ${workoutPicks} из ${weekLogs.length} дн.`,
-      action: "На «Сегодня» → Движение: даже 20 мин ходьбы зачтётся",
+      action: `${DAY_SCREEN} → блок «Движение»: даже 20 мин ходьбы зачтётся`,
       priority: "medium",
     });
   }
