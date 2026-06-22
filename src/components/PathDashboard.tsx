@@ -259,14 +259,14 @@ export function PathDashboard() {
 
       {GENERIC_FEATURES.lifePulse && <LifePulseWeekCard logs={pulseWeekLogs} />}
 
-      <GlassCard title="Неделя" subtitle="Авто из дневника">
+      <GlassCard title="Неделя" subtitle="Авто из сохранённых дней">
         {weekly && (weekly.wins.length > 0 || weekly.slipping.length > 0) ? (
           <WeeklyDigest insights={weekly} />
         ) : (
           <EmptyState
             icon={BarChart3}
             title="Неделя только начинается"
-            description="После 3–4 записей в дневнике здесь появятся победы и зоны роста с объяснением «почему»."
+            description="После 3–4 сохранённых дней здесь появятся победы и зоны роста с объяснением «почему»."
             action={
               totalDiaryEntries === 0 ? (
                 <Link

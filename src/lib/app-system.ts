@@ -6,10 +6,9 @@
 import { GENERIC_MODE, APP_NAME } from "@/lib/app-config";
 import { CHECKUP, UI } from "@/lib/product-copy";
 
-export const APP_RULES = {
-  edit: ["Дневник", "Профиль"],
-  auto: ["Сегодня", "Путь"],
-} as const;
+export const APP_RULES = GENERIC_MODE
+  ? ({ edit: ["Мой день", "Профиль"], auto: ["Прогресс"] } as const)
+  : ({ edit: ["Дневник", "Профиль"], auto: ["Сегодня", "Путь"] } as const);
 
 export const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   "/": {
@@ -22,11 +21,11 @@ export const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   },
   "/path": {
     title: "Прогресс",
-    subtitle: GENERIC_MODE ? UI.pathSubtitle : "Прогресс и динамика",
+    subtitle: GENERIC_MODE ? "Аналитика — только просмотр" : UI.pathSubtitle,
   },
   "/settings": {
     title: "Профиль",
-    subtitle: GENERIC_MODE ? "Цели и бэкап" : "Данные о себе",
+    subtitle: GENERIC_MODE ? "Общие данные и настройки" : "Данные о себе",
   },
   "/labs": { title: CHECKUP.section, subtitle: CHECKUP.sectionPath },
   "/life": { title: "Баланс", subtitle: "Перенесено в Путь" },

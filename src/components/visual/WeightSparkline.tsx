@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Scale } from "lucide-react";
 import { EmptyState } from "../ui/EmptyState";
 import { VC } from "@/lib/design-tokens";
+import { GENERIC_MODE } from "@/lib/app-config";
 
 export function WeightSparkline({
   points,
@@ -17,10 +18,14 @@ export function WeightSparkline({
       <EmptyState
         icon={Scale}
         title="Пока мало данных"
-        description="Запиши вес 2+ дня в дневнике — появится тренд и линия цели."
+        description={
+          GENERIC_MODE
+            ? "Запиши вес 2+ дня в «Мой день» — появится тренд и линия цели."
+            : "Запиши вес 2+ дня в дневнике — появится тренд и линия цели."
+        }
         action={
-          <Link href="/log" className="text-[13px] font-semibold text-[var(--accent)]">
-            Открыть дневник →
+          <Link href={GENERIC_MODE ? "/" : "/log"} className="text-[13px] font-semibold text-[var(--accent)]">
+            {GENERIC_MODE ? "Открыть «Мой день» →" : "Открыть дневник →"}
           </Link>
         }
       />

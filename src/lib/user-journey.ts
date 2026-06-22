@@ -188,7 +188,24 @@ const GENERIC_STEP_OVERRIDES: Partial<Record<string, Partial<JourneyStep>>> = {
     description: "Имя по желанию — остальное настроишь в профиле.",
     hrefLabel: "Старт",
   },
-  coach_plan: { hrefLabel: "Сегодня" },
+  first_log: {
+    title: "Первый день",
+    subtitle: "5 минут",
+    description: "Настроение, вода, еда — один экран, одна кнопка «Сохранить».",
+    href: "/",
+    hrefLabel: "Мой день",
+  },
+  coach_plan: {
+    title: "Отметить еду или движение",
+    hrefLabel: "Мой день",
+  },
+  streak_3: {
+    title: "3 дня подряд",
+    subtitle: "Привычка",
+    description: "Каждый день «Сохранить день» — серия растёт.",
+    href: "/",
+    hrefLabel: "Мой день",
+  },
   backup: {
     description: "Скачай копию — данные не потеряются при смене телефона.",
     hrefLabel: "Копия",

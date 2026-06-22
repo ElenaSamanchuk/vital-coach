@@ -5,6 +5,7 @@ import { Card } from "./ui/Card";
 import type { TagColor, TrackingTag } from "@/lib/tracking-tags";
 import { DEFAULT_TRACKING_TAGS, TAG_COLOR_CLASS } from "@/lib/tracking-tags";
 import { hapticLight } from "@/lib/haptics";
+import { GENERIC_MODE } from "@/lib/app-config";
 
 const COLORS: TagColor[] = ["green", "gray", "brown", "purple", "pink", "black"];
 
@@ -36,7 +37,14 @@ export function TrackingTagsEditor({
   const reset = () => onChange([...DEFAULT_TRACKING_TAGS]);
 
   return (
-    <Card title="Метки дня" subtitle="Отмечай в дневнике, что было сегодня">
+    <Card
+      title="Метки дня"
+      subtitle={
+        GENERIC_MODE
+          ? "Настрой список здесь · отмечай в «Мой день»"
+          : "Отмечай в дневнике, что было сегодня"
+      }
+    >
       <div className="flex flex-wrap gap-2 mb-4">
         {tags.map((tag) => (
           <span

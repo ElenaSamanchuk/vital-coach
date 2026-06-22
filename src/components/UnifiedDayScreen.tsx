@@ -3,8 +3,7 @@
 import { apiClient } from "@/lib/api-client";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import Link from "next/link";
-import { CheckCircle2, ChevronRight, Droplets, Moon, Footprints } from "lucide-react";
+import { CheckCircle2, Droplets, Moon, Footprints, Scale, Tags } from "lucide-react";
 import type { DailyCoachPlan } from "@/lib/types";
 import { MOOD_VISUAL } from "@/lib/visual-icons";
 import { PageSkeleton } from "@/components/ui/Skeleton";
@@ -23,6 +22,8 @@ import {
   emptyLifePulseDay,
   type LifePulseDay,
 } from "@/lib/life-pulse";
+import { DayTrackerTags } from "./visual/DayTrackerTags";
+import { parseDayTags, parseTrackingTags, type TrackingTag } from "@/lib/tracking-tags";
 import {
   buildDayFlowBlocks,
   dayFlowProgress,
@@ -85,6 +86,8 @@ export function UnifiedDayScreen() {
   const [mealChoices, setMealChoices] = useState<MealChoicesRaw>({});
   const [workoutChoice, setWorkoutChoice] = useState("");
   const [lifePulse, setLifePulse] = useState<LifePulseDay>(emptyLifePulseDay());
+  const [trackingTags, setTrackingTags] = useState<TrackingTag[]>([]);
+  const [dayTags, setDayTags] = useState<string[]>([]);
   const [log, setLog] = useState<LogFields>({
     energy: 7,
     mood: 7,
@@ -114,6 +117,8 @@ export function UnifiedDayScreen() {
       }
       setWorkoutChoice(d.todayLog?.workoutChoice ?? "");
       setLifePulse(parseLifePulseFromLog(d.todayLog?.lifeActionsJson));
+      setTrackingTags(parseTrackingTags(d.trackingTagsJson));
+      setDayTags(parseDayTags(d.todayLog?.dayTagsJson));
       setLog({
         energy: d.todayLog?.energy ?? 7,
         mood: d.todayLog?.mood ?? 7,
@@ -185,6 +190,7 @@ export function UnifiedDayScreen() {
           calories: totals?.calories,
           proteinG: totals?.proteinG,
           lifeActions: { _pulse: lifePulse },
+          dayTags,
         }),
       });
       const result = await dailyRes.json().catch(() => ({}));
@@ -217,7 +223,7 @@ export function UnifiedDayScreen() {
       <div className="vc-glass-card rounded-2xl">
         <p className="vc-text-lg">{plan.greeting}</p>
         <p className="vc-subtitle vc-text-xs mt-1 leading-relaxed">
-          Один поток: отметь день сверху вниз и нажми «Сохранить» внизу
+          Заполни сверху вниз — в конце «Сохранить день». Прогресс и профиль — в других вкладках.
         </p>
         <div className="flex flex-wrap gap-2 mt-3">
           <StreakBadge days={streak} />
@@ -305,7 +311,7 @@ export function UnifiedDayScreen() {
       </section>
 
       <section className="vc-glass-card rounded-2xl space-y-4">
-        <p className="vc-text-sm font-semibold">4 · Вода · сон · шаги</p>
+        <p className="vc-text-sm font-semibold">4 · Вода · сон · вес · шаги</p>
 
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -371,6 +377,26 @@ export function UnifiedDayScreen() {
 
         <div>
           <label className="vc-text-xs text-[var(--text-secondary)] flex items-center gap-1 mb-1">
+            <Scale size={14} /> Вес сегодня, кг (необязательно)
+          </label>
+          <input
+            type="number"
+            step="0.1"
+            className="apple-input apple-input--metric w-full"
+            placeholder="70.0"
+            value={log.weightKg ?? ""}
+            onChange={(e) => {
+              setLog((l) => ({
+                ...l,
+                weightKg: e.target.value ? parseFloat(e.target.value) : undefined,
+              }));
+              markDirty();
+            }}
+          />
+        </div>
+
+        <div>
+          <label className="vc-text-xs text-[var(--text-secondary)] flex items-center gap-1 mb-1">
             <Footprints size={14} /> Шаги
           </label>
           <input
@@ -402,13 +428,25 @@ export function UnifiedDayScreen() {
         </div>
       </section>
 
-      <Link
-        href="/path"
-        className="flex items-center justify-between vc-glass-card rounded-2xl p-4 vc-text-sm text-[var(--accent)] font-semibold"
-      >
-        Прогресс и неделя
-        <ChevronRight size={16} />
-      </Link>
+      <section className="vc-glass-card rounded-2xl space-y-3">
+        <p className="vc-text-sm font-semibold flex items-center gap-1.5">
+          <Tags size={15} /> 5 · Плашки дня
+        </p>
+        <p className="vc-text-xs text-[var(--text-secondary)] -mt-1">
+          Отметь, что было — список настраивается в профиле
+        </p>
+        <DayTrackerTags
+          tags={trackingTags}
+          selected={dayTags}
+          onToggle={(id) => {
+            hapticLight();
+            setDayTags((prev) =>
+              prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+            );
+            markDirty();
+          }}
+        />
+      </section>
 
       <div className="vc-sticky-save">
         {saveError && (

@@ -149,7 +149,9 @@ export function SettingsForm() {
     if (t.id === "body" || t.id === "system") return true;
     if (showAdvanced && (t.id === "life" || t.id === "health")) return true;
     return false;
-  });
+  }).map((t) =>
+    GENERIC_MODE && t.id === "system" ? { ...t, label: "Настройки" } : t,
+  );
 
   const activeTab: Tab = settingsTabs.some((t) => t.id === tab) ? tab : "body";
 
@@ -173,6 +175,12 @@ export function SettingsForm() {
             >
               {showAdvanced ? "Скрыть расширенные настройки" : UI.advancedSettings}
             </button>
+          )}
+
+          {GENERIC_MODE && (
+            <p className="text-[12px] text-[var(--text-secondary)] mb-3">
+              Данные о себе на всё время. Запись за сегодня — только во вкладке «Мой день».
+            </p>
           )}
 
           {GENERIC_MODE && showAdvanced && (
@@ -370,9 +378,11 @@ export function SettingsForm() {
               Справочник: кейсы и исследования →
             </Link>
           )}
-          <Link href="/path#charts" className="apple-btn apple-btn-secondary w-full text-center">
-            Графики динамики →
-          </Link>
+          {!GENERIC_MODE && (
+            <Link href="/path#charts" className="apple-btn apple-btn-secondary w-full text-center">
+              Графики динамики →
+            </Link>
+          )}
           {!STANDALONE_MODE && (
             <button
               type="button"
