@@ -1,10 +1,14 @@
 "use client";
 
-import { Moon } from "lucide-react";
+import { BedDouble, CloudMoon, Moon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { hapticLight } from "@/lib/haptics";
 
-const PILLOW_HOURS = 1;
-const PILLOW_MIN = PILLOW_HOURS * 60;
+const PRESETS: { hours: number; label: string; Icon: LucideIcon }[] = [
+  { hours: 6, label: "6 ч", Icon: Moon },
+  { hours: 7, label: "7 ч", Icon: CloudMoon },
+  { hours: 8, label: "8 ч", Icon: BedDouble },
+];
 
 export function SleepPillowControl({
   sleepMinutes,
@@ -15,42 +19,56 @@ export function SleepPillowControl({
   targetMin: number;
   onChange: (min: number) => void;
 }) {
-  const pillows = Math.ceil(targetMin / PILLOW_MIN);
-  const filled = Math.min(pillows, Math.floor(sleepMinutes / PILLOW_MIN));
+  const currentHours = sleepMinutes / 60;
+  const targetHours = targetMin / 60;
+  const activePreset = PRESETS.find((p) => Math.abs(currentHours - p.hours) < 0.25)?.hours;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="vc-text-sm font-semibold flex items-center gap-1.5">
-          <Moon size={16} className="text-[var(--purple)]" /> Сон
+          <Moon size={16} className="text-[var(--purple,#8E7CC3)]" strokeWidth={1.75} /> Сон
         </span>
         <span className="vc-text-sm font-semibold tabular-nums">
-          {(sleepMinutes / 60).toFixed(1)} / {(targetMin / 60).toFixed(1)} ч
+          {currentHours > 0 ? currentHours.toFixed(1) : "—"} / {targetHours.toFixed(0)} ч
         </span>
       </div>
-      <div className="flex flex-wrap gap-2 justify-center">
-        {Array.from({ length: pillows }, (_, i) => {
-          const active = i < filled;
+
+      <div className="flex gap-2 justify-center">
+        {PRESETS.map(({ hours, label, Icon }) => {
+          const active = activePreset === hours;
           return (
             <button
-              key={i}
+              key={hours}
               type="button"
-              aria-label={`${PILLOW_HOURS} ч сна`}
               onClick={() => {
                 hapticLight();
-                const next = i < filled ? i * PILLOW_MIN : (i + 1) * PILLOW_MIN;
-                onChange(next);
+                onChange(active ? 0 : hours * 60);
               }}
-              className={`px-3 py-2 rounded-xl transition-all ${
-                active ? "bg-[var(--purple-soft)] scale-105" : "bg-[var(--bg-subtle)] opacity-50"
+              className={`flex flex-col items-center justify-center flex-1 max-w-[5.5rem] rounded-2xl px-2 py-3 transition-all border active:scale-95 ${
+                active
+                  ? "bg-[var(--purple-soft,#ede9fe)] border-[var(--purple,#8E7CC3)]/40 shadow-sm"
+                  : "bg-[var(--bg-subtle)] border-transparent hover:border-[var(--purple,#8E7CC3)]/20"
               }`}
             >
-              <span className="text-2xl leading-none">{active ? "🛏️" : "▫️"}</span>
+              <Icon
+                size={22}
+                className={active ? "text-[var(--purple,#8E7CC3)]" : "text-[var(--text-tertiary)]"}
+                strokeWidth={1.75}
+              />
+              <span
+                className={`vc-text-sm font-bold mt-1 ${active ? "text-[var(--purple,#8E7CC3)]" : "text-[var(--text-secondary)]"}`}
+              >
+                {label}
+              </span>
             </button>
           );
         })}
       </div>
-      <p className="vc-text-xs text-center text-[var(--text-tertiary)]">Подушка = {PILLOW_HOURS} ч сна</p>
+
+      <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
+        Нажми 6 / 7 / 8 ч · повтор — сброс
+      </p>
     </div>
   );
 }

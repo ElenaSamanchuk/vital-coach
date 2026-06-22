@@ -155,9 +155,4 @@ export function JournalCalendar({
   );
 }
 
-export function navigateToDay(date: Date) {
-  const iso = format(startOfDay(date), "yyyy-MM-dd");
-  const todayIso = format(new Date(), "yyyy-MM-dd");
-  const path = iso === todayIso ? "/" : `/?date=${iso}`;
-  window.location.href = path;
-}
+export { navigateToDay } from "@/lib/app-path";

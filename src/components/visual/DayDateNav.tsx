@@ -5,6 +5,7 @@ import { addDays, format, isSameDay, parseISO, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { hapticLight } from "@/lib/haptics";
+import { syncDayInUrl } from "@/lib/app-path";
 
 export function DayDateNav({
   date,
@@ -80,15 +81,7 @@ export function useDayFromUrl(): [Date, (d: Date) => void] {
   const setDateWithUrl = (d: Date) => {
     const normalized = startOfDay(d);
     setDate(normalized);
-    const iso = format(normalized, "yyyy-MM-dd");
-    const todayIso = format(new Date(), "yyyy-MM-dd");
-    const url = new URL(window.location.href);
-    if (iso === todayIso) {
-      url.searchParams.delete("date");
-    } else {
-      url.searchParams.set("date", iso);
-    }
-    window.history.replaceState({}, "", url.pathname + url.search);
+    syncDayInUrl(normalized);
   };
 
   return [date, setDateWithUrl];

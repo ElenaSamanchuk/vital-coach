@@ -18,17 +18,18 @@ import {
   parseWorkoutChoices,
   serializeWorkoutChoices,
 } from "@/lib/today-choices";
-import { DayMiniRings, MINI_RING_COLORS } from "./visual/DayMiniRings";
+import { DayOverviewPanel } from "./visual/DayOverviewPanel";
+import { MINI_RING_COLORS } from "./visual/DayMiniRings";
 import {
   parseLifePulseFromLog,
   emptyLifePulseDay,
   togglePulseItem,
   LIFE_PULSE_ITEMS,
-  LIFE_PULSE_META,
   type LifePulseDay,
   type LifePulseKey,
 } from "@/lib/life-pulse";
-import { hapticLight, hapticSuccess } from "@/lib/haptics";
+import { lifePulseIconName } from "@/lib/life-pulse-icons";
+import { syncDayInUrl } from "@/lib/app-path";
 import { WaterDropControl } from "./visual/WaterDropControl";
 import { SleepPillowControl } from "./visual/SleepPillowControl";
 import { MealEditorSection, sumMealCalories } from "./day/MealEditorSection";
@@ -37,7 +38,6 @@ import { workoutImpact } from "@/lib/impact-motivation";
 import { genericLeisureCards, genericWorkoutOptions } from "@/lib/generic-day-catalogs";
 import { CycleDayCard } from "./visual/CycleDayCard";
 import { DayMemoryCard } from "./visual/DayMemoryCard";
-import { DayDiversityStrip } from "./visual/DayDiversityStrip";
 import { DayPhotoUpload } from "./visual/DayPhotoUpload";
 import { DayDateNav, readInitialDayFromUrl } from "./visual/DayDateNav";
 import { JournalCalendar } from "./visual/JournalCalendar";
@@ -45,6 +45,7 @@ import { computeDayDiversity } from "@/lib/day-diversity";
 import { findDayMemories } from "@/lib/day-memories";
 import { syncAndroidSteps, isAndroidNative } from "@/lib/android-steps";
 import { parsePeriodMeta } from "@/lib/period-tracking";
+import { hapticLight, hapticSuccess } from "@/lib/haptics";
 
 interface LogFields {
   mood: number;
@@ -94,6 +95,7 @@ export function UnifiedDayScreen() {
   const [lastPeriodStart, setLastPeriodStart] = useState<string | null>(null);
   const [cycleLength, setCycleLength] = useState(28);
   const [periodDays, setPeriodDays] = useState(5);
+  const [assessmentJson, setAssessmentJson] = useState<string | null>(null);
   const [memories, setMemories] = useState<ReturnType<typeof findDayMemories>>([]);
 
   const dateIso = format(viewDate, "yyyy-MM-dd");
@@ -111,6 +113,7 @@ export function UnifiedDayScreen() {
       setLastPeriodStart(profile.lastPeriodStart ?? null);
       setCycleLength(profile.cycleLength ?? 28);
       setPeriodDays(parsePeriodMeta(profile.assessmentJson).periodDays);
+      setAssessmentJson(profile.assessmentJson ?? null);
       setPlan(d.plan);
       if (d.todayLog?.mealChoices) {
         try {
@@ -208,16 +211,14 @@ export function UnifiedDayScreen() {
     [],
   );
 
-  const pulsePickItems = (key: LifePulseKey): HorizontalPickItem[] => {
-    const SphereIcon = LIFE_PULSE_META[key].icon;
-    return LIFE_PULSE_ITEMS[key].map((item) => ({
+  const pulsePickItems = (key: LifePulseKey): HorizontalPickItem[] =>
+    LIFE_PULSE_ITEMS[key].map((item) => ({
       id: item.id,
       title: item.label,
       subtitle: item.minutes != null ? `${item.minutes} мин` : undefined,
       impact: item.tip,
-      icon: SphereIcon,
+      iconName: lifePulseIconName(item.id),
     }));
-  };
 
   const burnedKcal = useMemo(() => {
     return workoutIds.reduce((sum, id) => {
@@ -362,6 +363,7 @@ export function UnifiedDayScreen() {
         date={viewDate}
         onDateChange={(d) => {
           setViewDate(d);
+          syncDayInUrl(d);
           setCalendarOpen(false);
         }}
         onOpenCalendar={() => setCalendarOpen((v) => !v)}
@@ -373,6 +375,7 @@ export function UnifiedDayScreen() {
           selectedDate={viewDate}
           onSelectDate={(d) => {
             setViewDate(d);
+            syncDayInUrl(d);
             setCalendarOpen(false);
           }}
           compact
@@ -385,23 +388,29 @@ export function UnifiedDayScreen() {
         </p>
       )}
 
-      <div className="vc-glass-card rounded-2xl px-2">
-        <DayMiniRings rings={miniRings} />
-      </div>
+      <DayOverviewPanel
+        rings={miniRings}
+        spheres={diversity.spheres}
+        score={diversity.score}
+        hint={diversity.hint}
+      />
 
-      {isToday && (
-        <CycleDayCard
-          lastPeriodStart={lastPeriodStart}
-          cycleLength={cycleLength}
-          periodDays={periodDays}
-          onUpdated={() => {
-            void load();
-            apiClient("/api/profile")
-              .then((r) => r.json())
-              .then((p) => setLastPeriodStart(p.lastPeriodStart ?? null));
-          }}
-        />
-      )}
+      <CycleDayCard
+        viewDate={viewDate}
+        lastPeriodStart={lastPeriodStart}
+        cycleLength={cycleLength}
+        periodDays={periodDays}
+        assessmentJson={assessmentJson}
+        onUpdated={() => {
+          void load();
+          apiClient("/api/profile")
+            .then((r) => r.json())
+            .then((p) => {
+              setLastPeriodStart(p.lastPeriodStart ?? null);
+              setAssessmentJson(p.assessmentJson ?? null);
+            });
+        }}
+      />
 
       <DayMemoryCard memories={memories} />
 
@@ -515,12 +524,6 @@ export function UnifiedDayScreen() {
           markDirty();
         }}
         searchPlaceholder="Поиск: фокус, встречи…"
-      />
-
-      <DayDiversityStrip
-        spheres={diversity.spheres}
-        score={diversity.score}
-        hint={diversity.hint}
       />
 
       <div className="vc-glass-card rounded-2xl space-y-5">
