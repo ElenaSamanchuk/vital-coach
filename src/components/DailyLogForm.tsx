@@ -2,6 +2,7 @@
 
 import { apiClient } from "@/lib/api-client";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import Link from "next/link";
 import { IconCard } from "./ui/IconCard";
@@ -107,7 +108,14 @@ interface LogData {
 type Tab = "quick" | "tasks" | "life" | "more";
 
 export function DailyLogForm() {
-  const [tab, setTab] = useState<Tab>("quick");
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<Tab>(() => {
+    const fromUrl = searchParams.get("tab");
+    if (fromUrl === "tasks" || fromUrl === "life" || fromUrl === "more" || fromUrl === "quick") {
+      return fromUrl;
+    }
+    return new Date().getHours() >= 18 ? "more" : "quick";
+  });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [log, setLog] = useState<LogData>({
     sleepQuality: 7,
@@ -152,11 +160,6 @@ export function DailyLogForm() {
   const [placePicks, setPlacePicks] = useState<import("@/lib/places-catalog").PlaceSpot[]>([]);
   const [leisureQuizJson, setLeisureQuizJson] = useState("{}");
   const [styleProfile, setStyleProfile] = useState<StyleProfile>(parseStyleProfile(null));
-
-  useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour >= 18) setTab("more");
-  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -497,6 +500,10 @@ export function DailyLogForm() {
 
       {tab === "quick" && (
         <>
+          <p className="vc-text-xs text-[var(--text-secondary)] px-1 leading-relaxed -mb-1">
+            {UI.diaryRoleHint}
+          </p>
+
           <IconCard icon={Smile} iconColor={CARD_ICON} title="Самочувствие" subtitle="Влияет на план завтра">
             <div className="flex justify-between gap-1 mb-4">
               {MOOD_VISUAL.map((preset) => {
@@ -619,6 +626,7 @@ export function DailyLogForm() {
             </IconCard>
           )}
 
+          {!GENERIC_MODE && (
           <label className="flex items-center gap-3 vc-glass-card rounded-2xl p-4 cursor-pointer">
             <input
               type="checkbox"
@@ -632,6 +640,7 @@ export function DailyLogForm() {
             />
             <span className="text-[14px]">{UI.movementDone}</span>
           </label>
+          )}
         </>
       )}
 
@@ -707,12 +716,14 @@ export function DailyLogForm() {
             />
           </IconCard>
 
+          {GENERIC_FEATURES.cycle && (
           <Link
             href="/settings?tab=body"
             className="block text-[12px] font-semibold text-[var(--accent)] px-1 -mt-2"
           >
             Цикл и лекарства → настройки «Тело»
           </Link>
+          )}
 
           <EveningRitualCard
             done={eveningRitual}

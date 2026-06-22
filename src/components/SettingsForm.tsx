@@ -1,7 +1,7 @@
 "use client";
 
 import { apiClient } from "@/lib/api-client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
@@ -16,7 +16,7 @@ import { parseStyleProfile } from "@/lib/style-guide";
 import type { TrackingTag } from "@/lib/tracking-tags";
 import { parseTrackingTags } from "@/lib/tracking-tags";
 import { LifeProfileForm } from "./LifeProfileForm";
-import { KeyParametersForm } from "./KeyParametersForm";
+import { KeyParametersForm, type KeyParametersFormHandle } from "./KeyParametersForm";
 import { BackupPanel } from "./BackupPanel";
 import { HealthHub } from "./HealthHub";
 import { WheelOfLife } from "./WheelOfLife";
@@ -72,6 +72,7 @@ export function SettingsForm() {
   const [savingWheel, setSavingWheel] = useState(false);
   const [trackingTags, setTrackingTags] = useState<TrackingTag[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const keyParamsRef = useRef<KeyParametersFormHandle>(null);
 
   useEffect(() => {
     const t = searchParams.get("tab");
@@ -91,6 +92,11 @@ export function SettingsForm() {
       if (w.wheelScores) setWheel(w.wheelScores);
     });
   }, []);
+
+  const saveAllBody = async () => {
+    await keyParamsRef.current?.save();
+    await saveProfile();
+  };
 
   const saveProfile = async (patch?: Partial<Profile>) => {
     if (!profile) return;
@@ -174,7 +180,7 @@ export function SettingsForm() {
             </p>
           )}
 
-          <KeyParametersForm showAdvanced={showAdvanced} />
+          <KeyParametersForm ref={keyParamsRef} showAdvanced={showAdvanced} hideSaveButton={GENERIC_MODE} />
           <Card title="Основное" subtitle="Рост, вес и год — в «Ключевых параметрах» выше">
             <div className="space-y-3">
               <label className="block">
@@ -196,6 +202,42 @@ export function SettingsForm() {
             </div>
           </Card>
 
+          {GENERIC_MODE && showAdvanced && (
+            <Card title="Цикл" subtitle="Для рекомендаций по фазам — только в расширенном режиме">
+            <ProfileNumberField
+              label="Длина цикла, дней"
+              value={profile.cycleLength}
+              min={21}
+              max={45}
+              onCommit={(n) => setProfile({ ...profile, cycleLength: Math.round(n) })}
+            />
+            <label className="block mt-3">
+              <span className="vc-label">Начало последних месячных</span>
+              <input
+                type="date"
+                className="apple-input mt-1"
+                value={profile.lastPeriodStart?.split("T")[0] ?? ""}
+                onChange={(e) =>
+                  setProfile({ ...profile, lastPeriodStart: e.target.value || null })
+                }
+              />
+            </label>
+          </Card>
+          )}
+
+          {GENERIC_MODE && showAdvanced && (
+          <Card title="Лекарства" subtitle="Что принимаешь регулярно">
+            <input
+              className="apple-input"
+              placeholder="Тироксин, витамин D, доза…"
+              value={profile.thyroidMedication}
+              onChange={(e) => setProfile({ ...profile, thyroidMedication: e.target.value })}
+            />
+          </Card>
+          )}
+
+          {!GENERIC_MODE && (
+            <>
           <Card title="Цикл" subtitle="Единственное место — для рекомендаций по фазам">
             <ProfileNumberField
               label="Длина цикла, дней"
@@ -225,6 +267,8 @@ export function SettingsForm() {
               onChange={(e) => setProfile({ ...profile, thyroidMedication: e.target.value })}
             />
           </Card>
+            </>
+          )}
 
           <TrackingTagsEditor
             tags={trackingTags}
@@ -260,8 +304,8 @@ export function SettingsForm() {
             </Card>
           )}
 
-          <button type="button" onClick={() => saveProfile()} className="apple-btn apple-btn-primary w-full">
-            {saved ? "Сохранено ✓" : GENERIC_MODE ? UI.saveProfile : "Сохранить тело"}
+          <button type="button" onClick={() => void saveAllBody()} className="apple-btn apple-btn-primary w-full">
+            {saved ? "Сохранено ✓" : GENERIC_MODE ? UI.saveAllProfile : "Сохранить тело"}
           </button>
         </>
       )}
@@ -324,7 +368,7 @@ export function SettingsForm() {
               Справочник: кейсы и исследования →
             </Link>
           )}
-          <Link href="/progress" className="apple-btn apple-btn-secondary w-full text-center">
+          <Link href="/path#charts" className="apple-btn apple-btn-secondary w-full text-center">
             Графики динамики →
           </Link>
           {!STANDALONE_MODE && (

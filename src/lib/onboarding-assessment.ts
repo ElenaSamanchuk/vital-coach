@@ -53,7 +53,7 @@ export const DEFAULT_ASSESSMENT: OnboardingAssessment = {
   name: "",
   birthYear: 1991,
   heightCm: 170,
-  currentWeightKg: 80,
+  currentWeightKg: 70,
   targetWeightKg: 70,
   targetWaistCm: 72,
   targetHipsCm: 100,

@@ -31,11 +31,13 @@ export function CompletionRings({
   rings,
   centerLabel,
   centerSub,
+  vitalityHint,
   celebrate,
 }: {
   rings: RingSegment[];
   centerLabel: string;
   centerSub?: string;
+  vitalityHint?: string;
   celebrate?: boolean;
 }) {
   const ordered = rings.slice(0, 4);
@@ -80,6 +82,11 @@ export function CompletionRings({
       </div>
 
       <p className="text-center vc-text-sm text-[var(--text-secondary)] mt-1">{centerSub ?? "сегодня"}</p>
+      {vitalityHint && (
+        <p className="text-center vc-text-xs text-[var(--text-tertiary)] mt-1 px-2 leading-relaxed">
+          {vitalityHint}
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 w-full justify-center max-w-[300px] mx-auto">
         {ordered.map((ring) => (

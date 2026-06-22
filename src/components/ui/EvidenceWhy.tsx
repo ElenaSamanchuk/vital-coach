@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GENERIC_MODE } from "@/lib/app-config";
 import type { EvidenceBlock } from "@/lib/evidence-why";
 import { BookOpen, ChevronDown } from "lucide-react";
 import Link from "next/link";
@@ -48,12 +49,19 @@ export function EvidenceWhy({
           {block.action && (
             <p className="text-[12px] font-medium text-[var(--accent)]">{block.action}</p>
           )}
-          <Link
-            href="/guide"
-            className="text-[10px] text-[var(--text-tertiary)] tracking-wide uppercase hover:text-[var(--accent)]"
-          >
-            {block.source} → справочник
-          </Link>
+          {!GENERIC_MODE && (
+            <Link
+              href="/guide"
+              className="text-[10px] text-[var(--text-tertiary)] tracking-wide uppercase hover:text-[var(--accent)]"
+            >
+              {block.source} → справочник
+            </Link>
+          )}
+          {GENERIC_MODE && (
+            <p className="text-[10px] text-[var(--text-tertiary)] tracking-wide uppercase">
+              {block.source}
+            </p>
+          )}
         </div>
       )}
     </div>

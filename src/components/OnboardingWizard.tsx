@@ -8,11 +8,14 @@ import { DEFAULT_ASSESSMENT } from "@/lib/onboarding-assessment";
 import { APP_NAME, APP_TAGLINE, GENERIC_PROFILE } from "@/lib/app-config";
 import { APP_FLOW, UI } from "@/lib/product-copy";
 import { BRAND_GRADIENT } from "@/lib/design-tokens";
+import { ProfileNumberField } from "@/components/ui/ProfileNumberField";
 
-/** Один экран: имя + старт. Без регистрации и пароля. */
+/** Имя + опционально рост/вес → старт без регистрации */
 export function OnboardingWizard() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [heightCm, setHeightCm] = useState<number | undefined>();
+  const [currentWeightKg, setCurrentWeightKg] = useState<number | undefined>();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,10 +23,19 @@ export function OnboardingWizard() {
     setSaving(true);
     setError(null);
     try {
+      const body = {
+        ...DEFAULT_ASSESSMENT,
+        ...GENERIC_PROFILE,
+        name: name.trim(),
+        ...(heightCm != null && heightCm > 0 ? { heightCm } : {}),
+        ...(currentWeightKg != null && currentWeightKg > 0
+          ? { currentWeightKg, targetWeightKg: Math.max(50, currentWeightKg - 5) }
+          : {}),
+      };
       const res = await apiClient("/api/onboarding/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...DEFAULT_ASSESSMENT, ...GENERIC_PROFILE, name: name.trim() }),
+        body: JSON.stringify(body),
       });
       const result = await res.json();
       if (!res.ok) {
@@ -80,6 +92,25 @@ export function OnboardingWizard() {
               autoComplete="given-name"
             />
           </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <ProfileNumberField
+              label={UI.onboardingHeight}
+              value={heightCm}
+              min={120}
+              max={220}
+              onCommit={setHeightCm}
+            />
+            <ProfileNumberField
+              label={UI.onboardingWeight}
+              value={currentWeightKg}
+              step={0.1}
+              min={30}
+              max={200}
+              onCommit={setCurrentWeightKg}
+            />
+          </div>
+          <p className="text-[11px] text-[var(--text-tertiary)] -mt-2">{UI.onboardingBodySkip}</p>
 
           <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
             {UI.onboardingPrivacy}

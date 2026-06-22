@@ -2,7 +2,7 @@
  * Режим массового приложения: без медицинского и возрастного индивидуализма.
  * NEXT_PUBLIC_GENERIC_MODE=true — в браузере и PWA/APK.
  *
- * STANDALONE — GitHub Pages + APK: данные в localStorage, без сервера.
+ * STANDALONE — GitHub Pages + APK: данные в IndexedDB (local-store), без сервера.
  */
 export const STANDALONE_MODE =
   process.env.NEXT_PUBLIC_STANDALONE === "true" ||
@@ -21,7 +21,7 @@ export const PUBLIC_APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ??
   (typeof window !== "undefined" ? window.location.origin + BASE_PATH : "");
 
-/** Средний взрослый профиль — без диагнозов и цикла */
+  /** Средний взрослый профиль — без диагнозов и цикла */
 export const GENERIC_PROFILE = {
   birthYear: 1990,
   heightCm: 170,

@@ -43,7 +43,7 @@ export function TodayPersonalRecsCard({ plan }: { plan: PersonalizedDayPlan }) {
   const { topPick, recommendations } = plan;
   if (!topPick && recommendations.length === 0) return null;
 
-  const rest = recommendations.filter((r) => r.id !== topPick?.id).slice(0, 2);
+  const rest = recommendations.filter((r) => r.id !== topPick?.id).slice(0, 1);
 
   return (
     <div className="vc-glass-card rounded-2xl space-y-3">

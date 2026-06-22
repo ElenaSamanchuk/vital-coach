@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 /** Число в профиле — не пишет 0 пока печатаешь; сохранение на blur */
 export function ProfileNumberField({
@@ -18,11 +18,11 @@ export function ProfileNumberField({
   min?: number;
   max?: number;
 }) {
-  const [text, setText] = useState(value != null && value > 0 ? String(value) : "");
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
 
-  useEffect(() => {
-    setText(value != null && value > 0 ? String(value) : "");
-  }, [value]);
+  const display =
+    editing ? draft : value != null && value > 0 ? String(value) : "";
 
   return (
     <label className="block">
@@ -33,11 +33,16 @@ export function ProfileNumberField({
         min={min}
         max={max}
         className="apple-input mt-1"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
+        value={display}
+        onFocus={() => {
+          setEditing(true);
+          setDraft(value != null && value > 0 ? String(value) : "");
+        }}
+        onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
-          if (text.trim() === "") return;
-          const n = parseFloat(text);
+          setEditing(false);
+          if (draft.trim() === "") return;
+          const n = parseFloat(draft);
           if (Number.isNaN(n)) return;
           onCommit(n);
         }}

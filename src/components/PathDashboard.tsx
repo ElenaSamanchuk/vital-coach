@@ -3,7 +3,7 @@
 import { apiClient } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BarChart3, Target, TrendingUp } from "lucide-react";
+import { ArrowRight, BarChart3 } from "lucide-react";
 import { EmptyState } from "./ui/EmptyState";
 import { GlassCard } from "./ui/GlassCard";
 import { JourneyHero } from "./visual/JourneyHero";
@@ -38,7 +38,9 @@ import type { WheelScores } from "@/lib/life-spheres";
 import type { WeeklyInsights } from "@/lib/types";
 import { PageSkeleton } from "@/components/ui/Skeleton";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import { GENERIC_MODE } from "@/lib/app-config";
 import { UI } from "@/lib/product-copy";
+import { ProgressCharts } from "@/components/ProgressCharts";
 
 export function PathDashboard() {
   const [journey, setJourney] = useState<{
@@ -231,32 +233,28 @@ export function PathDashboard() {
     return <PageSkeleton cards={3} />;
   }
 
-  return (
-    <div className="vc-page vc-stagger">
-      {GENERIC_FEATURES.journeyBanner && (
-        <JourneyHero progress={journey.progress} nextTitle={journey.next?.title} />
-      )}
+  const weekBlock = (
+    <>
+      <GlassCard title="7 дней" subtitle="Кольца привычек">
+        <WeekSummaryRings {...weekRings} />
+        {weekTaskPct != null && (
+          <p className="text-[11px] text-[var(--text-secondary)] mt-3">
+            Дела закрыты на {Math.round(weekTaskPct * 100)}% за неделю
+          </p>
+        )}
+      </GlassCard>
 
-      <div className="flex items-center gap-2 px-1">
-        <StreakBadge days={journey.streak} freezeUsed={journey.freezeUsed} />
-      </div>
-
-      {GENERIC_FEATURES.deepPsychology && !journey.who5Filled && (
-        <Link href="/settings?tab=life" className="block">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)] p-4">
-            <p className="text-[13px] font-semibold">WHO-5 — 1 минута</p>
-            <p className="text-[11px] text-[var(--text-secondary)] mt-1">
-              Короткий опрос настроения помогает не ужесточать план, когда организм на пределе
-            </p>
-          </div>
-        </Link>
-      )}
-
-      {trends.length > 0 && (
-        <GlassCard title="Тренды" subtitle={UI.trendsSubtitle}>
-          <TrendArrows items={trends} />
-        </GlassCard>
-      )}
+      <GlassCard title="Неделя" subtitle="Авто из дневника">
+        {weekly && (weekly.wins.length > 0 || weekly.slipping.length > 0) ? (
+          <WeeklyDigest insights={weekly} />
+        ) : (
+          <EmptyState
+            icon={BarChart3}
+            title="Неделя только начинается"
+            description="После 3–4 записей в дневнике здесь появятся победы и зоны роста с объяснением «почему»."
+          />
+        )}
+      </GlassCard>
 
       <GlassCard title={UI.recommendationsTitle} subtitle={UI.recommendationsSubtitle}>
         <AnalyticsRecommendationsCard
@@ -268,6 +266,16 @@ export function PathDashboard() {
           limit={8}
         />
       </GlassCard>
+    </>
+  );
+
+  const detailsBlock = (
+    <>
+      {trends.length > 0 && (
+        <GlassCard title="Тренды" subtitle={UI.trendsSubtitle}>
+          <TrendArrows items={trends} />
+        </GlassCard>
+      )}
 
       {GENERIC_FEATURES.lifeCatalog && lifeSuggestions.length > 0 && (
         <GlassCard title="Компас жизни" subtitle="Что попробовать — из данных и интересов">
@@ -314,19 +322,10 @@ export function PathDashboard() {
       </GlassCard>
 
       {GENERIC_FEATURES.lifeCatalog && (
-      <GlassCard title="Метки" subtitle="За 35 дней">
-        <TagStats tags={trackingTags} counts={tagCounts} days={35} />
-      </GlassCard>
+        <GlassCard title="Метки" subtitle="За 35 дней">
+          <TagStats tags={trackingTags} counts={tagCounts} days={35} />
+        </GlassCard>
       )}
-
-      <GlassCard title="7 дней" subtitle="Кольца привычек">
-        <WeekSummaryRings {...weekRings} />
-        {weekTaskPct != null && (
-          <p className="text-[11px] text-[var(--text-secondary)] mt-3">
-            Дела закрыты на {Math.round(weekTaskPct * 100)}% за неделю
-          </p>
-        )}
-      </GlassCard>
 
       <GlassCard title="Самочувствие" subtitle="Энергия · настроение · стресс">
         <WellbeingTrend points={wellbeingPoints} />
@@ -336,16 +335,10 @@ export function PathDashboard() {
         <WeightSparkline points={weightPoints} target={journey.targetWeightKg} />
       </GlassCard>
 
-      <GlassCard title="Неделя" subtitle="Авто из дневника">
-        {weekly && (weekly.wins.length > 0 || weekly.slipping.length > 0) ? (
-          <WeeklyDigest insights={weekly} />
-        ) : (
-          <EmptyState
-            icon={BarChart3}
-            title="Неделя только начинается"
-            description="После 3–4 записей в дневнике здесь появятся победы и зоны роста с объяснением «почему»."
-          />
-        )}
+      <GlassCard title="Динамика" subtitle="30 дней · графики">
+        <div id="charts">
+          <ProgressCharts />
+        </div>
       </GlassCard>
 
       {GENERIC_FEATURES.deepPsychology && insight && (
@@ -378,11 +371,49 @@ export function PathDashboard() {
           </Link>
         </GlassCard>
       )}
+    </>
+  );
 
-      <Link href="/progress" className="flex items-center justify-center gap-2 text-[12px] text-[var(--text-secondary)]">
-        <TrendingUp size={14} />
-        Подробная динамика
-      </Link>
+  return (
+    <div className="vc-page vc-stagger">
+      {GENERIC_FEATURES.journeyBanner && (
+        <JourneyHero progress={journey.progress} nextTitle={journey.next?.title} />
+      )}
+
+      <div className="flex items-center gap-2 px-1">
+        <StreakBadge days={journey.streak} freezeUsed={journey.freezeUsed} />
+      </div>
+
+      {GENERIC_FEATURES.deepPsychology && !journey.who5Filled && (
+        <Link href="/settings?tab=life" className="block">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)] p-4">
+            <p className="text-[13px] font-semibold">WHO-5 — 1 минута</p>
+            <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+              Короткий опрос настроения помогает не ужесточать план, когда организм на пределе
+            </p>
+          </div>
+        </Link>
+      )}
+
+      {GENERIC_MODE ? (
+        <>
+          {weekBlock}
+          <details className="rounded-2xl border border-[var(--border)] bg-[var(--elevated)]">
+            <summary className="p-4 text-[13px] font-semibold cursor-pointer list-none flex items-center justify-between">
+              Подробнее
+              <span className="text-[11px] text-[var(--text-secondary)] font-normal">графики · календарь · бейджи</span>
+            </summary>
+            <div className="px-4 pb-4 border-t border-[var(--border)] pt-3 space-y-4">
+              {detailsBlock}
+            </div>
+          </details>
+        </>
+      ) : (
+        <>
+          {weekBlock}
+          {detailsBlock}
+        </>
+      )}
     </div>
   );
 }

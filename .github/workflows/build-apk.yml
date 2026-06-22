@@ -30,9 +30,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Generate app icons
-        run: npm run generate:icons
-
       - name: Add Capacitor Android
         run: |
           npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
@@ -40,6 +37,9 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: App icons and Android label (after cap sync)
+        run: npm run generate:icons
 
       - name: Build debug APK
         working-directory: android
@@ -50,7 +50,7 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vital-debug-apk
+          name: rhythm-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 90
 

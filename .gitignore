@@ -48,6 +48,7 @@ next-env.d.ts
 /prisma/dev.db
 
 # android (генерируется: npx cap add android)
+/dist-apk
 /android/.gradle
 /android/app/build
 /android/build

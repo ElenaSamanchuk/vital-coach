@@ -1,7 +1,7 @@
 "use client";
 
 import { apiClient } from "@/lib/api-client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   ChevronRight,
@@ -36,7 +36,6 @@ import { TimeHorizonRings } from "./visual/TimeHorizonRings";
 import { TodayOptionsStrip } from "./visual/TodayOptionsStrip";
 import { TodayPersonalRecsCard } from "./visual/TodayPersonalRecsCard";
 import { CompensationCard } from "./visual/CompensationCard";
-import { TaskTrackerPanel } from "./visual/TaskTrackerPanel";
 import { parseLifeActions, type LifeActions } from "@/lib/life-actions";
 import type { DayTask } from "@/lib/day-tasks";
 import { LifeDiscoverPanel } from "./visual/LifeDiscoverPanel";
@@ -56,8 +55,8 @@ import {
   getNutritionDayEvidence,
 } from "@/lib/evidence-why";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
-import type { DailyCoachPlan, WeeklyInsights } from "@/lib/types";
-import { AnalyticsRecommendationsCard } from "./visual/AnalyticsRecommendationsCard";
+import type { DailyCoachPlan } from "@/lib/types";
+import { UI } from "@/lib/product-copy";
 import {
   type MealChoicesRaw,
   slotChoices,
@@ -97,7 +96,7 @@ export function CoachDashboard({
   const [streak, setStreak] = useState(0);
   const [freezeUsed, setFreezeUsed] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
-  const [prevComplete, setPrevComplete] = useState(false);
+  const prevCompleteRef = useRef(false);
   const [journeyNext, setJourneyNext] = useState<{
     title: string;
     href: string;
@@ -118,27 +117,9 @@ export function CoachDashboard({
   const [todayStress, setTodayStress] = useState<number | undefined>();
   const [notificationPrefsJson, setNotificationPrefsJson] = useState<string>("{}");
   const [leisureQuizJson, setLeisureQuizJson] = useState<string>("{}");
-  const [weeklyInsights, setWeeklyInsights] = useState<WeeklyInsights | null>(null);
-  const [weekRecLogs, setWeekRecLogs] = useState<
-    {
-      mealChoices?: string | null;
-      leisureJson?: string | null;
-      workoutChoice?: string | null;
-      mood?: number | null;
-      weightKg?: number | null;
-      steps?: number | null;
-      waterMl?: number | null;
-      sleepMinutes?: number | null;
-      postMealWalks?: number | null;
-    }[]
-  >([]);
 
   const load = useCallback(() => {
-    Promise.all([
-      apiClient("/api/coach"),
-      apiClient("/api/journey"),
-      apiClient("/api/analytics?days=7"),
-    ]).then(async ([c, j, a]) => {
+    Promise.all([apiClient("/api/coach"), apiClient("/api/journey")]).then(async ([c, j]) => {
       const d = await c.json();
       const journey = await j.json();
       setPlan(d.plan);
@@ -175,11 +156,6 @@ export function CoachDashboard({
         setMealChoices({});
       }
       setWorkoutChoice(d.todayLog?.workoutChoice ?? "");
-      if (a.ok) {
-        const analytics = await a.json();
-        setWeeklyInsights(analytics.insights ?? null);
-        setWeekRecLogs((analytics.logs ?? []).slice(-7));
-      }
     }).finally(() => setLoading(false));
   }, []);
 
@@ -249,35 +225,6 @@ export function CoachDashboard({
         lifeActions: la,
       }),
     });
-  };
-
-  const patchTodayLog = async (patch: Record<string, unknown>) => {
-    hapticLight();
-    await apiClient("/api/daily", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        date: format(new Date(), "yyyy-MM-dd"),
-        partial: true,
-        ...patch,
-      }),
-    });
-  };
-
-  const addWater = (ml: number) => {
-    const next = todayWater + ml;
-    setTodayWater(next);
-    void patchTodayLog({ waterMl: next });
-  };
-
-  const setSleepMinutes = (minutes: number) => {
-    setTodaySleep(minutes);
-    void patchTodayLog({ sleepMinutes: minutes });
-  };
-
-  const setStepsCount = (n: number) => {
-    setTodaySteps(n);
-    void patchTodayLog({ steps: n });
   };
 
   const toggleRoutineStep = async (
@@ -369,14 +316,15 @@ export function CoachDashboard({
     wellbeingProgress >= 1;
 
   useEffect(() => {
-    if (allComplete && !prevComplete) {
+    if (allComplete && !prevCompleteRef.current) {
       setCelebrate(true);
       hapticSuccess();
       const t = setTimeout(() => setCelebrate(false), 800);
+      prevCompleteRef.current = true;
       return () => clearTimeout(t);
     }
-    setPrevComplete(allComplete);
-  }, [allComplete, prevComplete]);
+    if (!allComplete) prevCompleteRef.current = false;
+  }, [allComplete]);
 
   if (loading) {
     const isEveningLoad = new Date().getHours() >= 18;
@@ -485,6 +433,10 @@ export function CoachDashboard({
         </Link>
       )}
 
+      <p className="vc-text-xs text-[var(--text-secondary)] px-1 leading-relaxed">
+        {UI.todayRoleHint}
+      </p>
+
       <div className="vc-glass-card rounded-2xl">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -504,6 +456,7 @@ export function CoachDashboard({
             rings={rings}
             centerLabel={String(vitalityScore)}
             centerSub={vitalityLabel(vitalityScore)}
+            vitalityHint={UI.vitalityHint}
             celebrate={celebrate}
           />
         </div>
@@ -568,9 +521,8 @@ export function CoachDashboard({
           sleepMin={todaySleep}
           sleepTargetMin={480}
           steps={todaySteps}
-          onWaterAdd={addWater}
-          onSleepSet={setSleepMinutes}
-          onStepsSet={setStepsCount}
+          readOnlyBodyMetrics
+          diaryHref="/log"
         />
       </div>
 
@@ -593,24 +545,6 @@ export function CoachDashboard({
           recommendedWorkouts={plan.personalizedRecs?.highlights.workouts}
           recommendedLeisure={plan.personalizedRecs?.highlights.leisure}
         />
-      )}
-
-      {(weeklyInsights || weekRecLogs.length > 0) && (
-        <IconCard
-          icon={Sparkles}
-          iconColor={CARD_ICON}
-          title="Рекомендации"
-          subtitle="Из аналитики за неделю"
-        >
-          <AnalyticsRecommendationsCard
-            insights={weeklyInsights}
-            logs={weekRecLogs}
-            waterTargetMl={plan.dayTargets.waterTargetMl}
-            sleepTargetMin={480}
-            proteinTargetG={plan.dayTargets.proteinTargetG}
-            compact
-          />
-        </IconCard>
       )}
 
       {!GENERIC_FEATURES.dayRhythm ? null : (
@@ -641,17 +575,13 @@ export function CoachDashboard({
         <HorizonPlanCard plan={plan.horizonPlan} compact />
       )}
 
-      <IconCard
-        icon={Target}
-        iconColor={CARD_ICON}
-        title="Дела дня"
-        subtitle="Список · канбан в дневнике"
+      <Link
+        href="/log?tab=tasks"
+        className="flex items-center gap-2 vc-glass-card rounded-2xl p-4 text-[13px] font-semibold text-[var(--accent)]"
       >
-        <TaskTrackerPanel tasks={dayTasks} onChange={saveTasks} compact />
-        <Link href="/log" className="text-[11px] text-[var(--accent)] mt-2 inline-block">
-          {GENERIC_FEATURES.lifeCatalog ? "Канбан и каталог жизни →" : "Открыть канбан в дневнике →"}
-        </Link>
-      </IconCard>
+        <Target size={16} />
+        Дела дня — в Дневнике →
+      </Link>
 
       {GENERIC_FEATURES.lifeCatalog ? (
         <TodayDetailsPanel subtitle="Аналитика · идеи · культура · плашки дня">

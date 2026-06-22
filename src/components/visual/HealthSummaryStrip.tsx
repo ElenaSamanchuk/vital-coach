@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Droplets, Flame, Footprints, Moon } from "lucide-react";
+import Link from "next/link";
 
-/** Горизонтальные плашки: еда, вода, сон, шаги — с быстрым вводом на «Сегодня» */
+/** Показатели дня: еда из выбора; вода/сон/шаги — только просмотр на «Сегодня», ввод в Дневнике */
 export function HealthSummaryStrip({
   calories,
   calorieTarget,
@@ -11,6 +13,8 @@ export function HealthSummaryStrip({
   sleepMin,
   sleepTargetMin,
   steps,
+  diaryHref = "/log",
+  readOnlyBodyMetrics = true,
   onWaterAdd,
   onSleepSet,
   onStepsSet,
@@ -22,10 +26,15 @@ export function HealthSummaryStrip({
   sleepMin?: number;
   sleepTargetMin: number;
   steps?: number;
+  diaryHref?: string;
+  /** В mass-market: вода/сон/шаги только в Дневнике */
+  readOnlyBodyMetrics?: boolean;
   onWaterAdd?: (ml: number) => void;
   onSleepSet?: (minutes: number) => void;
   onStepsSet?: (steps: number) => void;
 }) {
+  const bodyReadOnly = readOnlyBodyMetrics;
+
   const items = [
     {
       id: "food",
@@ -36,6 +45,7 @@ export function HealthSummaryStrip({
       pct: calorieTarget > 0 ? calories / calorieTarget : 0,
       color: "var(--accent)",
       hint: "Из выбора ниже",
+      actions: undefined as { label: string; onClick: () => void }[] | undefined,
     },
     {
       id: "water",
@@ -45,13 +55,14 @@ export function HealthSummaryStrip({
       sub: ` / ${waterTarget} мл`,
       pct: waterTarget > 0 ? (waterMl ?? 0) / waterTarget : 0,
       color: "var(--purple)",
-      hint: "Нажми +",
-      actions: onWaterAdd
-        ? [
-            { label: "+250", onClick: () => onWaterAdd(250) },
-            { label: "+500", onClick: () => onWaterAdd(500) },
-          ]
-        : undefined,
+      hint: bodyReadOnly ? "→ Дневник" : "Нажми +",
+      actions:
+        !bodyReadOnly && onWaterAdd
+          ? [
+              { label: "+250", onClick: () => onWaterAdd(250) },
+              { label: "+500", onClick: () => onWaterAdd(500) },
+            ]
+          : undefined,
     },
     {
       id: "sleep",
@@ -61,14 +72,15 @@ export function HealthSummaryStrip({
       sub: ` / ${Math.round(sleepTargetMin / 60)}ч`,
       pct: sleepMin ? sleepMin / sleepTargetMin : 0,
       color: "var(--brown)",
-      hint: "Быстрый выбор",
-      actions: onSleepSet
-        ? [
-            { label: "6ч", onClick: () => onSleepSet(360) },
-            { label: "7ч", onClick: () => onSleepSet(420) },
-            { label: "8ч", onClick: () => onSleepSet(480) },
-          ]
-        : undefined,
+      hint: bodyReadOnly ? "→ Дневник" : "Быстрый выбор",
+      actions:
+        !bodyReadOnly && onSleepSet
+          ? [
+              { label: "6ч", onClick: () => onSleepSet(360) },
+              { label: "7ч", onClick: () => onSleepSet(420) },
+              { label: "8ч", onClick: () => onSleepSet(480) },
+            ]
+          : undefined,
     },
     {
       id: "steps",
@@ -78,23 +90,29 @@ export function HealthSummaryStrip({
       sub: " / 8k",
       pct: steps != null ? steps / 8000 : 0,
       color: "var(--pink)",
-      hint: "Быстрый выбор",
-      actions: onStepsSet
-        ? [
-            { label: "2k", onClick: () => onStepsSet(2000) },
-            { label: "5k", onClick: () => onStepsSet(5000) },
-            { label: "8k", onClick: () => onStepsSet(8000) },
-            { label: "10k", onClick: () => onStepsSet(10000) },
-          ]
-        : undefined,
+      hint: bodyReadOnly ? "→ Дневник" : "Быстрый выбор",
+      actions:
+        !bodyReadOnly && onStepsSet
+          ? [
+              { label: "2k", onClick: () => onStepsSet(2000) },
+              { label: "5k", onClick: () => onStepsSet(5000) },
+              { label: "8k", onClick: () => onStepsSet(8000) },
+            ]
+          : undefined,
     },
   ];
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2">
         <p className="vc-text-sm font-semibold text-[var(--text)]">Показатели дня</p>
-        <span className="vc-text-xs text-[var(--text-tertiary)]">листай →</span>
+        {bodyReadOnly ? (
+          <Link href={diaryHref} className="vc-text-xs text-[var(--accent)] shrink-0">
+            Вода · сон · шаги →
+          </Link>
+        ) : (
+          <span className="vc-text-xs text-[var(--text-tertiary)]">листай →</span>
+        )}
       </div>
       <div className="vc-pick-strip-wrap">
         <div className="vc-pick-strip vc-health-strip">

@@ -5,7 +5,7 @@
 | Режим | Хостинг | Данные | APK |
 |-------|---------|--------|-----|
 | **Dev / сервер** | `npm run dev` | SQLite + API | — |
-| **Standalone** | GitHub Pages | localStorage на телефоне | Capacitor → URL Pages |
+| **Standalone** | GitHub Pages | IndexedDB на телефоне | Capacitor → URL Pages |
 
 Standalone-сборка: `npm run build:pages` → папка `out/` → GitHub Actions → Pages.
 
@@ -39,7 +39,7 @@ APK — оболочка WebView (Capacitor), открывает тот же URL
 
 | # | Что | Зачем |
 |---|-----|-------|
-| 6 | **IndexedDB вместо localStorage** | Больше объём, фото дня |
+| 6 | **IndexedDB вместо localStorage** | ✅ Реализовано (`vital_coach_v2`) |
 | 7 | **GitHub Actions → APK artifact** | Автосборка debug APK при релизе |
 | 8 | **Play Store (опционально)** | TWA или полноценная публикация |
 | 9 | **Тесты standalone-api** | Стабильность без сервера |
@@ -49,7 +49,7 @@ APK — оболочка WebView (Capacitor), открывает тот же URL
 | # | Что | Зачем |
 |---|-----|-------|
 | 10 | **Landing + кнопка APK** | Страница на вашем сайте со ссылкой на Pages + download apk |
-| 11 | **Версионирование данных** | Миграции localStorage при обновлениях |
+| 11 | **Версионирование данных** | Миграции IndexedDB при обновлениях |
 | 12 | **Анонимная аналитика** | Plausible/Umami — без PII |
 
 ---
@@ -65,7 +65,7 @@ https://USER.github.io/REPO/
      ↓
 Capacitor APK (WebView) ──→ тот же URL
      ↓
-Пользователь: localStorage на телефоне
+Пользователь: IndexedDB на телефоне
 ```
 
 **Важно:** в настройках репозитория включите **Pages → Source: GitHub Actions**.

@@ -1,5 +1,5 @@
-import { ProgressCharts } from "@/components/ProgressCharts";
+import { redirect } from "next/navigation";
 
 export default function ProgressPage() {
-  return <ProgressCharts />;
+  redirect("/path#charts");
 }

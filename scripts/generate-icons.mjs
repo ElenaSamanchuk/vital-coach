@@ -87,4 +87,26 @@ for (const [folder, size] of Object.entries(foreground)) {
   await adaptiveForeground(fgSvg, size, out);
 }
 
+/** Синхронизирует app_name из capacitor.config.json → Android strings.xml */
+function syncAndroidAppName() {
+  const capPath = path.join(root, "capacitor.config.json");
+  const stringsPath = path.join(root, "android/app/src/main/res/values/strings.xml");
+  if (!fs.existsSync(capPath) || !fs.existsSync(stringsPath)) return;
+  const { appName } = JSON.parse(fs.readFileSync(capPath, "utf8"));
+  if (!appName) return;
+  let xml = fs.readFileSync(stringsPath, "utf8");
+  xml = xml.replace(
+    /<string name="app_name">[^<]*<\/string>/,
+    `<string name="app_name">${appName}</string>`,
+  );
+  xml = xml.replace(
+    /<string name="title_activity_main">[^<]*<\/string>/,
+    `<string name="title_activity_main">${appName}</string>`,
+  );
+  fs.writeFileSync(stringsPath, xml);
+  console.log(`android strings.xml → «${appName}»`);
+}
+
+syncAndroidAppName();
+
 console.log("\n✓ Icons generated");

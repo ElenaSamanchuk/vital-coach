@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useImperativeHandle, useMemo, useState, forwardRef } from "react";
 import { apiClient } from "@/lib/api-client";
-import { useEffect, useState } from "react";
 import { Card } from "./ui/Card";
 import { Badge } from "./ui/Badge";
 import { NutritionMetaCard } from "./visual/NutritionMetaCard";
@@ -17,6 +17,8 @@ import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { GENERIC_MODE } from "@/lib/app-config";
 import type { BodyGoal } from "@/lib/profile-derivation";
 import { ProfileNumberField } from "./ui/ProfileNumberField";
+
+export type KeyParametersFormHandle = { save: () => Promise<boolean> };
 
 interface KeyProfile {
   assessmentJson: string;
@@ -62,10 +64,12 @@ const FOCUS_OPTIONS = [
   { id: "relationships", label: "Отношения" },
 ];
 
-export function KeyParametersForm({ showAdvanced = false }: { showAdvanced?: boolean }) {
+export const KeyParametersForm = forwardRef<
+  KeyParametersFormHandle,
+  { showAdvanced?: boolean; hideSaveButton?: boolean; onSaved?: () => void }
+>(function KeyParametersForm({ showAdvanced = false, hideSaveButton = false, onSaved }, ref) {
   const [data, setData] = useState<KeyProfile | null>(null);
   const [saved, setSaved] = useState(false);
-  const [preview, setPreview] = useState<NutritionMeta | null>(null);
   const [prefs, setPrefs] = useState<ProfilePreferences>({ bodyGoal: "auto", lossPaceKgPerWeek: 0.5 });
 
   useEffect(() => {
@@ -75,19 +79,17 @@ export function KeyParametersForm({ showAdvanced = false }: { showAdvanced?: boo
     });
   }, []);
 
-  useEffect(() => {
-    if (!data) return;
-    setPreview(
-      deriveNutritionMeta({
-        ...profileToDerivationInput(data),
-        bodyGoal: prefs.bodyGoal,
-        lossPaceKgPerWeek: prefs.lossPaceKgPerWeek,
-      }),
-    );
+  const preview = useMemo(() => {
+    if (!data) return null;
+    return deriveNutritionMeta({
+      ...profileToDerivationInput(data),
+      bodyGoal: prefs.bodyGoal,
+      lossPaceKgPerWeek: prefs.lossPaceKgPerWeek,
+    });
   }, [data, prefs]);
 
-  const save = async () => {
-    if (!data || !preview) return;
+  const save = async (): Promise<boolean> => {
+    if (!data || !preview) return false;
     await apiClient("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -120,8 +122,12 @@ export function KeyParametersForm({ showAdvanced = false }: { showAdvanced?: boo
       }),
     });
     setSaved(true);
+    onSaved?.();
     setTimeout(() => setSaved(false), 2000);
+    return true;
   };
+
+  useImperativeHandle(ref, () => ({ save }), [data, preview, prefs]);
 
   if (!data) return null;
 
@@ -268,9 +274,11 @@ export function KeyParametersForm({ showAdvanced = false }: { showAdvanced?: boo
         </>
       )}
 
-      <button type="button" onClick={save} className="apple-btn apple-btn-primary w-full">
-        {saved ? "Сохранено — план пересчитан ✓" : "Сохранить и пересчитать план"}
-      </button>
+      {!hideSaveButton && (
+        <button type="button" onClick={() => void save()} className="apple-btn apple-btn-primary w-full">
+          {saved ? "Сохранено — план пересчитан ✓" : "Сохранить и пересчитать план"}
+        </button>
+      )}
     </Card>
   );
-}
+});
