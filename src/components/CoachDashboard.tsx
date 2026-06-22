@@ -70,6 +70,11 @@ import {
 import { isSportLeisureId } from "@/lib/leisure";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { GENERIC_MODE } from "@/lib/app-config";
+import { LifePulseCard } from "./visual/LifePulseCard";
+import {
+  parseLifePulseFromLog,
+  type LifePulseDay,
+} from "@/lib/life-pulse";
 import { PageSkeleton } from "@/components/ui/Skeleton";
 import type { ReactNode } from "react";
 
@@ -117,6 +122,9 @@ export function CoachDashboard({
   const [todayMood, setTodayMood] = useState<number | undefined>();
   const [todayStress, setTodayStress] = useState<number | undefined>();
   const [leisureQuizJson, setLeisureQuizJson] = useState<string>("{}");
+  const [lifePulse, setLifePulse] = useState<LifePulseDay>(() =>
+    parseLifePulseFromLog(null),
+  );
 
   const load = useCallback(() => {
     Promise.all([apiClient("/api/coach"), apiClient("/api/journey")]).then(async ([c, j]) => {
@@ -138,6 +146,7 @@ export function CoachDashboard({
       setDayTasks(d.plan?.dayTasks ?? []);
       const la = parseLifeActions(d.todayLog?.lifeActionsJson);
       setLifeActions(la);
+      setLifePulse(parseLifePulseFromLog(d.todayLog?.lifeActionsJson));
       setPainLevel(la.painLevel ?? 0);
       setPainZones(la.painZones ?? []);
       setTodayEnergy(d.todayLog?.energy ?? undefined);
@@ -224,6 +233,12 @@ export function CoachDashboard({
         lifeActions: la,
       }),
     });
+  };
+
+  const saveLifePulse = async (pulse: LifePulseDay) => {
+    setLifePulse(pulse);
+    const la: LifeActions = { ...lifeActions, _pulse: pulse };
+    await saveLifeActions(la);
   };
 
   const toggleRoutineStep = async (
@@ -516,6 +531,18 @@ export function CoachDashboard({
           diaryHref="/log"
         />
       </div>
+
+      {GENERIC_FEATURES.lifePulse && (
+        <>
+          <LifePulseCard pulse={lifePulse} onChange={saveLifePulse} />
+          <Link
+            href="/log?tab=balance"
+            className="block text-center vc-text-xs text-[var(--accent)] -mt-2"
+          >
+            Подробнее в дневнике →
+          </Link>
+        </>
+      )}
 
       {plan.personalizedRecs && (
         <TodayPersonalRecsCard plan={plan.personalizedRecs} />

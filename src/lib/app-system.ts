@@ -14,11 +14,11 @@ export const APP_RULES = {
 export const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   "/": {
     title: "Сегодня",
-    subtitle: GENERIC_MODE ? "Еда · движение · дневник" : "Выбери еду и движение",
+    subtitle: GENERIC_MODE ? "Еда · баланс · движение" : "Выбери еду и движение",
   },
   "/log": {
     title: "Дневник",
-    subtitle: GENERIC_MODE ? "Запись дня" : "Дела · уход · самочувствие",
+    subtitle: GENERIC_MODE ? "Запись дня · баланс" : "Дела · уход · самочувствие",
   },
   "/path": {
     title: "Прогресс",

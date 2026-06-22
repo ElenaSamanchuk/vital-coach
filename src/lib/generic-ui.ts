@@ -14,4 +14,5 @@ export const GENERIC_FEATURES = {
   dayRhythm: !GENERIC_MODE,
   wellbeingPain: !GENERIC_MODE,
   careHomeBlock: !GENERIC_MODE,
+  lifePulse: GENERIC_MODE,
 } as const;

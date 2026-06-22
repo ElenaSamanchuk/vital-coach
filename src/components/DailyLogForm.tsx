@@ -50,6 +50,12 @@ import { PageSkeleton } from "@/components/ui/Skeleton";
 import { PickChip } from "@/components/ui/PickChip";
 import { GENERIC_MODE } from "@/lib/app-config";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import { LifePulseCard } from "./visual/LifePulseCard";
+import {
+  parseLifePulseFromLog,
+  emptyLifePulseDay,
+  type LifePulseDay,
+} from "@/lib/life-pulse";
 import { UI } from "@/lib/product-copy";
 import {
   Smile,
@@ -105,13 +111,19 @@ interface LogData {
   notes?: string;
 }
 
-type Tab = "quick" | "tasks" | "life" | "more";
+type Tab = "quick" | "balance" | "tasks" | "life" | "more";
 
 export function DailyLogForm() {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>(() => {
     const fromUrl = searchParams.get("tab");
-    if (fromUrl === "tasks" || fromUrl === "life" || fromUrl === "more" || fromUrl === "quick") {
+    if (
+      fromUrl === "tasks" ||
+      fromUrl === "life" ||
+      fromUrl === "more" ||
+      fromUrl === "quick" ||
+      fromUrl === "balance"
+    ) {
       return fromUrl;
     }
     return new Date().getHours() >= 18 ? "more" : "quick";
@@ -160,6 +172,7 @@ export function DailyLogForm() {
   const [placePicks, setPlacePicks] = useState<import("@/lib/places-catalog").PlaceSpot[]>([]);
   const [leisureQuizJson, setLeisureQuizJson] = useState("{}");
   const [styleProfile, setStyleProfile] = useState<StyleProfile>(parseStyleProfile(null));
+  const [lifePulse, setLifePulse] = useState<LifePulseDay>(emptyLifePulseDay());
 
   useEffect(() => {
     Promise.all([
@@ -212,6 +225,7 @@ export function DailyLogForm() {
             setSelfcare(la.selfcare ?? []);
             setHome(la.home ?? []);
             setLifeActions(la);
+            setLifePulse(parseLifePulseFromLog(t.lifeActionsJson));
             setEveningRitual(la.ritual ?? []);
             if (t.workSatisfaction) setWorkSatisfaction(t.workSatisfaction);
           } catch {
@@ -292,10 +306,14 @@ export function DailyLogForm() {
   const save = async () => {
     setSaving(true);
     setSaveError(null);
-    const { lifeActions, leisure, intellect } = winsToPayload(wins);
-    lifeActions.selfcare = [...new Set([...(lifeActions.selfcare ?? []), ...selfcare])];
-    lifeActions.home = [...new Set([...(lifeActions.home ?? []), ...home])];
-    lifeActions.ritual = eveningRitual;
+    const { lifeActions: winActions, leisure, intellect } = winsToPayload(wins);
+    const mergedLifeActions = {
+      ...winActions,
+      selfcare: [...new Set([...(winActions.selfcare ?? []), ...selfcare])],
+      home: [...new Set([...(winActions.home ?? []), ...home])],
+      ritual: eveningRitual,
+      _pulse: lifePulse,
+    };
     try {
       const res = await apiClient("/api/daily", {
         method: "POST",
@@ -310,7 +328,7 @@ export function DailyLogForm() {
           workouts: log.workoutCompleted
             ? [{ type: "walk", durationMin: 30, intensity: "moderate", completed: true, notes: "" }]
             : [],
-          lifeActions,
+          lifeActions: mergedLifeActions,
           leisure,
           intellect,
           workSatisfaction,
@@ -432,6 +450,7 @@ export function DailyLogForm() {
       <SegmentTabs
         tabs={[
           { id: "quick", label: "Быстро" },
+          ...(GENERIC_FEATURES.lifePulse ? [{ id: "balance" as const, label: "Баланс" }] : []),
           { id: "tasks", label: "Дела" },
           ...(GENERIC_FEATURES.lifeCatalog ? [{ id: "life" as const, label: "Жизнь" }] : []),
           { id: "more", label: isEvening ? "Вечер" : "Подробнее" },
@@ -439,6 +458,10 @@ export function DailyLogForm() {
         value={tab}
         onChange={setTab}
       />
+
+      {tab === "balance" && GENERIC_FEATURES.lifePulse && (
+        <LifePulseCard pulse={lifePulse} onChange={setLifePulse} />
+      )}
 
       {tab === "tasks" && (
         <>

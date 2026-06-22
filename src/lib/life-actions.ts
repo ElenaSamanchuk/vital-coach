@@ -10,6 +10,8 @@ export interface LifeActions {
   painZones?: string[];
   selfcare?: string[];
   home?: string[];
+  /** Баланс 4 сфер — см. life-pulse.ts */
+  _pulse?: import("./life-pulse").LifePulseDay;
 }
 
 export function parseLifeActions(raw: string | null | undefined): LifeActions {

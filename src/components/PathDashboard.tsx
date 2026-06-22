@@ -41,6 +41,7 @@ import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { GENERIC_MODE } from "@/lib/app-config";
 import { UI } from "@/lib/product-copy";
 import { WeeklyGoalCard } from "./visual/WeeklyGoalCard";
+import { LifePulseWeekCard } from "./visual/LifePulseWeekCard";
 import { ProgressCharts } from "@/components/ProgressCharts";
 import { BookOpen } from "lucide-react";
 
@@ -97,6 +98,7 @@ export function PathDashboard() {
     sleepTargetMin: 480,
     proteinTargetG: 120,
   });
+  const [pulseWeekLogs, setPulseWeekLogs] = useState<{ lifeActionsJson?: string | null }[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -136,8 +138,10 @@ export function PathDashboard() {
         waterMl?: number;
         sleepMinutes?: number;
         postMealWalks?: number;
+        lifeActionsJson?: string | null;
       }[];
       setWeekRecLogs(allLogs.slice(-7));
+      setPulseWeekLogs(allLogs.slice(-7).map((l) => ({ lifeActionsJson: l.lifeActionsJson })));
       setCalendarDays(logsToCalendarDays(allLogs));
       setTagCounts(countTagUsage(allLogs));
 
@@ -252,6 +256,8 @@ export function PathDashboard() {
           </p>
         )}
       </GlassCard>
+
+      {GENERIC_FEATURES.lifePulse && <LifePulseWeekCard logs={pulseWeekLogs} />}
 
       <GlassCard title="Неделя" subtitle="Авто из дневника">
         {weekly && (weekly.wins.length > 0 || weekly.slipping.length > 0) ? (
