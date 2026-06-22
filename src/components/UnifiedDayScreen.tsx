@@ -35,6 +35,12 @@ import { MealEditorSection, sumMealCalories } from "./day/MealEditorSection";
 import { ActivityCardSection } from "./day/ActivityCardSection";
 import { workoutImpact } from "@/lib/impact-motivation";
 import { genericLeisureCards, genericWorkoutOptions } from "@/lib/generic-day-catalogs";
+import { CycleDayCard } from "./visual/CycleDayCard";
+import { DayMemoryCard } from "./visual/DayMemoryCard";
+import { DayDiversityStrip } from "./visual/DayDiversityStrip";
+import { DayPhotoUpload } from "./visual/DayPhotoUpload";
+import { computeDayDiversity } from "@/lib/day-diversity";
+import { findDayMemories } from "@/lib/day-memories";
 
 interface LogFields {
   mood: number;
@@ -44,6 +50,7 @@ interface LogFields {
   sleepMinutes?: number;
   steps?: number;
   weightKg?: number;
+  notes: string;
 }
 
 const DEFAULT_MEAL_SLOTS = ["breakfast", "lunch", "dinner"];
@@ -102,6 +109,7 @@ export function UnifiedDayScreen() {
     mood: 7,
     stress: 5,
     waterMl: 0,
+    notes: "",
   });
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -110,6 +118,10 @@ export function UnifiedDayScreen() {
   const [workoutPickerOpen, setWorkoutPickerOpen] = useState(false);
   const [sleepTargetMin, setSleepTargetMin] = useState(480);
   const [weightKg, setWeightKg] = useState(70);
+  const [dayPhoto, setDayPhoto] = useState("");
+  const [lastPeriodStart, setLastPeriodStart] = useState<string | null>(null);
+  const [cycleLength, setCycleLength] = useState(28);
+  const [memories, setMemories] = useState<ReturnType<typeof findDayMemories>>([]);
 
   const load = useCallback(() => {
     return Promise.all([apiClient("/api/coach"), apiClient("/api/profile")]).then(async ([c, p]) => {
@@ -117,6 +129,8 @@ export function UnifiedDayScreen() {
       const profile = await p.json();
       setSleepTargetMin(profile.sleepTargetMin ?? 480);
       setWeightKg(profile.currentWeightKg ?? 70);
+      setLastPeriodStart(profile.lastPeriodStart ?? null);
+      setCycleLength(profile.cycleLength ?? 28);
       setPlan(d.plan);
       if (d.todayLog?.mealChoices) {
         try {
@@ -130,6 +144,7 @@ export function UnifiedDayScreen() {
         }
       }
       setWorkoutChoice(d.todayLog?.workoutChoice ?? "");
+      setDayPhoto(d.todayLog?.dayPhoto ?? "");
       setLifePulse(parseLifePulseFromLog(d.todayLog?.lifeActionsJson));
       setLog({
         energy: d.todayLog?.energy ?? 7,
@@ -139,6 +154,7 @@ export function UnifiedDayScreen() {
         sleepMinutes: d.todayLog?.sleepMinutes ?? undefined,
         steps: d.todayLog?.steps ?? undefined,
         weightKg: d.todayLog?.weightKg ?? undefined,
+        notes: d.todayLog?.notes ?? "",
       });
       setDirty(false);
       setSaved(Boolean(d.todayLog?.mood != null));
@@ -148,6 +164,13 @@ export function UnifiedDayScreen() {
   useEffect(() => {
     load().finally(() => setLoading(false));
   }, [load]);
+
+  useEffect(() => {
+    apiClient("/api/analytics?days=400")
+      .then((r) => r.json())
+      .then((d) => setMemories(findDayMemories(d.logs ?? [])))
+      .catch(() => setMemories([]));
+  }, [saved]);
 
   const markDirty = () => {
     setDirty(true);
@@ -227,6 +250,17 @@ export function UnifiedDayScreen() {
 
   const leisureItems = useMemo(() => genericLeisureCards(), []);
 
+  const diversity = useMemo(
+    () =>
+      computeDayDiversity({
+        lifePulse,
+        leisureIds,
+        workoutIds,
+        steps: log.steps,
+      }),
+    [lifePulse, leisureIds, workoutIds, log.steps],
+  );
+
   const saveAll = async () => {
     setSaving(true);
     setSaveError(null);
@@ -254,6 +288,8 @@ export function UnifiedDayScreen() {
           sleepMinutes: log.sleepMinutes,
           steps: log.steps,
           weightKg: log.weightKg,
+          notes: log.notes,
+          dayPhoto,
           calories: totals?.calories ?? consumedKcal,
           proteinG: totals?.proteinG,
           lifeActions: { _pulse: lifePulse },
@@ -289,6 +325,19 @@ export function UnifiedDayScreen() {
       <div className="vc-glass-card rounded-2xl px-2">
         <DayMiniRings rings={miniRings} />
       </div>
+
+      <CycleDayCard
+        lastPeriodStart={lastPeriodStart}
+        cycleLength={cycleLength}
+        onUpdated={() => {
+          void load();
+          apiClient("/api/profile")
+            .then((r) => r.json())
+            .then((p) => setLastPeriodStart(p.lastPeriodStart ?? null));
+        }}
+      />
+
+      <DayMemoryCard memories={memories} />
 
       <section className="vc-glass-card rounded-2xl space-y-3">
         <p className="vc-text-sm font-semibold">Настроение</p>
@@ -435,6 +484,12 @@ export function UnifiedDayScreen() {
         }}
       />
 
+      <DayDiversityStrip
+        spheres={diversity.spheres}
+        score={diversity.score}
+        hint={diversity.hint}
+      />
+
       <div className="vc-glass-card rounded-2xl space-y-5">
         <WaterDropControl
           valueMl={log.waterMl}
@@ -495,6 +550,26 @@ export function UnifiedDayScreen() {
           />
         </div>
       </div>
+
+      <section className="vc-glass-card rounded-2xl space-y-3">
+        <p className="vc-text-sm font-semibold">Заметка и фото дня</p>
+        <textarea
+          className="apple-input min-h-[5rem] resize-none w-full"
+          placeholder="Коротко — что запомнилось…"
+          value={log.notes}
+          onChange={(e) => {
+            setLog((l) => ({ ...l, notes: e.target.value }));
+            markDirty();
+          }}
+        />
+        <DayPhotoUpload
+          photo={dayPhoto}
+          onChange={(p) => {
+            setDayPhoto(p);
+            markDirty();
+          }}
+        />
+      </section>
 
       <div className="vc-sticky-save">
         {saveError && (

@@ -8,6 +8,7 @@ import {
   type CatalogItem,
 } from "@/lib/generic-food-catalog";
 import { foodBenefitText, estimateMacros } from "@/lib/food-benefit-text";
+import { mealComboHints } from "@/lib/food-compatibility";
 import { hapticLight } from "@/lib/haptics";
 
 const SLOT_LABELS: Record<string, string> = {
@@ -111,6 +112,7 @@ export function MealEditorSection({
         const ids = choices[slot] ?? [];
         const items = ids.map(getCatalogItemById).filter((x): x is CatalogItem => Boolean(x));
         const kcal = items.reduce((s, i) => s + i.calories, 0);
+        const comboHints = mealComboHints(ids);
         const pickerOpen = openSlot === slot;
 
         return (
@@ -138,6 +140,15 @@ export function MealEditorSection({
                     onRemove={() => onChoiceToggle(slot, item.id)}
                   />
                 ))}
+                {comboHints.length > 0 && (
+                  <div className="rounded-xl bg-[var(--warning-soft)]/60 border border-[var(--warning)]/20 p-2.5 space-y-1">
+                    {comboHints.map((h) => (
+                      <p key={h} className="vc-text-xs text-[var(--text-secondary)] leading-snug">
+                        💡 {h}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

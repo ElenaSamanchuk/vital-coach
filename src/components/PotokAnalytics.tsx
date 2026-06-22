@@ -1,7 +1,7 @@
 "use client";
 
 import { apiClient } from "@/lib/api-client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LineChart,
   Line,
@@ -13,8 +13,15 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, subDays } from "date-fns";
 import { Card } from "./ui/Card";
+import { JournalHistoryList } from "./visual/JournalHistoryList";
+import {
+  buildCycleChartData,
+  parsePeriodMeta,
+  cycleStatus,
+} from "@/lib/period-tracking";
+import { journalEntries } from "@/lib/day-memories";
 
 interface LogRow {
   date: string;
@@ -26,18 +33,26 @@ interface LogRow {
   mood?: number;
   workoutChoice?: string;
   workouts?: number;
+  notes?: string;
+  dayPhoto?: string;
 }
 
 export function PotokAnalytics() {
   const [logs, setLogs] = useState<LogRow[]>([]);
+  const [profile, setProfile] = useState<{
+    lastPeriodStart?: string | null;
+    cycleLength?: number;
+    assessmentJson?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiClient("/api/analytics?days=30")
-      .then((r) => r.json())
-      .then((d) => {
+    Promise.all([apiClient("/api/analytics?days=90"), apiClient("/api/profile")])
+      .then(async ([a, p]) => {
+        const analytics = await a.json();
+        setProfile(await p.json());
         setLogs(
-          (d.logs ?? []).map((l: LogRow) => ({
+          (analytics.logs ?? []).map((l: LogRow) => ({
             ...l,
             dateLabel: format(parseISO(l.date.split("T")[0]), "d.M"),
             workouts: l.workoutChoice ? 1 : 0,
@@ -47,11 +62,36 @@ export function PotokAnalytics() {
       .finally(() => setLoading(false));
   }, []);
 
+  const periodMeta = useMemo(
+    () => parsePeriodMeta(profile?.assessmentJson),
+    [profile?.assessmentJson],
+  );
+
+  const periodStarts = useMemo(() => {
+    const starts = [...periodMeta.periodStarts];
+    const last = profile?.lastPeriodStart?.split("T")[0];
+    if (last && !starts.includes(last)) starts.unshift(last);
+    return starts;
+  }, [periodMeta.periodStarts, profile?.lastPeriodStart]);
+
+  const cycleChart = useMemo(() => {
+    const to = new Date();
+    const from = subDays(to, 89);
+    return buildCycleChartData(from, to, periodStarts, periodMeta.periodDays);
+  }, [periodStarts, periodMeta.periodDays]);
+
+  const journal = useMemo(() => journalEntries(logs, 24), [logs]);
+
+  const cycleLabel = cycleStatus(
+    profile?.lastPeriodStart ?? null,
+    profile?.cycleLength ?? 28,
+  ).label;
+
   if (loading) {
     return <div className="text-center py-8 text-[var(--text-secondary)]">Загрузка…</div>;
   }
 
-  if (logs.length === 0) {
+  if (logs.length === 0 && periodStarts.length === 0) {
     return (
       <p className="text-center py-12 vc-text-sm text-[var(--text-secondary)]">
         Сохрани несколько дней — здесь появятся графики
@@ -67,6 +107,32 @@ export function PotokAnalytics() {
 
   return (
     <div className="space-y-4 pb-8">
+      {periodStarts.length > 0 && (
+        <Card title="Цикл" subtitle={cycleLabel}>
+          <p className="vc-text-xs text-[var(--text-secondary)] mb-3">
+            Розовые столбцы — дни месячных (~{periodMeta.periodDays} дн. от 1-го дня)
+          </p>
+          <div className="h-36">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={cycleChart}>
+                {chartProps.grid}
+                {chartProps.x}
+                <YAxis hide domain={[0, 1]} />
+                {chartProps.tooltip}
+                <Bar dataKey="menstrual" fill="#D4869C" name="месячные" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="vc-text-xs text-[var(--text-tertiary)] mt-2">
+            Отмечай 1-й день на «Мой день» — график обновится
+          </p>
+        </Card>
+      )}
+
+      <Card title="Дневник" subtitle="Заметки и фото">
+        <JournalHistoryList entries={journal} />
+      </Card>
+
       {logs.some((l) => l.weightKg) && (
         <Card title="Вес">
           <div className="h-44">

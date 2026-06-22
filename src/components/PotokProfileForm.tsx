@@ -22,6 +22,7 @@ interface ProfileData {
   targetWeightKg: number;
   activityLevel: string;
   workActivityLevel: string;
+  cycleLength: number;
   assessmentJson: string;
   insulinResistance: boolean;
   hypothyroidism: boolean;
@@ -101,6 +102,7 @@ export function PotokProfileForm() {
         currentWeightKg: data.currentWeightKg,
         targetWeightKg: data.targetWeightKg,
         activityLevel: data.activityLevel,
+        cycleLength: data.cycleLength,
         assessmentJson: merged,
         insulinResistance: data.insulinResistance,
         hypothyroidism: data.hypothyroidism,
@@ -212,6 +214,21 @@ export function PotokProfileForm() {
             </select>
           </label>
         </div>
+      </Card>
+
+      <Card title="Цикл" subtitle="Длина цикла — для расчёта фазы">
+        <SwipeSlider
+          label="Длина цикла"
+          value={data.cycleLength}
+          onChange={(n) => setData({ ...data, cycleLength: Math.round(n) })}
+          min={21}
+          max={35}
+          step={1}
+          unit="дн."
+        />
+        <p className="vc-text-xs text-[var(--text-tertiary)] mt-2">
+          1-й день месячных отмечай на «Мой день» — история попадёт в аналитику
+        </p>
       </Card>
 
       <Card title="Здоровье" subtitle="Влияет на калории, воду и нагрузку">
