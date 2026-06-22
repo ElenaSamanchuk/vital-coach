@@ -118,22 +118,50 @@ export async function requestNotificationPermission(): Promise<boolean> {
 
 export function fireNotification(payload: ReminderPayload) {
   if (typeof window === "undefined" || Notification.permission !== "granted") return;
-  try {
-    const n = new Notification(payload.title, {
-      body: payload.body,
-      icon: `${BASE_PATH}/icons/icon-192.png`,
-      tag: `potok-${payload.kind}`,
-    });
-    if (payload.href) {
-      n.onclick = () => {
-        window.focus();
-        window.location.assign(payload.href!);
-        n.close();
-      };
-    }
+
+  const markFired = () => {
     const today = new Date().toISOString().slice(0, 10);
     localStorage.setItem(REMINDER_STORAGE_KEYS[payload.kind], `${today}-${payload.kind}`);
-  } catch {
-    /* */
-  }
+  };
+
+  const href =
+    payload.href ??
+    (BASE_PATH ? `${BASE_PATH.replace(/\/$/, "")}/` : "/");
+
+  const showViaWindow = () => {
+    try {
+      const n = new Notification(payload.title, {
+        body: payload.body,
+        icon: `${BASE_PATH}/icons/icon-192.png`.replace(/\/+/g, "/"),
+        tag: `potok-${payload.kind}`,
+      });
+      n.onclick = () => {
+        window.focus();
+        window.location.assign(href);
+        n.close();
+      };
+      markFired();
+    } catch {
+      /* */
+    }
+  };
+
+  void (async () => {
+    try {
+      const reg = await navigator.serviceWorker?.ready;
+      if (reg?.showNotification) {
+        await reg.showNotification(payload.title, {
+          body: payload.body,
+          icon: `${BASE_PATH}/icons/icon-192.png`.replace(/\/+/g, "/"),
+          tag: `potok-${payload.kind}`,
+          data: { url: href },
+        });
+        markFired();
+        return;
+      }
+    } catch {
+      /* fallback */
+    }
+    showViaWindow();
+  })();
 }

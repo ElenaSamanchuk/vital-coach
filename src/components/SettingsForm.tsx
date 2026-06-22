@@ -27,6 +27,7 @@ import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { UI } from "@/lib/product-copy";
 import { WeeklyReviewCard } from "./WeeklyReviewCard";
 import { AppFlowCard } from "./AppFlowCard";
+import { ApkDownloadCard } from "./ApkDownloadCard";
 import { ProfileNumberField } from "./ui/ProfileNumberField";
 
 interface Profile {
@@ -363,6 +364,7 @@ export function SettingsForm() {
             />
           </Card>
           <BackupPanel />
+          {GENERIC_MODE && STANDALONE_MODE && <ApkDownloadCard />}
           {!GENERIC_MODE && (
             <Link href="/guide" className="apple-btn apple-btn-secondary w-full text-center">
               Справочник: кейсы и исследования →

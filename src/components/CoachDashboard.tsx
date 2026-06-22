@@ -115,7 +115,6 @@ export function CoachDashboard({
   const [todayEnergy, setTodayEnergy] = useState<number | undefined>();
   const [todayMood, setTodayMood] = useState<number | undefined>();
   const [todayStress, setTodayStress] = useState<number | undefined>();
-  const [notificationPrefsJson, setNotificationPrefsJson] = useState<string>("{}");
   const [leisureQuizJson, setLeisureQuizJson] = useState<string>("{}");
 
   const load = useCallback(() => {
@@ -124,7 +123,6 @@ export function CoachDashboard({
       const journey = await j.json();
       setPlan(d.plan);
       setProfile(d.profile);
-      setNotificationPrefsJson(d.profile?.notificationPrefsJson ?? "{}");
       setLeisureQuizJson(d.profile?.leisureQuizJson ?? "{}");
       setStreak(journey.streak ?? 0);
       setFreezeUsed(journey.freezeUsed ?? false);
@@ -390,9 +388,6 @@ export function CoachDashboard({
     });
     load();
   };
-
-  const taskLabels = dayTasks.filter((t) => !t.done).map((t) => t.label);
-  const briefingLine = plan.healthBriefing?.[0]?.title;
 
   const inner = (
     <div className="vc-page vc-stagger">

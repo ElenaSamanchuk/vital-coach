@@ -3,21 +3,27 @@
 import { apiClient } from "@/lib/api-client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Leaf } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShieldCheck, Leaf } from "lucide-react";
 import { DEFAULT_ASSESSMENT } from "@/lib/onboarding-assessment";
 import { APP_NAME, APP_TAGLINE, GENERIC_PROFILE } from "@/lib/app-config";
 import { APP_FLOW, UI } from "@/lib/product-copy";
 import { BRAND_GRADIENT } from "@/lib/design-tokens";
 import { ProfileNumberField } from "@/components/ui/ProfileNumberField";
+import { ApkDownloadCard } from "@/components/ApkDownloadCard";
 
-/** Имя + опционально рост/вес → старт без регистрации */
+const SLIDE_COUNT = UI.onboardingSlides.length;
+
+/** Слайды + имя → старт без регистрации */
 export function OnboardingWizard() {
   const router = useRouter();
+  const [slide, setSlide] = useState(0);
   const [name, setName] = useState("");
   const [heightCm, setHeightCm] = useState<number | undefined>();
   const [currentWeightKg, setCurrentWeightKg] = useState<number | undefined>();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const onForm = slide >= SLIDE_COUNT;
 
   const start = async () => {
     setSaving(true);
@@ -65,71 +71,121 @@ export function OnboardingWizard() {
               <ShieldCheck size={14} />
               {UI.onboardingBadge}
             </p>
-            <h1 className="vc-display text-[1.375rem]">{UI.onboardingTitle}</h1>
-            <p className="vc-subtitle mt-2">
-              {APP_NAME} · {APP_TAGLINE}
-            </p>
+            {!onForm ? (
+              <>
+                <h1 className="vc-display text-[1.375rem]">{UI.onboardingSlides[slide].title}</h1>
+                <p className="vc-subtitle mt-2 leading-relaxed">{UI.onboardingSlides[slide].desc}</p>
+              </>
+            ) : (
+              <>
+                <h1 className="vc-display text-[1.375rem]">{UI.onboardingTitle}</h1>
+                <p className="vc-subtitle mt-2">
+                  {APP_NAME} · {APP_TAGLINE}
+                </p>
+              </>
+            )}
           </div>
 
-          <ol className="space-y-2 text-[12px] text-[var(--text-secondary)]">
-            {APP_FLOW.steps.map((s, i) => (
-              <li key={s.label} className="flex gap-2">
-                <span className="font-semibold text-[var(--accent)] shrink-0">{i + 1}.</span>
-                <span>
-                  <strong className="text-[var(--text)]">{s.label}</strong> — {s.desc}
-                </span>
-              </li>
-            ))}
-          </ol>
-
-          <label className="block">
-            <span className="vc-label">{UI.onboardingName}</span>
-            <input
-              className="apple-input mt-2"
-              placeholder="Имя"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoComplete="given-name"
-            />
-          </label>
-
-          <div className="grid grid-cols-2 gap-3">
-            <ProfileNumberField
-              label={UI.onboardingHeight}
-              value={heightCm}
-              min={120}
-              max={220}
-              onCommit={setHeightCm}
-            />
-            <ProfileNumberField
-              label={UI.onboardingWeight}
-              value={currentWeightKg}
-              step={0.1}
-              min={30}
-              max={200}
-              onCommit={setCurrentWeightKg}
-            />
-          </div>
-          <p className="text-[11px] text-[var(--text-tertiary)] -mt-2">{UI.onboardingBodySkip}</p>
-
-          <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
-            {UI.onboardingPrivacy}
-          </p>
-
-          {error && (
-            <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl">
-              {error}
-            </p>
+          {!onForm && (
+            <>
+              <div className="flex justify-center gap-1.5">
+                {UI.onboardingSlides.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === slide ? "w-6 bg-[var(--accent)]" : "w-1.5 bg-[var(--border)]"
+                    }`}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                {slide > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSlide((s) => s - 1)}
+                    className="apple-btn apple-btn-secondary flex-1 flex items-center justify-center gap-1"
+                  >
+                    <ChevronLeft size={16} />
+                    Назад
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSlide((s) => s + 1)}
+                  className="apple-btn apple-btn-primary flex-1 flex items-center justify-center gap-1"
+                >
+                  {slide < SLIDE_COUNT - 1 ? UI.onboardingNext : UI.onboardingCta}
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSlide(SLIDE_COUNT)}
+                className="w-full text-[12px] text-[var(--text-tertiary)]"
+              >
+                {UI.onboardingSkipSlides}
+              </button>
+            </>
           )}
 
-          <button
-            type="button"
-            onClick={start}
-            disabled={saving}
-            className="apple-btn apple-btn-primary w-full font-semibold"
-          >
-            {saving ? "Запуск…" : UI.onboardingCta}
-          </button>
+          {onForm && (
+            <>
+              <label className="block">
+                <span className="vc-label">{UI.onboardingName}</span>
+                <input
+                  className="apple-input mt-2"
+                  placeholder="Имя"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="given-name"
+                />
+              </label>
+
+              <div className="grid grid-cols-2 gap-3">
+                <ProfileNumberField
+                  label={UI.onboardingHeight}
+                  value={heightCm}
+                  min={120}
+                  max={220}
+                  onCommit={setHeightCm}
+                />
+                <ProfileNumberField
+                  label={UI.onboardingWeight}
+                  value={currentWeightKg}
+                  step={0.1}
+                  min={30}
+                  max={200}
+                  onCommit={setCurrentWeightKg}
+                />
+              </div>
+              <p className="text-[11px] text-[var(--text-tertiary)] -mt-2">{UI.onboardingBodySkip}</p>
+
+              <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
+                {UI.onboardingPrivacy}
+              </p>
+
+              <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
+                {APP_FLOW.note}
+              </p>
+
+              {error && (
+                <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={start}
+                disabled={saving}
+                className="apple-btn apple-btn-primary w-full font-semibold"
+              >
+                {saving ? "Запуск…" : UI.onboardingCta}
+              </button>
+
+              <ApkDownloadCard />
+            </>
+          )}
         </div>
       </main>
     </div>

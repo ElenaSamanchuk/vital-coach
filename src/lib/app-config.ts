@@ -21,6 +21,11 @@ export const PUBLIC_APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ??
   (typeof window !== "undefined" ? window.location.origin + BASE_PATH : "");
 
+/** Постоянная ссылка на последний APK (GitHub Releases) */
+export const APK_DOWNLOAD_URL =
+  process.env.NEXT_PUBLIC_APK_URL ??
+  "https://github.com/ElenaSamanchuk/vital-coach/releases/download/apk-latest/potok.apk";
+
   /** Средний взрослый профиль — без диагнозов и цикла */
 export const GENERIC_PROFILE = {
   birthYear: 1990,

@@ -61,9 +61,6 @@ export function TodayPersonalRecsCard({ plan }: { plan: PersonalizedDayPlan }) {
           ))}
         </div>
       )}
-      <p className="vc-text-xs text-[var(--text-tertiary)] text-center">
-        ★ в подборке ниже — рекомендованные варианты
-      </p>
     </div>
   );
 }

@@ -37,7 +37,7 @@ export function ReminderSettings({
         <span className="text-[12px] font-semibold">Напоминания</span>
       </div>
       <p className="text-[11px] text-[var(--text-secondary)]">
-        Утро: briefing + 3 дела · Вечер: ритуал (когда приложение открыто или PWA)
+        Утро — план дня · Вечер — закрыть дневник. Работает, когда приложение открыто или свёрнуто (PWA).
       </p>
       <label className="flex items-center gap-2 text-[13px]">
         <input

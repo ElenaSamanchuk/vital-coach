@@ -28,7 +28,7 @@ const urls = walk(outDir).filter((u) => !u.endsWith("sw.js"));
 const scope = `${basePath}/`.replace(/\/+/g, "/");
 
 const sw = `/* Vital offline shell — auto-generated */
-const CACHE = "vital-shell-v2";
+const CACHE = "potok-shell-v3";
 const PRECACHE = ${JSON.stringify(urls, null, 2)};
 
 self.addEventListener("install", (event) => {
@@ -61,6 +61,23 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       }).catch(() => cached || caches.match("${basePath}/index.html".replace(/\/+/g, "/")));
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url || "${scope.replace(/"/g, '\\"')}";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if ("focus" in client) {
+          return client.focus().then(() => {
+            if ("navigate" in client) return client.navigate(target);
+          });
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(target);
     })
   );
 });
