@@ -43,7 +43,7 @@ export const GENERIC_PROFILE = {
 
 export const APP_NAME = GENERIC_MODE ? "Поток" : "Vital Coach";
 export const APP_TAGLINE = GENERIC_MODE
-  ? "Еда · движение · дневник — без суеты"
+  ? "будь в потоке"
   : "Личный коуч: питание, тренировки, здоровье";
 
 /** Префикс файла резервной копии в standalone */

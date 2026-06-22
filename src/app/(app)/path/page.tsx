@@ -1,5 +1,5 @@
-import { PathDashboard } from "@/components/PathDashboard";
+import { PathPageContent } from "@/components/PathPageContent";
 
 export default function PathPage() {
-  return <PathDashboard />;
+  return <PathPageContent />;
 }

@@ -137,6 +137,8 @@ export function assessmentToProfilePayload(a: OnboardingAssessment) {
     insulinResistance: a.insulinResistance,
     hypothyroidism: a.hypothyroidism,
     cortisolIssues: a.cortisolIssues,
+    hormoneIssues: a.hormoneIssues,
+    endometriosis: a.endometriosis,
     pcosSuspected: a.pcosSuspected,
     surgeryRecovery: a.surgeryRecovery,
   });
@@ -191,6 +193,8 @@ export function getAssessmentSummary(a: OnboardingAssessment): string[] {
     insulinResistance: a.insulinResistance,
     hypothyroidism: a.hypothyroidism,
     cortisolIssues: a.cortisolIssues,
+    hormoneIssues: a.hormoneIssues,
+    endometriosis: a.endometriosis,
     pcosSuspected: a.pcosSuspected,
     surgeryRecovery: a.surgeryRecovery,
   });

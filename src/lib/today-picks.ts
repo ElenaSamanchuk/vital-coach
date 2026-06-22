@@ -69,7 +69,9 @@ export function pickTodayLeisure(ctx: {
   leisureFavorites?: string[];
 }): TodayLeisurePick[] {
   const weakSpheres = getLowestSpheres(ctx.wheelScores, 3);
-  const pool = [...LEISURE_ACTIVITIES, ...INTELLECT_ACTIVITIES];
+  const pool = [...LEISURE_ACTIVITIES, ...INTELLECT_ACTIVITIES].filter(
+    (a) => a.category !== "sport",
+  );
 
   const scored = pool
     .map((act) => {

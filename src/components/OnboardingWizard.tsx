@@ -3,40 +3,60 @@
 import { apiClient } from "@/lib/api-client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, ShieldCheck, Leaf } from "lucide-react";
+import { Leaf } from "lucide-react";
 import { DEFAULT_ASSESSMENT } from "@/lib/onboarding-assessment";
 import { APP_NAME, APP_TAGLINE, GENERIC_PROFILE } from "@/lib/app-config";
-import { APP_FLOW, UI } from "@/lib/product-copy";
 import { BRAND_GRADIENT } from "@/lib/design-tokens";
-import { ProfileNumberField } from "@/components/ui/ProfileNumberField";
-import { ApkDownloadCard } from "@/components/ApkDownloadCard";
+import { SwipeSlider } from "@/components/ui/SwipeSlider";
+import {
+  ACTIVITY_LEVEL_OPTIONS,
+  GENDER_OPTIONS,
+  GENERIC_HEALTH_OPTIONS,
+} from "@/lib/generic-health-options";
 
-const SLIDE_COUNT = UI.onboardingSlides.length;
-
-/** Слайды + имя → старт без регистрации */
+/** Один экран: данные для расчёта калорий, воды и активности */
 export function OnboardingWizard() {
   const router = useRouter();
-  const [slide, setSlide] = useState(0);
   const [name, setName] = useState("");
-  const [heightCm, setHeightCm] = useState<number | undefined>();
-  const [currentWeightKg, setCurrentWeightKg] = useState<number | undefined>();
+  const [heightCm, setHeightCm] = useState(170);
+  const [currentWeightKg, setCurrentWeightKg] = useState(70);
+  const [targetWeightKg, setTargetWeightKg] = useState(65);
+  const [gender, setGender] = useState("female");
+  const [birthDate, setBirthDate] = useState("1990-01-01");
+  const [activityLevel, setActivityLevel] = useState<"low" | "moderate" | "high">("moderate");
+  const [health, setHealth] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const onForm = slide >= SLIDE_COUNT;
+  const toggleHealth = (key: string) => {
+    setHealth((h) => ({ ...h, [key]: !h[key] }));
+  };
 
   const start = async () => {
+    if (!name.trim()) {
+      setError("Укажи имя");
+      return;
+    }
     setSaving(true);
     setError(null);
+    const birthYear = parseInt(birthDate.slice(0, 4), 10) || 1990;
     try {
       const body = {
         ...DEFAULT_ASSESSMENT,
         ...GENERIC_PROFILE,
         name: name.trim(),
-        ...(heightCm != null && heightCm > 0 ? { heightCm } : {}),
-        ...(currentWeightKg != null && currentWeightKg > 0
-          ? { currentWeightKg, targetWeightKg: currentWeightKg }
-          : {}),
+        heightCm,
+        currentWeightKg,
+        targetWeightKg,
+        birthYear,
+        activityLevel,
+        insulinResistance: health.insulinResistance ?? false,
+        hypothyroidism: health.hypothyroidism ?? false,
+        cortisolIssues: health.cortisolIssues ?? false,
+        hormoneIssues: health.hormoneIssues ?? false,
+        pcosSuspected: health.pcosSuspected ?? false,
+        endometriosis: health.endometriosis ?? false,
+        assessmentExtras: { gender, birthDate },
       };
       const res = await apiClient("/api/onboarding/complete", {
         method: "POST",
@@ -58,8 +78,8 @@ export function OnboardingWizard() {
 
   return (
     <div className="vc-app-shell vc-app-shell--page">
-      <main className="vc-app-main flex flex-col justify-center px-4 py-8 pb-14 vc-header-safe">
-        <div className="vc-surface p-5 space-y-5 w-full">
+      <main className="vc-app-main px-4 py-8 pb-14 vc-header-safe">
+        <div className="vc-surface p-5 space-y-5 w-full max-w-md mx-auto">
           <div className="text-center">
             <div
               className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-3"
@@ -67,125 +87,133 @@ export function OnboardingWizard() {
             >
               <Leaf className="text-white" size={28} />
             </div>
-            <p className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1 rounded-full mb-3">
-              <ShieldCheck size={14} />
-              {UI.onboardingBadge}
-            </p>
-            {!onForm ? (
-              <>
-                <h1 className="vc-display text-[1.375rem]">{UI.onboardingSlides[slide].title}</h1>
-                <p className="vc-subtitle mt-2 leading-relaxed">{UI.onboardingSlides[slide].desc}</p>
-              </>
-            ) : (
-              <>
-                <h1 className="vc-display text-[1.375rem]">{UI.onboardingTitle}</h1>
-                <p className="vc-subtitle mt-2">
-                  {APP_NAME} · {APP_TAGLINE}
-                </p>
-              </>
-            )}
+            <h1 className="vc-display text-[1.5rem]">{APP_NAME}</h1>
+            <p className="vc-subtitle mt-1">будь в потоке</p>
           </div>
 
-          {!onForm && (
-            <>
-              <div className="flex justify-center gap-1.5">
-                {UI.onboardingSlides.map((_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1.5 rounded-full transition-all ${
-                      i === slide ? "w-6 bg-[var(--accent)]" : "w-1.5 bg-[var(--border)]"
-                    }`}
-                  />
-                ))}
-              </div>
-              <div className="flex gap-2">
-                {slide > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSlide((s) => s - 1)}
-                    className="apple-btn apple-btn-secondary flex-1 flex items-center justify-center gap-1"
-                  >
-                    <ChevronLeft size={16} />
-                    Назад
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setSlide((s) => s + 1)}
-                  className="apple-btn apple-btn-primary flex-1 flex items-center justify-center gap-1"
+          <label className="block">
+            <span className="vc-label">Имя</span>
+            <input
+              className="apple-input mt-2"
+              placeholder="Как к тебе обращаться"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="given-name"
+            />
+          </label>
+
+          <SwipeSlider
+            label="Рост"
+            value={heightCm}
+            onChange={setHeightCm}
+            min={140}
+            max={210}
+            step={1}
+            unit="см"
+          />
+
+          <SwipeSlider
+            label="Вес сейчас"
+            value={currentWeightKg}
+            onChange={setCurrentWeightKg}
+            min={40}
+            max={150}
+            step={0.5}
+            unit="кг"
+            formatValue={(n) => n.toFixed(1)}
+          />
+
+          <SwipeSlider
+            label="Цель веса"
+            value={targetWeightKg}
+            onChange={setTargetWeightKg}
+            min={40}
+            max={150}
+            step={0.5}
+            unit="кг"
+            formatValue={(n) => n.toFixed(1)}
+          />
+
+          <label className="block">
+            <span className="vc-label">Пол</span>
+            <select
+              className="apple-input mt-2"
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+            >
+              {GENDER_OPTIONS.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="vc-label">Дата рождения</span>
+            <input
+              type="date"
+              className="apple-input mt-2"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+            />
+          </label>
+
+          <label className="block">
+            <span className="vc-label">Уровень активности</span>
+            <select
+              className="apple-input mt-2"
+              value={activityLevel}
+              onChange={(e) => setActivityLevel(e.target.value as typeof activityLevel)}
+            >
+              {ACTIVITY_LEVEL_OPTIONS.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div>
+            <p className="vc-label mb-2">Что влияет на расчёты</p>
+            <p className="vc-text-xs text-[var(--text-secondary)] mb-3 leading-relaxed">
+              Эти данные нужны для рекомендаций по питанию, движению и воде — мы учтём их в плане
+            </p>
+            <div className="space-y-2">
+              {GENERIC_HEALTH_OPTIONS.map((opt) => (
+                <label
+                  key={opt.key}
+                  className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[var(--bg-subtle)] cursor-pointer"
                 >
-                  {slide < SLIDE_COUNT - 1 ? UI.onboardingNext : UI.onboardingCta}
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSlide(SLIDE_COUNT)}
-                className="w-full text-[12px] text-[var(--text-tertiary)]"
-              >
-                {UI.onboardingSkipSlides}
-              </button>
-            </>
+                  <input
+                    type="checkbox"
+                    checked={health[opt.key] ?? false}
+                    onChange={() => toggleHealth(opt.key)}
+                    className="mt-0.5 accent-[var(--accent)]"
+                  />
+                  <span className="min-w-0">
+                    <span className="vc-text-sm font-medium block">{opt.label}</span>
+                    <span className="vc-text-xs text-[var(--text-tertiary)]">{opt.hint}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl">
+              {error}
+            </p>
           )}
 
-          {onForm && (
-            <>
-              <label className="block">
-                <span className="vc-label">{UI.onboardingName}</span>
-                <input
-                  className="apple-input mt-2"
-                  placeholder="Имя"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="given-name"
-                />
-              </label>
-
-              <div className="grid grid-cols-2 gap-3">
-                <ProfileNumberField
-                  label={UI.onboardingHeight}
-                  value={heightCm}
-                  min={120}
-                  max={220}
-                  onCommit={setHeightCm}
-                />
-                <ProfileNumberField
-                  label={UI.onboardingWeight}
-                  value={currentWeightKg}
-                  step={0.1}
-                  min={30}
-                  max={200}
-                  onCommit={setCurrentWeightKg}
-                />
-              </div>
-              <p className="text-[11px] text-[var(--text-tertiary)] -mt-2">{UI.onboardingBodySkip}</p>
-
-              <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
-                {UI.onboardingPrivacy}
-              </p>
-
-              <p className="text-[12px] text-[var(--text-secondary)] text-center leading-snug">
-                {APP_FLOW.note}
-              </p>
-
-              {error && (
-                <p className="text-[13px] text-[var(--danger)] bg-[var(--danger-soft)] p-3 rounded-xl">
-                  {error}
-                </p>
-              )}
-
-              <button
-                type="button"
-                onClick={start}
-                disabled={saving}
-                className="apple-btn apple-btn-primary w-full font-semibold"
-              >
-                {saving ? "Запуск…" : UI.onboardingCta}
-              </button>
-
-              <ApkDownloadCard />
-            </>
-          )}
+          <button
+            type="button"
+            onClick={start}
+            disabled={saving}
+            className="apple-btn apple-btn-primary w-full font-semibold"
+          >
+            {saving ? "Запуск…" : "Начать"}
+          </button>
         </div>
       </main>
     </div>

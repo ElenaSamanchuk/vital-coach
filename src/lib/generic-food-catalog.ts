@@ -212,6 +212,10 @@ function catalogToMealOption(c: CatalogItem): MealOption {
   };
 }
 
+export function getCatalogItemById(id: string): CatalogItem | undefined {
+  return GENERIC_FOOD_CATALOG.find((c) => c.id === id);
+}
+
 /** Все пункты каталога как MealOption — один пул для любого приёма */
 export function getGenericMealOptions(): MealOption[] {
   return GENERIC_FOOD_CATALOG.map(catalogToMealOption);

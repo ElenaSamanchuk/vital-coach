@@ -31,6 +31,15 @@ import { ApkDownloadCard } from "./ApkDownloadCard";
 import { ProfileNumberField } from "./ui/ProfileNumberField";
 import { LeisureQuizCard } from "./visual/LeisureQuizCard";
 import { parseLeisureQuiz } from "@/lib/leisure-quiz";
+import { PotokProfileForm } from "./PotokProfileForm";
+
+export function SettingsForm() {
+  if (GENERIC_MODE) {
+    return <PotokProfileForm />;
+  }
+
+  return <SettingsFormFull />;
+}
 
 interface Profile {
   name: string;
@@ -67,7 +76,7 @@ interface Profile {
 
 type Tab = "body" | "life" | "health" | "system";
 
-export function SettingsForm() {
+function SettingsFormFull() {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>("body");
   const [profile, setProfile] = useState<Profile | null>(null);

@@ -1,14 +1,13 @@
 "use client";
 
 import { apiClient } from "@/lib/api-client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { CheckCircle2, Droplets, Moon, Footprints, Scale, Tags, Leaf, Sparkles } from "lucide-react";
+import { CheckCircle2, Footprints, Scale, Plus } from "lucide-react";
 import type { DailyCoachPlan } from "@/lib/types";
+import type { WorkoutOption } from "@/lib/fitness";
 import { MOOD_VISUAL } from "@/lib/visual-icons";
 import { PageSkeleton } from "@/components/ui/Skeleton";
-import { TodayOptionsStrip } from "./visual/TodayOptionsStrip";
-import { LifePulseCard } from "./visual/LifePulseCard";
 import {
   type MealChoicesRaw,
   slotChoices,
@@ -19,117 +18,119 @@ import {
   parseWorkoutChoices,
   serializeWorkoutChoices,
 } from "@/lib/today-choices";
-import { CompletionRings, buildTodayRings } from "./visual/CompletionRings";
-import { computeVitalityScore, vitalityLabel } from "@/lib/vitality-score";
-import { TodayPersonalRecsCard } from "./visual/TodayPersonalRecsCard";
-import { isSportLeisureId } from "@/lib/leisure";
+import { DayMiniRings, MINI_RING_COLORS } from "./visual/DayMiniRings";
 import {
   parseLifePulseFromLog,
   emptyLifePulseDay,
+  togglePulseItem,
+  LIFE_PULSE_ITEMS,
+  LIFE_PULSE_META,
   type LifePulseDay,
+  type LifePulseKey,
 } from "@/lib/life-pulse";
-import { leisureIdsFromPulse } from "@/lib/life-pulse-mood";
-import { DayTrackerTags } from "./visual/DayTrackerTags";
-import { parseDayTags, parseTrackingTags, type TrackingTag } from "@/lib/tracking-tags";
-import {
-  buildDayFlowBlocks,
-  dayFlowProgress,
-} from "@/lib/day-flow-status";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
-import { UI } from "@/lib/product-copy";
-import { StreakBadge } from "./visual/StreakBadge";
+import { WaterDropControl } from "./visual/WaterDropControl";
+import { SleepPillowControl } from "./visual/SleepPillowControl";
+import { MealEditorSection, sumMealCalories } from "./day/MealEditorSection";
+import { ActivityCardSection } from "./day/ActivityCardSection";
+import { workoutImpact } from "@/lib/impact-motivation";
+import { genericLeisureCards, genericWorkoutOptions } from "@/lib/generic-day-catalogs";
 
 interface LogFields {
-  energy: number;
   mood: number;
+  energy: number;
   stress: number;
   waterMl: number;
   sleepMinutes?: number;
   steps?: number;
   weightKg?: number;
-  notes: string;
 }
 
-function DayFlowChecklist({ blocks }: { blocks: ReturnType<typeof buildDayFlowBlocks> }) {
-  const { done, total, pct } = dayFlowProgress(blocks);
+const DEFAULT_MEAL_SLOTS = ["breakfast", "lunch", "dinner"];
+
+function movementBurnTarget(calorieTarget: number): number {
+  return Math.max(200, Math.round(calorieTarget * 0.2));
+}
+
+function WorkoutCard({
+  w,
+  onRemove,
+}: {
+  w: WorkoutOption;
+  onRemove: () => void;
+}) {
+  const icons: Record<string, string> = {
+    walk: "🚶",
+    bike: "🚴",
+    pool: "🏊",
+    strength: "💪",
+    yoga: "🧘",
+    dance: "💃",
+    rest: "🌿",
+  };
   return (
-    <div className="vc-glass-card rounded-2xl p-4 space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="vc-text-sm font-semibold">Прогресс дня</p>
-          <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">
-            {done} из {total} · всё на одном экране
-          </p>
-        </div>
-        <span className="text-xl font-bold tabular-nums text-[var(--accent)]">{pct}%</span>
+    <button
+      type="button"
+      onClick={onRemove}
+      className="w-full text-left vc-glass-card rounded-2xl p-3 flex gap-3"
+    >
+      <div className="shrink-0 w-10 h-10 rounded-xl bg-[var(--bg-subtle)] flex items-center justify-center text-xl">
+        {icons[w.type] ?? "🏃"}
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
-        {blocks.map((b) => (
-          <div
-            key={b.id}
-            className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-[12px] ${
-              b.done ? "bg-[var(--success-soft)]" : "bg-[var(--bg-subtle)]"
-            }`}
-          >
-            <CheckCircle2
-              size={14}
-              className={b.done ? "text-[var(--success)] shrink-0" : "text-[var(--text-tertiary)] shrink-0"}
-            />
-            <span className={`font-medium truncate ${b.done ? "text-[var(--text)]" : "text-[var(--text-secondary)]"}`}>
-              {b.label}
-            </span>
-          </div>
-        ))}
+      <div className="min-w-0 flex-1">
+        <p className="vc-text-sm font-semibold">{w.title}</p>
+        <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
+          {w.durationMin} мин · ~{w.caloriesBurned ?? "—"} ккал
+        </p>
+        <p className="vc-text-xs text-[var(--text-tertiary)] mt-1.5 leading-snug">
+          {w.impact ?? workoutImpact(w.id, w.type)}
+        </p>
       </div>
-    </div>
+    </button>
   );
 }
 
-/** Один экран дня: настроение → еда → движение → баланс → вода/сон → одна кнопка «Сохранить» */
 export function UnifiedDayScreen() {
   const [plan, setPlan] = useState<DailyCoachPlan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [streak, setStreak] = useState(0);
   const [mealChoices, setMealChoices] = useState<MealChoicesRaw>({});
+  const [mealSlots, setMealSlots] = useState<string[]>(DEFAULT_MEAL_SLOTS);
   const [workoutChoice, setWorkoutChoice] = useState("");
   const [lifePulse, setLifePulse] = useState<LifePulseDay>(emptyLifePulseDay());
-  const [trackingTags, setTrackingTags] = useState<TrackingTag[]>([]);
-  const [dayTags, setDayTags] = useState<string[]>([]);
   const [log, setLog] = useState<LogFields>({
     energy: 7,
     mood: 7,
     stress: 5,
     waterMl: 0,
-    notes: "",
   });
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [softDay, setSoftDay] = useState(false);
-  const [celebrate, setCelebrate] = useState(false);
-  const prevCompleteRef = useRef(false);
+  const [workoutPickerOpen, setWorkoutPickerOpen] = useState(false);
+  const [sleepTargetMin, setSleepTargetMin] = useState(480);
+  const [weightKg, setWeightKg] = useState(70);
 
   const load = useCallback(() => {
-    return Promise.all([apiClient("/api/coach"), apiClient("/api/journey")]).then(async ([c, j]) => {
+    return Promise.all([apiClient("/api/coach"), apiClient("/api/profile")]).then(async ([c, p]) => {
       const d = await c.json();
-      const journey = await j.json();
+      const profile = await p.json();
+      setSleepTargetMin(profile.sleepTargetMin ?? 480);
+      setWeightKg(profile.currentWeightKg ?? 70);
       setPlan(d.plan);
-      setStreak(journey.streak ?? 0);
       if (d.todayLog?.mealChoices) {
         try {
           const parsed = JSON.parse(d.todayLog.mealChoices) as MealChoicesRaw;
           delete parsed._softDay;
           setMealChoices(parsed);
+          const slots = Object.keys(parsed).filter((k) => !k.startsWith("_"));
+          if (slots.length) setMealSlots([...new Set([...DEFAULT_MEAL_SLOTS, ...slots])]);
         } catch {
           setMealChoices({});
         }
       }
       setWorkoutChoice(d.todayLog?.workoutChoice ?? "");
-      setSoftDay(d.todayLog?.softDay === true || d.plan?.softDay === true);
       setLifePulse(parseLifePulseFromLog(d.todayLog?.lifeActionsJson));
-      setTrackingTags(parseTrackingTags(d.trackingTagsJson));
-      setDayTags(parseDayTags(d.todayLog?.dayTagsJson));
       setLog({
         energy: d.todayLog?.energy ?? 7,
         mood: d.todayLog?.mood ?? 7,
@@ -138,10 +139,9 @@ export function UnifiedDayScreen() {
         sleepMinutes: d.todayLog?.sleepMinutes ?? undefined,
         steps: d.todayLog?.steps ?? undefined,
         weightKg: d.todayLog?.weightKg ?? undefined,
-        notes: d.todayLog?.notes ?? "",
       });
       setDirty(false);
-      setSaved(Boolean(d.todayLog?.mood != null && d.todayLog?.waterMl != null));
+      setSaved(Boolean(d.todayLog?.mood != null));
     });
   }, []);
 
@@ -157,70 +157,75 @@ export function UnifiedDayScreen() {
   const mealChoicesForSlots = useMemo(() => slotChoices(mealChoices), [mealChoices]);
   const leisureIds = useMemo(() => leisureChoices(mealChoices), [mealChoices]);
   const workoutIds = useMemo(() => parseWorkoutChoices(workoutChoice), [workoutChoice]);
-  const mealSlots = plan?.mealPlan.map((m) => m.slot) ?? ["breakfast", "lunch", "snack", "dinner"];
 
-  const diaryDone = saved || log.mood != null;
-  const mealsDone = mealSlots.filter((s) => (mealChoicesForSlots[s]?.length ?? 0) > 0).length;
-  const mealsTotal = mealSlots.length;
-  const workoutPicked =
-    workoutIds.length > 0 ||
-    leisureIds.some((id) => isSportLeisureId(id)) ||
-    (log.steps ?? 0) >= 5000;
+  const consumedKcal = useMemo(() => sumMealCalories(mealChoicesForSlots), [mealChoicesForSlots]);
 
-  const wellbeingProgress = useMemo(() => {
-    let p = 0;
-    if (log.mood != null || diaryDone) p += 0.34;
-    const balanceTouched =
-      lifePulse.work.items.length +
-        lifePulse.care.items.length +
-        lifePulse.home.items.length +
-        lifePulse.leisure.items.length >
-      0;
-    if (balanceTouched) p += 0.33;
-    if (leisureIds.length > 0) p += 0.33;
-    return Math.min(1, p);
-  }, [log.mood, diaryDone, lifePulse, leisureIds]);
+  const allWorkouts = useMemo(() => genericWorkoutOptions(weightKg), [weightKg]);
 
-  const rings = useMemo(() => {
+  const burnedKcal = useMemo(() => {
+    return workoutIds.reduce((sum, id) => {
+      const w = allWorkouts.find((o) => o.id === id);
+      return sum + (w?.caloriesBurned ?? 0);
+    }, 0);
+  }, [allWorkouts, workoutIds]);
+
+  const selectedWorkouts = useMemo(() => {
+    return workoutIds
+      .map((id) => allWorkouts.find((o) => o.id === id))
+      .filter((w): w is WorkoutOption => Boolean(w));
+  }, [allWorkouts, workoutIds]);
+
+  const miniRings = useMemo(() => {
     if (!plan) return [];
-    return buildTodayRings({
-      mealSlots,
-      mealChoices: mealChoicesForSlots,
-      workoutChoice: workoutChoice || null,
-      steps: log.steps,
-      diaryDone,
-      moodLogged: log.mood != null,
-      wellbeingActionsDone: wellbeingProgress >= 0.67 ? 1 : 0,
-      leisureChoice: leisureIds[0] ?? "",
-    });
-  }, [plan, mealSlots, mealChoicesForSlots, workoutChoice, log.steps, log.mood, diaryDone, wellbeingProgress, leisureIds]);
+    const moveTarget = movementBurnTarget(plan.dayTargets.calorieTarget);
+    return [
+      {
+        id: "food",
+        label: "Питание",
+        current: consumedKcal,
+        target: plan.dayTargets.calorieTarget,
+        unit: "ккал",
+        color: MINI_RING_COLORS.food,
+      },
+      {
+        id: "move",
+        label: "Движение",
+        current: burnedKcal,
+        target: moveTarget,
+        unit: "ккал",
+        color: MINI_RING_COLORS.move,
+      },
+      {
+        id: "sleep",
+        label: "Сон",
+        current: (log.sleepMinutes ?? 0) / 60,
+        target: sleepTargetMin / 60,
+        unit: "ч",
+        color: MINI_RING_COLORS.sleep,
+        format: (n: number) => n.toFixed(1),
+      },
+      {
+        id: "water",
+        label: "Вода",
+        current: log.waterMl,
+        target: plan.dayTargets.waterTargetMl,
+        unit: "мл",
+        color: MINI_RING_COLORS.water,
+      },
+    ];
+  }, [plan, consumedKcal, burnedKcal, log.sleepMinutes, log.waterMl, sleepTargetMin]);
 
-  const vitalityScore = useMemo(() => computeVitalityScore(rings), [rings]);
-  const allComplete =
-    mealsDone >= mealsTotal && workoutPicked && diaryDone && wellbeingProgress >= 1;
+  const pulseItems = (key: LifePulseKey) =>
+    LIFE_PULSE_ITEMS[key].map((item) => ({
+      id: item.id,
+      label: item.label,
+      icon: LIFE_PULSE_META[key].icon,
+      minutes: item.minutes,
+      impact: item.tip,
+      impactLabel: item.moodBoost ? `настроение +${item.moodBoost}` : undefined,
+    }));
 
-  useEffect(() => {
-    if (allComplete && !prevCompleteRef.current) {
-      setCelebrate(true);
-      hapticSuccess();
-      const t = setTimeout(() => setCelebrate(false), 800);
-      prevCompleteRef.current = true;
-      return () => clearTimeout(t);
-    }
-    if (!allComplete) prevCompleteRef.current = false;
-  }, [allComplete]);
-
-  const flowBlocks = buildDayFlowBlocks({
-    mood: log.mood,
-    energy: log.energy,
-    mealChoices: mealChoicesForSlots,
-    mealSlots,
-    workoutIds,
-    lifePulse,
-    waterMl: log.waterMl,
-    sleepMinutes: log.sleepMinutes,
-    savedToday: saved,
-  });
+  const leisureItems = useMemo(() => genericLeisureCards(), []);
 
   const saveAll = async () => {
     setSaving(true);
@@ -230,15 +235,12 @@ export function UnifiedDayScreen() {
       await apiClient("/api/choices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, mealChoices, workoutChoice, softDay }),
+        body: JSON.stringify({ date, mealChoices, workoutChoice, softDay: false }),
       });
 
       const coachRes = await apiClient("/api/coach");
       const coach = await coachRes.json();
       const totals = coach.plan?.nutritionFramework?.totalsFromMeals;
-
-      const leisureFromPulse = leisureIdsFromPulse(lifePulse);
-      const leisureMerged = [...new Set([...leisureIds, ...leisureFromPulse])];
 
       const dailyRes = await apiClient("/api/daily", {
         method: "POST",
@@ -252,12 +254,10 @@ export function UnifiedDayScreen() {
           sleepMinutes: log.sleepMinutes,
           steps: log.steps,
           weightKg: log.weightKg,
-          notes: log.notes,
-          calories: totals?.calories,
+          calories: totals?.calories ?? consumedKcal,
           proteinG: totals?.proteinG,
           lifeActions: { _pulse: lifePulse },
-          dayTags,
-          leisure: leisureMerged,
+          leisure: leisureIds,
         }),
       });
       const result = await dailyRes.json().catch(() => ({}));
@@ -280,84 +280,18 @@ export function UnifiedDayScreen() {
     return <PageSkeleton cards={4} />;
   }
 
-  const totals = plan.nutritionFramework.totalsFromMeals;
   const moodMatch = MOOD_VISUAL.find(
     (p) => p.energy === log.energy && p.mood === log.mood && p.stress === log.stress,
   );
 
   return (
-    <div className="vc-page vc-stagger pb-28">
-      {plan.suggestSoftDay && !softDay && !plan.softDay && (
-        <button
-          type="button"
-          onClick={() => {
-            hapticLight();
-            setSoftDay(true);
-            markDirty();
-          }}
-          className="w-full rounded-2xl border border-[var(--warning)]/40 bg-[var(--warning-soft)] p-4 text-left"
-        >
-          <p className="text-[13px] font-semibold text-[var(--text)]">Предлагаем мягкий день</p>
-          <p className="text-[11px] text-[var(--text-secondary)] mt-1">
-            Стресс или усталость — смягчим план без чувства вины
-          </p>
-        </button>
-      )}
-
-      <div className="vc-glass-card rounded-2xl">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="vc-text-lg">{plan.greeting}</p>
-            <p className="vc-subtitle vc-text-xs mt-1 leading-relaxed">{plan.summary}</p>
-          </div>
-          {allComplete && (
-            <span className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-[var(--success)] bg-[var(--success-soft)] px-2 py-1 rounded-full">
-              <Sparkles size={12} />
-              День собран
-            </span>
-          )}
-        </div>
-
-        <div className="mt-4">
-          <CompletionRings
-            rings={rings}
-            centerLabel={String(vitalityScore)}
-            centerSub={vitalityLabel(vitalityScore)}
-            vitalityHint={UI.vitalityHint}
-            celebrate={celebrate}
-          />
-        </div>
-
-        <div className="flex flex-wrap gap-2 mt-4">
-          <StreakBadge days={streak} />
-          <span className="vc-text-xs text-[var(--text-secondary)] self-center">
-            {totals.calories} ккал · цель {plan.dayTargets.calorieTarget}
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              hapticLight();
-              setSoftDay((v) => !v);
-              markDirty();
-            }}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors ${
-              softDay || plan.softDay
-                ? "bg-[var(--accent)] text-white"
-                : "bg-[var(--bg-subtle)] text-[var(--text-secondary)]"
-            }`}
-          >
-            <Leaf size={12} />
-            {softDay || plan.softDay ? "Мягкий день" : "Мягкий день"}
-          </button>
-        </div>
+    <div className="vc-page vc-stagger pb-28 space-y-5">
+      <div className="vc-glass-card rounded-2xl px-2">
+        <DayMiniRings rings={miniRings} />
       </div>
 
-      {plan.personalizedRecs && <TodayPersonalRecsCard plan={plan.personalizedRecs} />}
-
-      <DayFlowChecklist blocks={flowBlocks} />
-
       <section className="vc-glass-card rounded-2xl space-y-3">
-        <p className="vc-text-sm font-semibold">1 · Как ты?</p>
+        <p className="vc-text-sm font-semibold">Настроение</p>
         <div className="flex justify-between gap-1">
           {MOOD_VISUAL.map((preset) => {
             const active = moodMatch?.label === preset.label;
@@ -393,123 +327,157 @@ export function UnifiedDayScreen() {
         </div>
       </section>
 
-      {plan.mealPlan && plan.todaySportExtras && plan.todayLeisure && (
-        <section>
-          <p className="vc-overline px-1 mb-2">2 · Еда · движение · досуг</p>
-          <TodayOptionsStrip
-            layout="stack"
-            genericFoodLayout
-            mealPlan={plan.mealPlan}
-            mealChoices={mealChoicesForSlots}
-            onMealSelect={(slot, id) => {
-              hapticLight();
-              setMealChoices(toggleSlotChoice(mealChoices, slot, id));
-              markDirty();
-            }}
-            sportOptions={plan.todaySportExtras}
-            selectedWorkoutIds={workoutIds}
-            onWorkoutSelect={(id) => {
-              hapticLight();
-              setWorkoutChoice(serializeWorkoutChoices(toggleWorkoutChoice(workoutIds, id)));
-              markDirty();
-            }}
-            leisure={plan.todayLeisure}
-            selectedLeisureIds={leisureIds}
-            onLeisureSelect={(id) => {
-              hapticLight();
-              setMealChoices(toggleLeisureChoice(mealChoices, id));
-              markDirty();
-            }}
-            recommendedMeals={plan.personalizedRecs?.highlights.meals}
-            recommendedWorkouts={plan.personalizedRecs?.highlights.workouts}
-            recommendedLeisure={plan.personalizedRecs?.highlights.leisure}
-          />
-        </section>
-      )}
+      <MealEditorSection
+        slots={mealSlots}
+        choices={mealChoicesForSlots}
+        onSlotsChange={(s) => {
+          setMealSlots(s);
+          markDirty();
+        }}
+        onChoiceToggle={(slot, id) => {
+          setMealChoices(toggleSlotChoice(mealChoices, slot, id));
+          markDirty();
+        }}
+      />
 
-      <section>
-        <p className="vc-overline px-1 mb-2">3 · Баланс — что было · работа · уход · быт</p>
-        <p className="vc-text-xs text-[var(--text-secondary)] px-1 mb-2 -mt-1">
-          Досуг выше — план и мотивация; здесь — отметить, как прошёл день
-        </p>
-        <LifePulseCard
-          pulse={lifePulse}
-          moodContext={{ mood: log.mood, energy: log.energy, stress: log.stress }}
-          onChange={(p) => {
-            setLifePulse(p);
+      <section className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <p className="vc-text-sm font-semibold">Движение</p>
+          <button
+            type="button"
+            onClick={() => {
+              hapticLight();
+              setWorkoutPickerOpen((v) => !v);
+            }}
+            className="w-8 h-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]"
+            aria-label="Добавить движение"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+        {selectedWorkouts.length > 0 && (
+          <div className="space-y-2">
+            {selectedWorkouts.map((w) => (
+              <WorkoutCard
+                key={w.id}
+                w={w}
+                onRemove={() => {
+                  hapticLight();
+                  setWorkoutChoice(serializeWorkoutChoices(toggleWorkoutChoice(workoutIds, w.id)));
+                  markDirty();
+                }}
+              />
+            ))}
+          </div>
+        )}
+        {workoutPickerOpen && (
+          <div className="grid grid-cols-2 gap-2">
+            {(allWorkouts)
+              .filter((w) => !workoutIds.includes(w.id))
+              .map((w) => (
+                <button
+                  key={w.id}
+                  type="button"
+                  onClick={() => {
+                    hapticLight();
+                    setWorkoutChoice(serializeWorkoutChoices(toggleWorkoutChoice(workoutIds, w.id)));
+                    markDirty();
+                  }}
+                  className="text-left rounded-xl border border-[var(--border)] bg-[var(--elevated)] p-2.5"
+                >
+                  <p className="vc-text-xs font-semibold">{w.title}</p>
+                  <p className="vc-text-xs text-[var(--text-tertiary)] mt-0.5">
+                    {w.durationMin} мин · ~{w.caloriesBurned} ккал
+                  </p>
+                </button>
+              ))}
+          </div>
+        )}
+      </section>
+
+      <ActivityCardSection
+        title="Досуг"
+        items={leisureItems}
+        selectedIds={leisureIds}
+        onToggle={(id) => {
+          setMealChoices(toggleLeisureChoice(mealChoices, id));
+          markDirty();
+        }}
+      />
+
+      <ActivityCardSection
+        title="Быт"
+        items={pulseItems("home")}
+        selectedIds={lifePulse.home.items}
+        onToggle={(id) => {
+          setLifePulse(togglePulseItem(lifePulse, "home", id));
+          markDirty();
+        }}
+      />
+
+      <ActivityCardSection
+        title="Уход за собой"
+        items={pulseItems("care")}
+        selectedIds={lifePulse.care.items}
+        onToggle={(id) => {
+          setLifePulse(togglePulseItem(lifePulse, "care", id));
+          markDirty();
+        }}
+      />
+
+      <ActivityCardSection
+        title="Работа"
+        items={pulseItems("work")}
+        selectedIds={lifePulse.work.items}
+        onToggle={(id) => {
+          setLifePulse(togglePulseItem(lifePulse, "work", id));
+          markDirty();
+        }}
+      />
+
+      <div className="vc-glass-card rounded-2xl space-y-5">
+        <WaterDropControl
+          valueMl={log.waterMl}
+          targetMl={plan.dayTargets.waterTargetMl}
+          onChange={(ml) => {
+            setLog((l) => ({ ...l, waterMl: ml }));
             markDirty();
           }}
         />
-      </section>
-
-      <section className="vc-glass-card rounded-2xl space-y-4">
-        <p className="vc-text-sm font-semibold">4 · Вода · сон · вес · шаги</p>
-
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="vc-text-xs text-[var(--text-secondary)] flex items-center gap-1">
-              <Droplets size={14} /> Вода
-            </span>
-            <span className="vc-text-sm font-semibold tabular-nums">
-              {log.waterMl} / {plan.dayTargets.waterTargetMl} мл
-            </span>
-          </div>
-          <div className="flex gap-2">
-            {[250, 500].map((ml) => (
-              <button
-                key={ml}
-                type="button"
-                onClick={() => {
-                  setLog((l) => ({ ...l, waterMl: l.waterMl + ml }));
-                  markDirty();
-                }}
-                className="flex-1 py-2 rounded-xl bg-[var(--bg-subtle)] vc-text-sm font-semibold"
-              >
-                +{ml} мл
-              </button>
-            ))}
-          </div>
-        </div>
+        <SleepPillowControl
+          sleepMinutes={log.sleepMinutes ?? 0}
+          targetMin={sleepTargetMin}
+          onChange={(min) => {
+            setLog((l) => ({ ...l, sleepMinutes: min }));
+            markDirty();
+          }}
+        />
 
         <div>
-          <label className="vc-text-xs text-[var(--text-secondary)] flex items-center gap-1 mb-1">
-            <Moon size={14} /> Сон, минут
+          <label className="vc-text-sm font-semibold flex items-center gap-1.5 mb-2">
+            <Footprints size={16} className="text-[var(--accent)]" /> Шаги
           </label>
-          <div className="flex gap-2 mb-2">
-            {[360, 420, 480].map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => {
-                  setLog((l) => ({ ...l, sleepMinutes: m }));
-                  markDirty();
-                }}
-                className={`flex-1 py-2 rounded-xl vc-text-sm font-semibold ${
-                  log.sleepMinutes === m ? "bg-[var(--accent)] text-white" : "bg-[var(--bg-subtle)]"
-                }`}
-              >
-                {m / 60} ч
-              </button>
-            ))}
-          </div>
           <input
             type="number"
             className="apple-input apple-input--metric w-full"
-            placeholder="420"
-            value={log.sleepMinutes ?? ""}
+            placeholder="8000"
+            value={log.steps ?? ""}
             onChange={(e) => {
               setLog((l) => ({
                 ...l,
-                sleepMinutes: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                steps: e.target.value ? parseInt(e.target.value, 10) : undefined,
               }));
               markDirty();
             }}
           />
+          <p className="vc-text-xs text-[var(--text-tertiary)] mt-1.5">
+            Автоматически — только в установленном приложении на Android. На iPhone введи вручную или из «Здоровья»
+          </p>
         </div>
 
         <div>
-          <label className="vc-text-xs text-[var(--text-secondary)] flex items-center gap-1 mb-1">
-            <Scale size={14} /> Вес сегодня, кг (необязательно)
+          <label className="vc-text-sm font-semibold flex items-center gap-1.5 mb-2">
+            <Scale size={16} /> Вес сегодня, кг
           </label>
           <input
             type="number"
@@ -526,59 +494,7 @@ export function UnifiedDayScreen() {
             }}
           />
         </div>
-
-        <div>
-          <label className="vc-text-xs text-[var(--text-secondary)] flex items-center gap-1 mb-1">
-            <Footprints size={14} /> Шаги
-          </label>
-          <input
-            type="number"
-            className="apple-input apple-input--metric w-full"
-            placeholder="8000"
-            value={log.steps ?? ""}
-            onChange={(e) => {
-              setLog((l) => ({
-                ...l,
-                steps: e.target.value ? parseInt(e.target.value, 10) : undefined,
-              }));
-              markDirty();
-            }}
-          />
-        </div>
-
-        <div>
-          <label className="vc-text-xs text-[var(--text-secondary)] mb-1 block">Заметка (необязательно)</label>
-          <textarea
-            className="apple-input min-h-[4rem] resize-none w-full"
-            placeholder="Что запомнилось за день…"
-            value={log.notes}
-            onChange={(e) => {
-              setLog((l) => ({ ...l, notes: e.target.value }));
-              markDirty();
-            }}
-          />
-        </div>
-      </section>
-
-      <section className="vc-glass-card rounded-2xl space-y-3">
-        <p className="vc-text-sm font-semibold flex items-center gap-1.5">
-          <Tags size={15} /> 5 · Плашки дня
-        </p>
-        <p className="vc-text-xs text-[var(--text-secondary)] -mt-1">
-          Отметь, что было — список настраивается в профиле
-        </p>
-        <DayTrackerTags
-          tags={trackingTags}
-          selected={dayTags}
-          onToggle={(id) => {
-            hapticLight();
-            setDayTags((prev) =>
-              prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-            );
-            markDirty();
-          }}
-        />
-      </section>
+      </div>
 
       <div className="vc-sticky-save">
         {saveError && (
@@ -592,9 +508,7 @@ export function UnifiedDayScreen() {
           </p>
         )}
         {dirty && (
-          <p className="text-center vc-text-xs text-[var(--warning)] mb-2">
-            Есть несохранённые изменения
-          </p>
+          <p className="text-center vc-text-xs text-[var(--warning)] mb-2">Есть несохранённые изменения</p>
         )}
         <button
           type="button"

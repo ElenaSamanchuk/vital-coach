@@ -2,17 +2,22 @@ import type { OnboardingAssessment } from "./onboarding-assessment";
 import { deriveNutritionTargets } from "./profile-derivation";
 
 /** Явный маппинг — совместим с Prisma Profile */
-export function buildProfileFromAssessment(a: OnboardingAssessment) {
+export function buildProfileFromAssessment(
+  a: OnboardingAssessment & { assessmentExtras?: { gender?: string; birthDate?: string } },
+) {
   const nutrition = deriveNutritionTargets({
     currentWeightKg: a.currentWeightKg,
     targetWeightKg: a.targetWeightKg,
     heightCm: a.heightCm,
     birthYear: a.birthYear,
+    gender: a.assessmentExtras?.gender as import("./profile-derivation").Gender | undefined,
     activityLevel: a.activityLevel,
     workActivityLevel: a.workActivityLevel,
     insulinResistance: a.insulinResistance,
     hypothyroidism: a.hypothyroidism,
     cortisolIssues: a.cortisolIssues,
+    hormoneIssues: a.hormoneIssues,
+    endometriosis: a.endometriosis,
     pcosSuspected: a.pcosSuspected,
     surgeryRecovery: a.surgeryRecovery,
   });
@@ -62,6 +67,7 @@ export function buildProfileFromAssessment(a: OnboardingAssessment) {
     assessmentJson: JSON.stringify({
       stressLevel: a.stressLevel,
       leisureInterests: a.leisureInterests,
+      ...(a.assessmentExtras ?? {}),
     }),
     onboardingDone: true,
     onboardingVersion: 2,

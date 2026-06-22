@@ -46,6 +46,17 @@ export const LEISURE_ACTIVITIES: ActivityItem[] = [
   { id: "boardgames", label: "Настолки", category: "social", moodBoost: 8, xpStat: "soul", icon: "Dice5", color: "#ff9500" },
   { id: "stretch", label: "Растяжка / мобилити", category: "sport", moodBoost: 7, xpStat: "body", icon: "StretchHorizontal", color: "#af52de" },
   { id: "run", label: "Лёгкий бег", category: "sport", moodBoost: 8, xpStat: "body", icon: "PersonStanding", color: "#34c759" },
+  // —— только досуг (не спорт) ——
+  { id: "tea", label: "Чай / кофе в тишине", category: "rest", moodBoost: 6, xpStat: "soul", icon: "Coffee", color: "#a2845e" },
+  { id: "lake", label: "Водоём / набережная", category: "rest", moodBoost: 8, xpStat: "energy", icon: "Waves", color: "#0071e3" },
+  { id: "parents", label: "Родители / семья", category: "social", moodBoost: 8, xpStat: "soul", icon: "Heart", color: "#ff9500" },
+  { id: "cafe", label: "Кафе", category: "social", moodBoost: 7, xpStat: "soul", icon: "Coffee", color: "#8B6F47" },
+  { id: "projector", label: "Кино на проекторе", category: "rest", moodBoost: 7, xpStat: "soul", icon: "Projector", color: "#5856d6" },
+  { id: "park", label: "Парк / сквер", category: "rest", moodBoost: 7, xpStat: "energy", icon: "Trees", color: "#30d158" },
+  { id: "beach", label: "Пляж / море", category: "rest", moodBoost: 9, xpStat: "energy", icon: "Umbrella", color: "#00c7be" },
+  { id: "museum", label: "Музей / выставка", category: "intellect", moodBoost: 7, xpStat: "mind", icon: "Landmark", color: "#5856d6" },
+  { id: "craft", label: "Рукоделие / DIY", category: "creative", moodBoost: 8, xpStat: "soul", icon: "Scissors", color: "#ff2d55" },
+  { id: "volunteer", label: "Волонтёрство / помощь", category: "social", moodBoost: 8, xpStat: "soul", icon: "HandHeart", color: "#34c759" },
 ];
 
 export const INTELLECT_ACTIVITIES: ActivityItem[] = [

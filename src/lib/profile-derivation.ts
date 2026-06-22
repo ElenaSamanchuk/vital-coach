@@ -8,16 +8,21 @@ export type BodyGoal = "lose" | "gain" | "maintain";
 export type ActivityLevel = "low" | "moderate" | "high";
 export type WorkActivity = "sedentary" | "mixed" | "active";
 
+export type Gender = "female" | "male" | "other";
+
 export interface DerivationInput {
   currentWeightKg: number;
   targetWeightKg: number;
   heightCm: number;
   birthYear?: number;
+  gender?: Gender;
   activityLevel: ActivityLevel;
   workActivityLevel: WorkActivity;
   insulinResistance: boolean;
   hypothyroidism: boolean;
   cortisolIssues: boolean;
+  hormoneIssues: boolean;
+  endometriosis: boolean;
   pcosSuspected: boolean;
   surgeryRecovery: boolean;
   bodyGoal?: BodyGoal | "auto";
@@ -85,8 +90,16 @@ export function deriveBodyGoal(
   return "maintain";
 }
 
-export function bmrMifflin(weightKg: number, heightCm: number, age: number): number {
-  return 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+export function bmrMifflin(
+  weightKg: number,
+  heightCm: number,
+  age: number,
+  gender: Gender = "female",
+): number {
+  const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
+  if (gender === "male") return base + 5;
+  if (gender === "other") return base - 78;
+  return base - 161;
 }
 
 export function activityMultiplier(
@@ -151,6 +164,7 @@ function weightBasedLossTarget(
 
 function safeCalorieFloor(input: DerivationInput, bmr: number): number {
   if (input.hypothyroidism) return 1400;
+  if (input.endometriosis) return 1380;
   if (input.surgeryRecovery) return 1350;
   return Math.max(1280, Math.round(bmr * 1.05));
 }
@@ -177,6 +191,8 @@ function deficitForWeightLoss(
 
   if (input.hypothyroidism) deficit = Math.min(deficit, 380);
   if (input.cortisolIssues) deficit = Math.min(deficit, 420);
+  if (input.hormoneIssues) deficit = Math.min(deficit, 400);
+  if (input.endometriosis) deficit = Math.min(deficit, 380);
   if (input.surgeryRecovery) deficit = Math.min(deficit, 320);
 
   return deficit;
@@ -207,7 +223,12 @@ export function deriveNutritionMeta(input: DerivationInput): NutritionMeta {
   }
   const calcInput: DerivationInput = { ...input, lossPaceKgPerWeek: lossPace };
 
-  const bmr = bmrMifflin(calcInput.currentWeightKg, calcInput.heightCm, age);
+  const bmr = bmrMifflin(
+    calcInput.currentWeightKg,
+    calcInput.heightCm,
+    age,
+    calcInput.gender ?? "female",
+  );
   const tdee = Math.round(bmr * activityMultiplier(calcInput.activityLevel, calcInput.workActivityLevel));
   const dietBase = dietBaseCalories(bmr);
 
@@ -238,6 +259,7 @@ export function deriveNutritionMeta(input: DerivationInput): NutritionMeta {
   let proteinPerKg = 1.7;
   if (bodyGoal === "gain") proteinPerKg = 1.9;
   if (input.insulinResistance || input.pcosSuspected) proteinPerKg = Math.max(proteinPerKg, 1.8);
+  if (input.hormoneIssues || input.endometriosis) proteinPerKg = Math.max(proteinPerKg, 1.75);
   if (bodyGoal === "lose" && bmi >= 25) proteinPerKg = 1.9;
 
   const proteinTargetG = Math.round(input.currentWeightKg * proteinPerKg);
@@ -313,20 +335,27 @@ export function profileToDerivationInput(profile: {
   insulinResistance: boolean;
   hypothyroidism: boolean;
   cortisolIssues: boolean;
+  hormoneIssues?: boolean;
+  endometriosis?: boolean;
   pcosSuspected: boolean;
   surgeryRecovery: boolean;
   assessmentJson?: string | null;
 }): DerivationInput {
   let bodyGoal: BodyGoal | "auto" = "auto";
   let lossPaceKgPerWeek: 0.3 | 0.5 | 0.7 = 0.5;
+  let gender: Gender = "female";
   if (profile.assessmentJson) {
     try {
       const j = JSON.parse(profile.assessmentJson) as {
         bodyGoal?: BodyGoal | "auto";
         lossPaceKgPerWeek?: 0.3 | 0.5 | 0.7;
+        gender?: Gender;
       };
       if (j.bodyGoal) bodyGoal = j.bodyGoal;
       if (j.lossPaceKgPerWeek) lossPaceKgPerWeek = j.lossPaceKgPerWeek;
+      if (j.gender === "male" || j.gender === "female" || j.gender === "other") {
+        gender = j.gender;
+      }
     } catch {
       /* */
     }
@@ -336,11 +365,14 @@ export function profileToDerivationInput(profile: {
     targetWeightKg: profile.targetWeightKg,
     heightCm: profile.heightCm,
     birthYear: profile.birthYear,
+    gender,
     activityLevel: (profile.activityLevel as ActivityLevel) || "moderate",
     workActivityLevel: (profile.workActivityLevel as WorkActivity) || "sedentary",
     insulinResistance: profile.insulinResistance,
     hypothyroidism: profile.hypothyroidism,
     cortisolIssues: profile.cortisolIssues,
+    hormoneIssues: profile.hormoneIssues ?? false,
+    endometriosis: profile.endometriosis ?? false,
     pcosSuspected: profile.pcosSuspected,
     surgeryRecovery: profile.surgeryRecovery,
     bodyGoal,
