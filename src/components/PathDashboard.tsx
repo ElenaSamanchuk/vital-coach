@@ -40,7 +40,9 @@ import { PageSkeleton } from "@/components/ui/Skeleton";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { GENERIC_MODE } from "@/lib/app-config";
 import { UI } from "@/lib/product-copy";
+import { WeeklyGoalCard } from "./visual/WeeklyGoalCard";
 import { ProgressCharts } from "@/components/ProgressCharts";
+import { BookOpen } from "lucide-react";
 
 export function PathDashboard() {
   const [journey, setJourney] = useState<{
@@ -88,6 +90,8 @@ export function PathDashboard() {
       postMealWalks?: number | null;
     }[]
   >([]);
+  const [diaryDaysThisWeek, setDiaryDaysThisWeek] = useState(0);
+  const [totalDiaryEntries, setTotalDiaryEntries] = useState(0);
   const [profileTargets, setProfileTargets] = useState({
     waterTargetMl: 2000,
     sleepTargetMin: 480,
@@ -136,6 +140,11 @@ export function PathDashboard() {
       setWeekRecLogs(allLogs.slice(-7));
       setCalendarDays(logsToCalendarDays(allLogs));
       setTagCounts(countTagUsage(allLogs));
+
+      const withDiary = allLogs.filter((l) => l.mood != null || l.weightKg != null);
+      setTotalDiaryEntries(withDiary.length);
+      const weekDiary = allLogs.slice(-7).filter((l) => l.mood != null || l.weightKg != null);
+      setDiaryDaysThisWeek(weekDiary.length);
 
       const weekTaskLogs = allLogs.slice(-7) as { tasksJson?: string }[];
       let taskDone = 0;
@@ -252,6 +261,17 @@ export function PathDashboard() {
             icon={BarChart3}
             title="Неделя только начинается"
             description="После 3–4 записей в дневнике здесь появятся победы и зоны роста с объяснением «почему»."
+            action={
+              totalDiaryEntries === 0 ? (
+                <Link
+                  href="/log?tab=quick"
+                  className="apple-btn apple-btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-[13px]"
+                >
+                  <BookOpen size={16} />
+                  Записать первый день
+                </Link>
+              ) : undefined
+            }
           />
         )}
       </GlassCard>
@@ -383,6 +403,24 @@ export function PathDashboard() {
       <div className="flex items-center gap-2 px-1">
         <StreakBadge days={journey.streak} freezeUsed={journey.freezeUsed} />
       </div>
+
+      {GENERIC_MODE && totalDiaryEntries === 0 && (
+        <Link href="/log?tab=quick" className="block">
+          <div className="rounded-2xl border border-[var(--accent)]/40 bg-[var(--accent-soft)] p-4 text-center">
+            <p className="text-[14px] font-semibold text-[var(--text)]">Начни с одной записи</p>
+            <p className="text-[12px] text-[var(--text-secondary)] mt-1">
+              2 минуты в дневнике — и прогресс оживёт
+            </p>
+            <span className="inline-block mt-3 text-[13px] font-semibold text-[var(--accent)]">
+              Открыть дневник →
+            </span>
+          </div>
+        </Link>
+      )}
+
+      {GENERIC_MODE && (
+        <WeeklyGoalCard diaryDaysThisWeek={diaryDaysThisWeek} streak={journey.streak} />
+      )}
 
       {GENERIC_FEATURES.deepPsychology && !journey.who5Filled && (
         <Link href="/settings?tab=life" className="block">

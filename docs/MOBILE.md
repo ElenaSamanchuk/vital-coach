@@ -1,7 +1,10 @@
-# Vital — GitHub Pages + APK
+# Поток — GitHub Pages + APK
 
 Репозиторий: **github.com/ElenaSamanchuk/vital-coach**  
 После деплоя: **https://elenasamanchuk.github.io/vital-coach/**
+
+**APK (постоянная ссылка):** [potok.apk](https://github.com/ElenaSamanchuk/vital-coach/releases/download/apk-latest/potok.apk)  
+Обновляется автоматически при каждом push в `main`.
 
 > Пароли и данные пользователей **не хранятся в Git**. Standalone — без входа, данные на телефоне.  
 > Подробнее: [docs/SECURITY.md](./SECURITY.md)

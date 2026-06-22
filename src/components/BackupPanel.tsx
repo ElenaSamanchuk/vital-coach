@@ -82,7 +82,12 @@ export function BackupPanel() {
             {GENERIC_MODE ? ", достижения" : ", XP"}.
           </p>
           {GENERIC_MODE && (
-            <p className="text-[var(--text-secondary)] mt-1 text-[12px]">{UI.backupTech}</p>
+            <>
+              <p className="text-[var(--text-secondary)] mt-1 text-[12px]">{UI.backupTech}</p>
+              <p className="text-[12px] text-[var(--text-secondary)] mt-1">
+                Подойдёт potok-backup, vital-backup или любой JSON экспорт из приложения.
+              </p>
+            </>
           )}
         </div>
       </div>

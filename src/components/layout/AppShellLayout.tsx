@@ -4,6 +4,9 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { usePathname } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { cn } from "@/lib/cn";
+import { AppPromoBanners } from "@/components/AppPromoBanners";
+import { ReminderBootContainer } from "@/components/ReminderBootContainer";
+import { STANDALONE_MODE } from "@/lib/app-config";
 import { normalizeAppPath } from "@/lib/routes";
 import { useShellDock } from "./ShellDockContext";
 
@@ -38,6 +41,7 @@ export function AppShellLayout({ children }: { children: ReactNode }) {
 
   return (
     <AppShell dock={dock} mainRef={mainRef}>
+      {STANDALONE_MODE && <ReminderBootContainer />}
       <div
         key={route}
         className={cn(
@@ -46,6 +50,11 @@ export function AppShellLayout({ children }: { children: ReactNode }) {
           direction === "back" && "vc-page-enter--back",
         )}
       >
+        {STANDALONE_MODE && (
+          <div className="px-1 -mt-1 mb-2">
+            <AppPromoBanners />
+          </div>
+        )}
         {children}
       </div>
     </AppShell>

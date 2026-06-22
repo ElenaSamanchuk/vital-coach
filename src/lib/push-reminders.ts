@@ -52,11 +52,22 @@ export interface ReminderPayload {
   kind: ReminderKind;
   title: string;
   body: string;
+  href?: string;
+}
+
+export function eveningDiaryHref(): string {
+  const base = BASE_PATH.replace(/\/$/, "");
+  return `${base}/log?tab=quick`;
 }
 
 export function buildReminder(
   kind: ReminderKind,
-  ctx?: { tasks?: string[]; briefing?: string },
+  ctx?: {
+    tasks?: string[];
+    briefing?: string;
+    todaySteps?: number;
+    diaryDone?: boolean;
+  },
 ): ReminderPayload {
   if (kind === "morning") {
     const tasks = ctx?.tasks?.slice(0, 3).join(" · ") || "Открой дневник";
@@ -68,10 +79,20 @@ export function buildReminder(
         : `Сегодня: ${tasks}`,
     };
   }
+  const parts: string[] = [];
+  if (!ctx?.diaryDone) {
+    parts.push("2 минуты в дневнике — настроение, вода, сон");
+  } else {
+    parts.push("День уже записан — можно отметить шаги или воду");
+  }
+  if (ctx?.todaySteps == null || ctx.todaySteps === 0) {
+    parts.push("не забудь шаги");
+  }
   return {
     kind: "evening",
-    title: "Закрыть день",
-    body: "2 минуты в дневнике — настроение, вода, сон",
+    title: ctx?.diaryDone ? "Добить день" : "Закрыть день",
+    body: parts.join(" · "),
+    href: eveningDiaryHref(),
   };
 }
 
@@ -98,11 +119,18 @@ export async function requestNotificationPermission(): Promise<boolean> {
 export function fireNotification(payload: ReminderPayload) {
   if (typeof window === "undefined" || Notification.permission !== "granted") return;
   try {
-    new Notification(payload.title, {
+    const n = new Notification(payload.title, {
       body: payload.body,
       icon: `${BASE_PATH}/icons/icon-192.png`,
       tag: `potok-${payload.kind}`,
     });
+    if (payload.href) {
+      n.onclick = () => {
+        window.focus();
+        window.location.assign(payload.href!);
+        n.close();
+      };
+    }
     const today = new Date().toISOString().slice(0, 10);
     localStorage.setItem(REMINDER_STORAGE_KEYS[payload.kind], `${today}-${payload.kind}`);
   } catch {

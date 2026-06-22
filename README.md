@@ -1,4 +1,20 @@
-# Vital Coach
+# Поток
+
+Mass-market приложение: **еда · движение · дневник** — без регистрации, данные на устройстве (IndexedDB).
+
+| | Ссылка |
+|---|--------|
+| **Веб / PWA** | https://elenasamanchuk.github.io/vital-coach/ |
+| **APK (Android)** | [Скачать potok.apk](https://github.com/ElenaSamanchuk/vital-coach/releases/download/apk-latest/potok.apk) |
+
+Установка PWA: Chrome/Safari → «На экран Домой» / «Установить».  
+APK: скачай `potok.apk`, разреши установку из неизвестных источников.
+
+Подробнее: [docs/MOBILE.md](./docs/MOBILE.md)
+
+---
+
+# Vital Coach (серверная версия)
 
 Личный коуч: питание, тренировки, сон, чекап, цикл.  
 Учитывает инсулинорезистентность, щитовидку, кортизол, B12/D, гормоны.

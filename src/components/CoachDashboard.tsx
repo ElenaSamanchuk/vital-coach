@@ -44,7 +44,6 @@ import { MediaPicksCard } from "./visual/MediaPicksCard";
 import { LeisureQuizCard } from "./visual/LeisureQuizCard";
 import { RecipesCard } from "./visual/RecipesCard";
 import { PlacesCard } from "./visual/PlacesCard";
-import { ReminderBoot } from "./ReminderBoot";
 import { parseLeisureQuiz } from "@/lib/leisure-quiz";
 import { BreathingTimer } from "./visual/BreathingTimer";
 import { computeVitalityScore, vitalityLabel } from "@/lib/vitality-score";
@@ -397,11 +396,6 @@ export function CoachDashboard({
 
   const inner = (
     <div className="vc-page vc-stagger">
-      <ReminderBoot
-        prefsJson={notificationPrefsJson}
-        taskLabels={taskLabels}
-        briefing={briefingLine}
-      />
       {GENERIC_FEATURES.medical && plan.healthBriefing?.length > 0 && (
         <HealthBriefingCard briefs={plan.healthBriefing} />
       )}
