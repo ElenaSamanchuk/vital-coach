@@ -31,7 +31,7 @@ export const GENERIC_PROFILE = {
   birthYear: 1990,
   heightCm: 170,
   currentWeightKg: 70,
-  targetWeightKg: 65,
+  targetWeightKg: 70,
   targetWaistCm: 75,
   targetHipsCm: 95,
   targetChestCm: 90,

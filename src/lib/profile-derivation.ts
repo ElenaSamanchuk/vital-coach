@@ -2,6 +2,7 @@
  * Пересчёт целей: Mifflin BMR, ИМТ, цель тела.
  * При похудении: питание НЕ завышается из-за тренировок (тренировка = доп. расход).
  */
+import { GENERIC_MODE } from "./app-config";
 
 export type BodyGoal = "lose" | "gain" | "maintain";
 export type ActivityLevel = "low" | "moderate" | "high";
@@ -192,10 +193,22 @@ export function deriveNutritionMeta(input: DerivationInput): NutritionMeta {
   const bmi = computeBmi(input.currentWeightKg, input.heightCm);
   const bmiCat = bmiCategory(bmi);
   const autoGoal = deriveBodyGoal(input.currentWeightKg, input.targetWeightKg, bmi);
-  const bodyGoal =
+  let bodyGoal =
     input.bodyGoal && input.bodyGoal !== "auto" ? input.bodyGoal : autoGoal;
-  const bmr = bmrMifflin(input.currentWeightKg, input.heightCm, age);
-  const tdee = Math.round(bmr * activityMultiplier(input.activityLevel, input.workActivityLevel));
+
+  const weightDeltaKg = input.targetWeightKg - input.currentWeightKg;
+  let lossPace = input.lossPaceKgPerWeek ?? 0.5;
+  if (GENERIC_MODE) {
+    if (bmiCat === "normal" && Math.abs(weightDeltaKg) < 2) {
+      bodyGoal = "maintain";
+    } else if (bodyGoal === "lose" && bmi < 25) {
+      lossPace = 0.3;
+    }
+  }
+  const calcInput: DerivationInput = { ...input, lossPaceKgPerWeek: lossPace };
+
+  const bmr = bmrMifflin(calcInput.currentWeightKg, calcInput.heightCm, age);
+  const tdee = Math.round(bmr * activityMultiplier(calcInput.activityLevel, calcInput.workActivityLevel));
   const dietBase = dietBaseCalories(bmr);
 
   let calorieTarget: number;
@@ -207,14 +220,19 @@ export function deriveNutritionMeta(input: DerivationInput): NutritionMeta {
     deficitOrSurplus = surplusForGain(tdee, bmi);
     calorieTarget = tdee + deficitOrSurplus;
   } else {
-    deficitOrSurplus = deficitForWeightLoss(dietBase, bmi, input);
+    deficitOrSurplus = deficitForWeightLoss(dietBase, bmi, calcInput);
     const fromDeficit = dietBase - deficitOrSurplus;
-    const fromWeight = weightBasedLossTarget(input.currentWeightKg, bmi, input);
+    const fromWeight = weightBasedLossTarget(calcInput.currentWeightKg, bmi, calcInput);
     const minRealDeficit = tdee - 450;
 
     calorieTarget = Math.min(fromDeficit, fromWeight, minRealDeficit);
-    const floor = safeCalorieFloor(input, bmr);
+    const floor = safeCalorieFloor(calcInput, bmr);
     calorieTarget = Math.max(floor, calorieTarget);
+    if (GENERIC_MODE && bmi < 25) {
+      const mildCap = Math.max(Math.round(bmr * 1.12), 1600);
+      calorieTarget = Math.max(calorieTarget, mildCap);
+      calorieTarget = Math.min(calorieTarget, tdee - 250);
+    }
   }
 
   let proteinPerKg = 1.7;
@@ -238,7 +256,7 @@ export function deriveNutritionMeta(input: DerivationInput): NutritionMeta {
 
   let explanation: string;
   if (bodyGoal === "lose") {
-    const pace = input.lossPaceKgPerWeek ?? 0.5;
+    const pace = lossPace;
     const realDeficit = tdee - calorieTarget;
     explanation =
       `ИМТ ${bmi} (${BMI_LABELS[bmiCat]})${deltaStr} · расход ~${tdee} · еда ${calorieTarget} (минус ~${realDeficit}) · −${pace} кг/нед · спорт не добавляет к еде`;

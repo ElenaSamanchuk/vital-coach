@@ -13,6 +13,7 @@ import { ImpactLine } from "./ImpactLine";
 import { PickChip } from "@/components/ui/PickChip";
 
 type Tab = "food" | "sport" | "leisure";
+type FoodKindTab = "product" | "dish";
 
 const TABS: { id: Tab; label: string; icon: typeof Utensils }[] = [
   { id: "food", label: "Еда", icon: Utensils },
@@ -54,6 +55,16 @@ function PickStripSection({
   );
 }
 
+function formatGenericNutrition(opt: MealSlotPlan["options"][number]): string {
+  if (opt.description?.includes("ккал")) return opt.description;
+  const portionTag = (opt as { tags?: string[] }).tags?.find((t) => t.startsWith("portion:"));
+  const portion = portionTag?.slice("portion:".length);
+  const proteinPart = opt.proteinG > 0 ? ` · белок ${opt.proteinG} г` : "";
+  return portion
+    ? `${portion} · ${opt.calories} ккал${proteinPart}`
+    : `${opt.calories} ккал · белок ${opt.proteinG} г`;
+}
+
 export function TodayOptionsStrip({
   mealPlan,
   mealChoices,
@@ -67,6 +78,7 @@ export function TodayOptionsStrip({
   recommendedMeals,
   recommendedWorkouts,
   recommendedLeisure,
+  genericFoodLayout = false,
 }: {
   mealPlan: MealSlotPlan[];
   mealChoices: Record<string, string[]>;
@@ -80,6 +92,8 @@ export function TodayOptionsStrip({
   recommendedMeals?: Record<string, string[]>;
   recommendedWorkouts?: string[];
   recommendedLeisure?: string[];
+  /** Поток: продукты и блюда — один пул на любой приём */
+  genericFoodLayout?: boolean;
 }) {
   const defaultTab = (): Tab => {
     const phase = activeRoutinePhase(new Date().getHours());
@@ -88,6 +102,10 @@ export function TodayOptionsStrip({
     return "leisure";
   };
   const [tab, setTab] = useState<Tab>(defaultTab);
+  const [foodKind, setFoodKind] = useState<FoodKindTab>("dish");
+
+  const filterByKind = (options: MealSlotPlan["options"], kind: FoodKindTab) =>
+    options.filter((o) => (o as { tags?: string[] }).tags?.includes(kind));
 
   const mealCount = mealPlan.reduce((n, s) => n + s.options.length, 0);
   const selectedMeals = mealPlan.reduce(
@@ -102,7 +120,9 @@ export function TodayOptionsStrip({
       <div>
         <p className="vc-text-lg">Выбор на сегодня</p>
         <p className="vc-subtitle vc-text-xs mt-0.5">
-          Можно выбрать несколько · листай влево · повторное нажатие снимает выбор
+          {genericFoodLayout
+            ? "Продукты и блюда — в любой приём · несколько пунктов · листай →"
+            : "Можно выбрать несколько · листай влево · повторное нажатие снимает выбор"}
         </p>
       </div>
       <div className="flex gap-1 p-0.5 rounded-xl bg-[var(--bg-subtle)]">
@@ -125,17 +145,51 @@ export function TodayOptionsStrip({
 
       {tab === "food" && (
         <div className="space-y-4">
-          {mealPlan.map((slot) => (
-            <PickStripSection key={slot.slot} label={slot.slotLabel} count={slot.options.length}>
-              {slot.options.map((opt) => {
+          {genericFoodLayout && (
+            <div className="flex gap-1 p-0.5 rounded-lg bg-[var(--bg-subtle)]">
+              {(
+                [
+                  { id: "dish" as const, label: "Блюда" },
+                  { id: "product" as const, label: "Продукты" },
+                ] as const
+              ).map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setFoodKind(id)}
+                  className={`flex-1 py-1.5 rounded-md vc-text-xs font-semibold transition-colors ${
+                    foodKind === id
+                      ? "bg-[var(--elevated)] text-[var(--text)] shadow-sm"
+                      : "text-[var(--text-secondary)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {mealPlan.map((slot) => {
+            const options = genericFoodLayout
+              ? filterByKind(slot.options, foodKind)
+              : slot.options;
+            if (genericFoodLayout && options.length === 0) return null;
+            const slotLabel = genericFoodLayout
+              ? `${slot.slotLabel} · что угодно`
+              : slot.slotLabel;
+            return (
+            <PickStripSection key={slot.slot} label={slotLabel} count={options.length}>
+              {options.map((opt) => {
                 const id = (opt as { id?: string }).id ?? opt.title;
                 const selected = (mealChoices[slot.slot] ?? []).includes(id);
                 const recommended = (recommendedMeals?.[slot.slot] ?? []).includes(id);
                 const short = opt.title.split("+")[0].trim().slice(0, 40);
                 const impact = (opt as { impact?: string }).impact;
+                const nutritionLine = genericFoodLayout
+                  ? (opt.description || formatGenericNutrition(opt))
+                  : `${opt.calories} ккал · белок ${opt.proteinG} г`;
                 return (
                   <PickChip
-                    key={id}
+                    key={`${slot.slot}-${id}`}
                     selected={selected}
                     recommended={recommended}
                     onClick={() => {
@@ -145,14 +199,15 @@ export function TodayOptionsStrip({
                   >
                     <p className="vc-pick-chip-title line-clamp-2">{short}</p>
                     <p className="vc-text-xs mt-0.5 text-[var(--text-secondary)]">
-                      {opt.calories} ккал · {opt.proteinG} г
+                      {nutritionLine}
                     </p>
                     {impact && <ImpactLine text={impact} />}
                   </PickChip>
                 );
               })}
             </PickStripSection>
-          ))}
+            );
+          })}
           {selectedMeals > 0 && (
             <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
               Выбрано {selectedMeals} · всего {mealCount} вариантов
@@ -183,7 +238,10 @@ export function TodayOptionsStrip({
                     <WIcon size={16} className="text-[var(--accent)] shrink-0" />
                     <p className="vc-pick-chip-title line-clamp-2">{w.title}</p>
                   </div>
-                  <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">{w.durationMin} мин</p>
+                  <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">
+                    {w.durationMin} мин
+                    {w.caloriesBurned != null ? ` · ~${w.caloriesBurned} ккал` : ""}
+                  </p>
                   {w.impact && <ImpactLine text={w.impact} />}
                 </PickChip>
               );

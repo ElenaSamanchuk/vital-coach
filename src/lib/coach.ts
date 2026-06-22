@@ -14,7 +14,8 @@ import {
   getNutritionFramework,
   sumSelectedMeals,
 } from "./nutrition";
-import { getWorkoutOptions } from "./fitness";
+import { getGenericDailyMealPlan, GENERIC_SLOT_LABELS } from "./generic-food-catalog";
+import { getWorkoutOptions, enrichWorkoutCalories } from "./fitness";
 import { buildHorizonPlan } from "./horizon-plan";
 import { pickTodayLeisure, pickTodaySportExtras } from "./today-picks";
 import { getPsychologyCoach } from "./psychology";
@@ -71,12 +72,14 @@ type DailyLogWithRelations = DailyLog & {
   meals?: Meal[];
 };
 
-const SLOT_LABELS: Record<string, string> = {
-  breakfast: "Завтрак",
-  lunch: "Обед",
-  snack: "Перекус",
-  dinner: "Ужин",
-};
+const SLOT_LABELS: Record<string, string> = GENERIC_MODE
+  ? GENERIC_SLOT_LABELS
+  : {
+      breakfast: "Завтрак",
+      lunch: "Обед",
+      snack: "Перекус",
+      dinner: "Ужин",
+    };
 
 function profileConditions(p: Profile): HealthConditions {
   return {
@@ -107,14 +110,17 @@ function toWorkoutSuggestion(w: {
   intensity: string;
   moodBoost?: string;
   leisureNote?: string;
+  caloriesNote?: string;
+  caloriesBurned?: number;
 }) {
+  const notes = [w.moodBoost, w.leisureNote, w.caloriesNote].filter(Boolean).join(" · ");
   return {
     id: w.id,
     type: w.type,
     title: w.title,
     durationMin: w.durationMin,
     intensity: w.intensity,
-    notes: [w.moodBoost, w.leisureNote].filter(Boolean).join(" · "),
+    notes,
     moodBoost: w.moodBoost,
     leisureNote: w.leisureNote,
     impact: workoutImpact(w.id, w.type),
@@ -253,11 +259,13 @@ export function generateDailyPlan(
     leisureFavorites,
   });
 
-  const rawMealPlan = getDailyMealPlan(phase, conditions, mealChoicesForPlan, {
-    highlights: personalized.highlights.meals,
-    proteinDebt: dynamic.proteinBoost || slippingKeys.has("protein"),
-    calorieSlip: slippingKeys.has("calories"),
-  });
+  const rawMealPlan = GENERIC_MODE
+    ? getGenericDailyMealPlan(mealChoicesForPlan)
+    : getDailyMealPlan(phase, conditions, mealChoicesForPlan, {
+        highlights: personalized.highlights.meals,
+        proteinDebt: dynamic.proteinBoost || slippingKeys.has("protein"),
+        calorieSlip: slippingKeys.has("calories"),
+      });
   const mealTotals = sumSelectedMeals(rawMealPlan);
   const mealOverTarget =
     nutritionMeta.bodyGoal === "lose" && mealTotals.calories > calorieTarget * 1.05;
@@ -332,6 +340,8 @@ export function generateDailyPlan(
       caloriesNote: `${recommended.caloriesNote} · компенсация переедания`,
     };
   }
+
+  recommended = enrichWorkoutCalories(recommended, profile.currentWeightKg);
 
   const nutritionFocus = [...framework.principles.slice(0, 4), ...dynamic.extraFocus];
   if (!GENERIC_MODE) {
@@ -577,6 +587,7 @@ export function generateDailyPlan(
     workoutCtx,
     18,
     personalized.highlights.workouts,
+    profile.currentWeightKg,
   );
 
   const weeklyExperiment = currentExperiment(profile.weeklyExperimentJson, recentLogs);

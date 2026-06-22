@@ -69,6 +69,7 @@ import {
 } from "@/lib/today-choices";
 import { isSportLeisureId } from "@/lib/leisure";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
+import { GENERIC_MODE } from "@/lib/app-config";
 import { PageSkeleton } from "@/components/ui/Skeleton";
 import type { ReactNode } from "react";
 
@@ -538,6 +539,7 @@ export function CoachDashboard({
           recommendedMeals={plan.personalizedRecs?.highlights.meals}
           recommendedWorkouts={plan.personalizedRecs?.highlights.workouts}
           recommendedLeisure={plan.personalizedRecs?.highlights.leisure}
+          genericFoodLayout={GENERIC_MODE}
         />
       )}
 

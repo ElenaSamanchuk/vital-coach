@@ -35,7 +35,7 @@ export function OnboardingWizard() {
         name: name.trim(),
         ...(heightCm != null && heightCm > 0 ? { heightCm } : {}),
         ...(currentWeightKg != null && currentWeightKg > 0
-          ? { currentWeightKg, targetWeightKg: Math.max(50, currentWeightKg - 5) }
+          ? { currentWeightKg, targetWeightKg: currentWeightKg }
           : {}),
       };
       const res = await apiClient("/api/onboarding/complete", {

@@ -3,7 +3,7 @@
  */
 
 import type { WorkoutOption, WorkoutContext } from "./fitness";
-import { getWorkoutOptions, WORKOUT_OPTIONS } from "./fitness";
+import { getWorkoutOptions, WORKOUT_OPTIONS, enrichWorkoutCalories } from "./fitness";
 import { LEISURE_ACTIVITIES, INTELLECT_ACTIVITIES, type ActivityItem } from "./leisure";
 import type { WheelScores } from "./life-spheres";
 import { getLowestSpheres } from "./life-spheres";
@@ -117,6 +117,7 @@ export function pickTodaySportExtras(
   ctx: WorkoutContext,
   limit = 22,
   highlightIds?: string[],
+  weightKg = 70,
 ): WorkoutOption[] {
   const base = getWorkoutOptions(ctx);
   const seen = new Set<string>();
@@ -129,10 +130,14 @@ export function pickTodaySportExtras(
     result.push(w);
   };
 
-  const withImpact = (w: WorkoutOption): WorkoutOption => ({
-    ...w,
-    impact: w.impact ?? workoutImpact(w.id, w.type),
-  });
+  const withImpact = (w: WorkoutOption): WorkoutOption =>
+    enrichWorkoutCalories(
+      {
+        ...w,
+        impact: w.impact ?? workoutImpact(w.id, w.type),
+      },
+      weightKg,
+    );
 
   add(withImpact(base.recommended));
   for (const w of base.alternatives) add(withImpact(w));

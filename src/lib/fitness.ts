@@ -13,8 +13,53 @@ export interface WorkoutOption {
   moodBoost: string;
   leisureNote: string;
   caloriesNote: string;
+  /** Расчётный расход ккал (MET × вес × время) */
+  caloriesBurned?: number;
   tags: string[];
   impact?: string;
+}
+
+const TYPE_MET: Record<string, number> = {
+  walk: 3.5,
+  bike: 6,
+  pool: 6,
+  strength: 5.5,
+  yoga: 2.8,
+  dance: 5.5,
+  sup: 5,
+  rest: 2.5,
+};
+
+const INTENSITY_MULT: Record<WorkoutOption["intensity"], number> = {
+  low: 0.85,
+  moderate: 1,
+  high: 1.2,
+};
+
+/** MET × вес (кг) × часы — ориентир расхода энергии */
+export function estimateWorkoutCalories(
+  weightKg: number,
+  durationMin: number,
+  intensity: WorkoutOption["intensity"],
+  type?: string,
+): number {
+  const met = (type && TYPE_MET[type]) || 4.5;
+  const hours = durationMin / 60;
+  return Math.round(met * INTENSITY_MULT[intensity] * weightKg * hours);
+}
+
+export function enrichWorkoutCalories(w: WorkoutOption, weightKg: number): WorkoutOption {
+  const caloriesBurned = estimateWorkoutCalories(
+    weightKg,
+    w.durationMin,
+    w.intensity,
+    w.type,
+  );
+  return {
+    ...w,
+    caloriesBurned,
+    caloriesNote: `~${caloriesBurned} ккал · ${w.caloriesNote}`,
+  };
 }
 
 export interface WorkoutContext {
