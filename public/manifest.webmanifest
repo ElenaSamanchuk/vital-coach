@@ -1,6 +1,6 @@
 {
-  "name": "Ритм",
-  "short_name": "Ритм",
+  "name": "Поток",
+  "short_name": "Поток",
   "description": "Еда · движение · дневник — без регистрации",
   "start_url": "/",
   "display": "standalone",

@@ -272,7 +272,7 @@ export function buildAnalyticsRecommendations(
     pushRec(recs, seen, {
       id: "balanced",
       category: "mood",
-      title: "Ритм ровный",
+      title: "Ровная неделя",
       detail: "Явных просадок за неделю нет",
       action: "Держи текущий темп: еда, движение, досуг, сон",
       priority: "low",

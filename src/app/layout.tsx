@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Providers } from "@/components/Providers";
 import { DesktopStage } from "@/components/layout/DesktopStage";
-import { APP_NAME, APP_TAGLINE } from "@/lib/app-config";
+import { APP_NAME, APP_TAGLINE, GENERIC_MODE } from "@/lib/app-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: `${APP_NAME} — здоровье и привычки`,
+  title: GENERIC_MODE ? `${APP_NAME} — твой день` : `${APP_NAME} — здоровье и привычки`,
   description: APP_TAGLINE,
   manifest: "/manifest.webmanifest",
   icons: {

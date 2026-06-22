@@ -26,6 +26,28 @@ export function parseNotificationPrefs(raw: string | null | undefined): Notifica
 
 export type ReminderKind = "morning" | "evening";
 
+/** Ключи localStorage для «уже показывали сегодня» */
+export const REMINDER_STORAGE_KEYS: Record<ReminderKind, string> = {
+  morning: "potok-reminder-morning",
+  evening: "potok-reminder-evening",
+};
+
+const LEGACY_REMINDER_KEYS: Record<ReminderKind, string> = {
+  morning: "vital-reminder-morning",
+  evening: "vital-reminder-evening",
+};
+
+function reminderAlreadyFired(storageKey: string, kind: ReminderKind): boolean {
+  if (typeof localStorage === "undefined") return false;
+  const today = new Date().toISOString().slice(0, 10);
+  const marker = `${today}-${kind}`;
+  if (localStorage.getItem(storageKey) === marker) return true;
+  const legacyKey = storageKey.startsWith("potok-")
+    ? LEGACY_REMINDER_KEYS[kind]
+    : null;
+  return legacyKey ? localStorage.getItem(legacyKey) === marker : false;
+}
+
 export interface ReminderPayload {
   kind: ReminderKind;
   title: string;
@@ -48,8 +70,8 @@ export function buildReminder(
   }
   return {
     kind: "evening",
-    title: "Вечерний ритуал",
-    body: "Маска → тёплый напиток → сон. Закрой день за 2 минуты в дневнике",
+    title: "Закрыть день",
+    body: "2 минуты в дневнике — настроение, вода, сон",
   };
 }
 
@@ -62,12 +84,7 @@ export function shouldFireReminder(
   const hour = new Date().getHours();
   const target = kind === "morning" ? prefs.morningHour : prefs.eveningHour;
   if (hour !== target) return false;
-  const today = new Date().toISOString().slice(0, 10);
-  if (typeof localStorage !== "undefined") {
-    const last = localStorage.getItem(lastFiredKey);
-    if (last === `${today}-${kind}`) return false;
-  }
-  return true;
+  return !reminderAlreadyFired(lastFiredKey, kind);
 }
 
 export async function requestNotificationPermission(): Promise<boolean> {
@@ -84,10 +101,10 @@ export function fireNotification(payload: ReminderPayload) {
     new Notification(payload.title, {
       body: payload.body,
       icon: `${BASE_PATH}/icons/icon-192.png`,
-      tag: `vital-${payload.kind}`,
+      tag: `potok-${payload.kind}`,
     });
     const today = new Date().toISOString().slice(0, 10);
-    localStorage.setItem(`vital-reminder-${payload.kind}`, `${today}-${payload.kind}`);
+    localStorage.setItem(REMINDER_STORAGE_KEYS[payload.kind], `${today}-${payload.kind}`);
   } catch {
     /* */
   }

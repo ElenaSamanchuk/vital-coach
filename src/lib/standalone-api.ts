@@ -14,7 +14,7 @@ import { computeJourneyProgress, nextRecommendedStep } from "./user-journey";
 import { computeForgivingStreak, computeStreak } from "./insights";
 import { buildProfileFromAssessment } from "./profile-save";
 import { DEFAULT_ASSESSMENT } from "./onboarding-assessment";
-import { GENERIC_PROFILE } from "./app-config";
+import { BACKUP_FILE_PREFIX, GENERIC_PROFILE } from "./app-config";
 import { parseWellbeingDone } from "./wellbeing-coach";
 import { xpFromDailyLog, xpFromLifeActions, xpFromTasks } from "./gamification";
 import type { OnboardingAssessment } from "./onboarding-assessment";
@@ -430,7 +430,7 @@ export async function handleStandaloneApi(path: string, init?: RequestInit): Pro
       return new Response(text, {
         headers: {
           "Content-Type": "application/json",
-          "Content-Disposition": `attachment; filename="vital-backup-${new Date().toISOString().slice(0, 10)}.json"`,
+          "Content-Disposition": `attachment; filename="${BACKUP_FILE_PREFIX}-${new Date().toISOString().slice(0, 10)}.json"`,
         },
       });
     }

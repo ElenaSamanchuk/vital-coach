@@ -5,6 +5,7 @@ import {
   buildReminder,
   fireNotification,
   parseNotificationPrefs,
+  REMINDER_STORAGE_KEYS,
   shouldFireReminder,
 } from "@/lib/push-reminders";
 
@@ -21,10 +22,10 @@ export function ReminderBoot({
     const prefs = parseNotificationPrefs(prefsJson);
     if (!prefs.enabled) return;
 
-    if (shouldFireReminder(prefs, "morning", "vital-reminder-morning")) {
+    if (shouldFireReminder(prefs, "morning", REMINDER_STORAGE_KEYS.morning)) {
       fireNotification(buildReminder("morning", { tasks: taskLabels, briefing }));
     }
-    if (shouldFireReminder(prefs, "evening", "vital-reminder-evening")) {
+    if (shouldFireReminder(prefs, "evening", REMINDER_STORAGE_KEYS.evening)) {
       fireNotification(buildReminder("evening"));
     }
   }, [prefsJson, taskLabels, briefing]);

@@ -36,7 +36,10 @@ export const GENERIC_PROFILE = {
   sleepHours: 7.5,
 };
 
-export const APP_NAME = GENERIC_MODE ? "Ритм" : "Vital Coach";
+export const APP_NAME = GENERIC_MODE ? "Поток" : "Vital Coach";
 export const APP_TAGLINE = GENERIC_MODE
-  ? "Еда · движение · дневник"
+  ? "Еда · движение · дневник — без суеты"
   : "Личный коуч: питание, тренировки, здоровье";
+
+/** Префикс файла резервной копии в standalone */
+export const BACKUP_FILE_PREFIX = GENERIC_MODE ? "potok-backup" : "vital-coach-backup";

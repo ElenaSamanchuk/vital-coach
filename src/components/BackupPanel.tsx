@@ -2,7 +2,7 @@
 
 import { backupIncludesLine, UI } from "@/lib/product-copy";
 import { apiClient } from "@/lib/api-client";
-import { GENERIC_MODE, STANDALONE_MODE } from "@/lib/app-config";
+import { BACKUP_FILE_PREFIX, GENERIC_MODE, STANDALONE_MODE } from "@/lib/app-config";
 import { useEffect, useRef, useState } from "react";
 import { GlassCard } from "./ui/GlassCard";
 import { Badge } from "./ui/Badge";
@@ -27,7 +27,7 @@ export function BackupPanel() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `vital-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `${BACKUP_FILE_PREFIX}-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setLastBackup(new Date().toISOString());

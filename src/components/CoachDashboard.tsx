@@ -35,6 +35,7 @@ import { HorizonPlanCard } from "./visual/HorizonPlanCard";
 import { TimeHorizonRings } from "./visual/TimeHorizonRings";
 import { TodayOptionsStrip } from "./visual/TodayOptionsStrip";
 import { TodayPersonalRecsCard } from "./visual/TodayPersonalRecsCard";
+import { DynamicInsightsCard } from "./visual/DynamicInsightsCard";
 import { CompensationCard } from "./visual/CompensationCard";
 import { parseLifeActions, type LifeActions } from "@/lib/life-actions";
 import type { DayTask } from "@/lib/day-tasks";
@@ -528,6 +529,10 @@ export function CoachDashboard({
 
       {plan.personalizedRecs && (
         <TodayPersonalRecsCard plan={plan.personalizedRecs} />
+      )}
+
+      {plan.dynamicInsights.length > 0 && (
+        <DynamicInsightsCard insights={plan.dynamicInsights} />
       )}
 
       {plan.mealPlan && plan.todayLeisure && plan.todaySportExtras && (

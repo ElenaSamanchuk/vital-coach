@@ -1,6 +1,6 @@
 {
   "appId": "com.elenasamanchuk.vital",
-  "appName": "Ритм",
+  "appName": "Поток",
   "_comment_webDir": "public — для локального APK; при server.url APK грузит Pages, webDir почти не используется. Статический билд: out/",
   "webDir": "public",
   "server": {
