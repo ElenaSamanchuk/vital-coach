@@ -640,6 +640,7 @@ select.apple-input {
 }
 
 .vc-pick-chip {
+  position: relative;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--elevated);

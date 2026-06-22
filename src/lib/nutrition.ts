@@ -4,6 +4,7 @@
  * anti-inflammatory, thyroid-aware, cortisol-aware — без экстремальных диет.
  */
 import type { CyclePhase, HealthConditions, MealSuggestion } from "./types";
+import { mealOptionBoost } from "./personalized-day-recs";
 
 export interface MealOption extends MealSuggestion {
   id: string;
@@ -222,6 +223,11 @@ export function getMealOptions(
   phase: CyclePhase | null,
   conditions: HealthConditions,
   mealType: string,
+  rankOpts?: {
+    highlightIds?: string[];
+    proteinDebt?: boolean;
+    calorieSlip?: boolean;
+  },
 ): MealOption[] {
   const p = phase ?? "follicular";
   const phaseOpts = BANK[p][mealType] ?? BANK.follicular[mealType] ?? [];
@@ -242,6 +248,19 @@ export function getMealOptions(
   }
   if (conditions.hypothyroidism) {
     options = options.filter((o) => !o.title.toLowerCase().includes("сырой капуст"));
+  }
+
+  if (rankOpts) {
+    const boostCtx = {
+      proteinDebt: rankOpts.proteinDebt ?? false,
+      ir: conditions.insulinResistance || conditions.pcosSuspected,
+      calorieSlip: rankOpts.calorieSlip ?? false,
+    };
+    options.sort((a, b) => {
+      const ba = mealOptionBoost(a, rankOpts.highlightIds ?? [], boostCtx);
+      const bb = mealOptionBoost(b, rankOpts.highlightIds ?? [], boostCtx);
+      return bb - ba;
+    });
   }
 
   const limit = 22;
@@ -265,6 +284,11 @@ export function getDailyMealPlan(
   phase: CyclePhase | null,
   conditions: HealthConditions,
   selectedIds?: Record<string, string | string[]>,
+  rankCtx?: {
+    highlights: Record<string, string[]>;
+    proteinDebt?: boolean;
+    calorieSlip?: boolean;
+  },
 ): {
   slot: string;
   options: MealOption[];
@@ -273,7 +297,11 @@ export function getDailyMealPlan(
   selectedItems: MealOption[];
 }[] {
   return MEAL_SLOTS.map((slot) => {
-    const options = getMealOptions(phase, conditions, slot);
+    const options = getMealOptions(phase, conditions, slot, {
+      highlightIds: rankCtx?.highlights[slot],
+      proteinDebt: rankCtx?.proteinDebt,
+      calorieSlip: rankCtx?.calorieSlip,
+    });
     const raw = selectedIds?.[slot];
     const ids = Array.isArray(raw) ? raw.filter(Boolean) : raw ? [raw] : [];
     const selectedItems = ids

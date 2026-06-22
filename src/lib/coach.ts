@@ -56,6 +56,7 @@ import {
   leisureChoices,
   parseWorkoutChoices,
 } from "./today-choices";
+import { buildPersonalizedDayPlan } from "./personalized-day-recs";
 import type {
   CoachTask,
   CyclePhase,
@@ -226,7 +227,37 @@ export function generateDailyPlan(
   const workoutChoiceIds = parseWorkoutChoices(todayLog?.workoutChoice);
   const workoutChoiceId = workoutChoiceIds[0];
 
-  const rawMealPlan = getDailyMealPlan(phase, conditions, mealChoicesForPlan);
+  let leisureFavorites: string[] = [];
+  try {
+    leisureFavorites = JSON.parse(profile.leisureFavorites || "[]") as string[];
+  } catch {
+    /* */
+  }
+
+  const slippingKeys = new Set(insights.slipping.map((s) => s.key));
+  const personalized = buildPersonalizedDayPlan({
+    insights,
+    compensation,
+    dynamic,
+    conditions,
+    phase,
+    energy,
+    mood,
+    stress,
+    softDay,
+    hour: today.getHours(),
+    proteinTargetG: proteinTarget,
+    calorieTarget,
+    recentLogs: recentLogs,
+    todayPostMealWalks: todayLog?.postMealWalks ?? undefined,
+    leisureFavorites,
+  });
+
+  const rawMealPlan = getDailyMealPlan(phase, conditions, mealChoicesForPlan, {
+    highlights: personalized.highlights.meals,
+    proteinDebt: dynamic.proteinBoost || slippingKeys.has("protein"),
+    calorieSlip: slippingKeys.has("calories"),
+  });
   const mealTotals = sumSelectedMeals(rawMealPlan);
   const mealOverTarget =
     nutritionMeta.bodyGoal === "lose" && mealTotals.calories > calorieTarget * 1.05;
@@ -526,6 +557,8 @@ export function generateDailyPlan(
     wheelScores,
     quiz: leisureQuiz,
     limit: 24,
+    highlightIds: personalized.highlights.leisure,
+    leisureFavorites,
   });
 
   const workoutCtx = {
@@ -540,7 +573,11 @@ export function generateDailyPlan(
       0,
     ),
   };
-  const todaySportExtras = pickTodaySportExtras(workoutCtx, 18);
+  const todaySportExtras = pickTodaySportExtras(
+    workoutCtx,
+    18,
+    personalized.highlights.workouts,
+  );
 
   const weeklyExperiment = currentExperiment(profile.weeklyExperimentJson, recentLogs);
 
@@ -667,5 +704,6 @@ export function generateDailyPlan(
     horizonPlan,
     todayLeisure,
     todaySportExtras,
+    personalizedRecs: personalized,
   };
 }

@@ -9,6 +9,7 @@ import type { WheelScores } from "./life-spheres";
 import { getLowestSpheres } from "./life-spheres";
 import type { LeisureQuizAnswers } from "./leisure-quiz";
 import { leisureImpact, workoutImpact } from "./impact-motivation";
+import { rankByHighlights, workoutOptionBoost } from "./personalized-day-recs";
 
 function quizLeisureBoost(actId: string, q: LeisureQuizAnswers): number {
   let b = 0;
@@ -64,15 +65,19 @@ export function pickTodayLeisure(ctx: {
   wheelScores: WheelScores;
   quiz?: LeisureQuizAnswers | null;
   limit?: number;
+  highlightIds?: string[];
+  leisureFavorites?: string[];
 }): TodayLeisurePick[] {
   const weakSpheres = getLowestSpheres(ctx.wheelScores, 3);
   const pool = [...LEISURE_ACTIVITIES, ...INTELLECT_ACTIVITIES];
 
   const scored = pool
-    .map((act) => ({
-      act,
-      score: scoreLeisure(act, { ...ctx, weakSpheres }),
-    }))
+    .map((act) => {
+      let score = scoreLeisure(act, { ...ctx, weakSpheres });
+      if (ctx.highlightIds?.includes(act.id)) score += 12;
+      if (ctx.leisureFavorites?.includes(act.id)) score += 8;
+      return { act, score };
+    })
     .sort((a, b) => b.score - a.score);
 
   const reasons: Record<string, string> = {
@@ -93,6 +98,7 @@ export function pickTodayLeisure(ctx: {
     let why = reasons[act.category] ?? "Подходит под сегодня";
     if (ctx.stress >= 7 && act.category === "rest") why = "Стресс высокий — отдых важнее KPI";
     if (ctx.softDay) why = "Мягкий день — без давления";
+    if (ctx.highlightIds?.includes(act.id)) why = "Рекомендуем сегодня по твоим данным";
     picks.push({
       id: act.id,
       label: act.label,
@@ -107,7 +113,11 @@ export function pickTodayLeisure(ctx: {
   return picks;
 }
 
-export function pickTodaySportExtras(ctx: WorkoutContext, limit = 22): WorkoutOption[] {
+export function pickTodaySportExtras(
+  ctx: WorkoutContext,
+  limit = 22,
+  highlightIds?: string[],
+): WorkoutOption[] {
   const base = getWorkoutOptions(ctx);
   const seen = new Set<string>();
   const result: WorkoutOption[] = [];
@@ -150,6 +160,13 @@ export function pickTodaySportExtras(ctx: WorkoutContext, limit = 22): WorkoutOp
   for (const w of filtered) {
     add(withImpact(w));
     if (result.length >= limit) break;
+  }
+
+  if (highlightIds?.length) {
+    return rankByHighlights(
+      [...result].sort((a, b) => workoutOptionBoost(b, highlightIds) - workoutOptionBoost(a, highlightIds)),
+      highlightIds,
+    );
   }
 
   return result;

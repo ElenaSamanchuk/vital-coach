@@ -34,6 +34,7 @@ import { HealthBriefingCard } from "./visual/HealthBriefingCard";
 import { HorizonPlanCard } from "./visual/HorizonPlanCard";
 import { TimeHorizonRings } from "./visual/TimeHorizonRings";
 import { TodayOptionsStrip } from "./visual/TodayOptionsStrip";
+import { TodayPersonalRecsCard } from "./visual/TodayPersonalRecsCard";
 import { CompensationCard } from "./visual/CompensationCard";
 import { TaskTrackerPanel } from "./visual/TaskTrackerPanel";
 import { parseLifeActions, type LifeActions } from "@/lib/life-actions";
@@ -573,6 +574,27 @@ export function CoachDashboard({
         />
       </div>
 
+      {plan.personalizedRecs && (
+        <TodayPersonalRecsCard plan={plan.personalizedRecs} />
+      )}
+
+      {plan.mealPlan && plan.todayLeisure && plan.todaySportExtras && (
+        <TodayOptionsStrip
+          mealPlan={plan.mealPlan}
+          mealChoices={mealChoicesForSlots}
+          onMealSelect={saveMealChoice}
+          sportOptions={plan.todaySportExtras}
+          selectedWorkoutIds={workoutChoiceIds}
+          onWorkoutSelect={saveWorkoutChoice}
+          leisure={plan.todayLeisure}
+          selectedLeisureIds={leisureChoiceIds}
+          onLeisureSelect={saveLeisureChoice}
+          recommendedMeals={plan.personalizedRecs?.highlights.meals}
+          recommendedWorkouts={plan.personalizedRecs?.highlights.workouts}
+          recommendedLeisure={plan.personalizedRecs?.highlights.leisure}
+        />
+      )}
+
       {(weeklyInsights || weekRecLogs.length > 0) && (
         <IconCard
           icon={Sparkles}
@@ -617,20 +639,6 @@ export function CoachDashboard({
 
       {GENERIC_FEATURES.horizonPlan && plan.horizonPlan && (
         <HorizonPlanCard plan={plan.horizonPlan} compact />
-      )}
-
-      {plan.mealPlan && plan.todayLeisure && plan.todaySportExtras && (
-        <TodayOptionsStrip
-          mealPlan={plan.mealPlan}
-          mealChoices={mealChoicesForSlots}
-          onMealSelect={saveMealChoice}
-          sportOptions={plan.todaySportExtras}
-          selectedWorkoutIds={workoutChoiceIds}
-          onWorkoutSelect={saveWorkoutChoice}
-          leisure={plan.todayLeisure}
-          selectedLeisureIds={leisureChoiceIds}
-          onLeisureSelect={saveLeisureChoice}
-        />
       )}
 
       <IconCard

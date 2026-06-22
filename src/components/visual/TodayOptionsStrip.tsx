@@ -64,6 +64,9 @@ export function TodayOptionsStrip({
   leisure,
   selectedLeisureIds,
   onLeisureSelect,
+  recommendedMeals,
+  recommendedWorkouts,
+  recommendedLeisure,
 }: {
   mealPlan: MealSlotPlan[];
   mealChoices: Record<string, string[]>;
@@ -74,6 +77,9 @@ export function TodayOptionsStrip({
   leisure: TodayLeisurePick[];
   selectedLeisureIds: string[];
   onLeisureSelect: (id: string) => void;
+  recommendedMeals?: Record<string, string[]>;
+  recommendedWorkouts?: string[];
+  recommendedLeisure?: string[];
 }) {
   const defaultTab = (): Tab => {
     const phase = activeRoutinePhase(new Date().getHours());
@@ -124,12 +130,14 @@ export function TodayOptionsStrip({
               {slot.options.map((opt) => {
                 const id = (opt as { id?: string }).id ?? opt.title;
                 const selected = (mealChoices[slot.slot] ?? []).includes(id);
+                const recommended = (recommendedMeals?.[slot.slot] ?? []).includes(id);
                 const short = opt.title.split("+")[0].trim().slice(0, 40);
                 const impact = (opt as { impact?: string }).impact;
                 return (
                   <PickChip
                     key={id}
                     selected={selected}
+                    recommended={recommended}
                     onClick={() => {
                       hapticLight();
                       onMealSelect(slot.slot, id);
@@ -159,12 +167,14 @@ export function TodayOptionsStrip({
             {sportOptions.map((w) => {
               const id = w.id ?? w.title;
               const selected = selectedWorkoutIds.includes(id);
+            const recommended = (recommendedWorkouts ?? []).includes(id);
               const WIcon = workoutIcon(w.type);
               return (
-                <PickChip
-                  key={id}
-                  selected={selected}
-                  onClick={() => {
+              <PickChip
+                key={id}
+                selected={selected}
+                recommended={recommended}
+                onClick={() => {
                     hapticLight();
                     onWorkoutSelect(id);
                   }}
@@ -198,11 +208,13 @@ export function TodayOptionsStrip({
               <PickStripSection count={leisure.length}>
                 {leisure.map((l) => {
                   const selected = selectedLeisureIds.includes(l.id);
+                const recommended = (recommendedLeisure ?? []).includes(l.id);
                   return (
-                    <PickChip
-                      key={l.id}
-                      selected={selected}
-                      onClick={() => {
+                  <PickChip
+                    key={l.id}
+                    selected={selected}
+                    recommended={recommended}
+                    onClick={() => {
                         hapticLight();
                         onLeisureSelect(l.id);
                       }}

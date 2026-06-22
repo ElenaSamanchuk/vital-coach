@@ -15,6 +15,7 @@ import type { WeeklyExperiment } from "./weekly-experiment";
 import type { HorizonPlan } from "./horizon-plan";
 import type { TodayLeisurePick } from "./today-picks";
 import type { WorkoutOption } from "./fitness";
+import type { PersonalizedDayPlan } from "./personalized-day-recs";
 import type { WellbeingPlan } from "./wellbeing-coach";
 
 export type CyclePhase = "menstrual" | "follicular" | "ovulation" | "luteal";
@@ -163,6 +164,7 @@ export interface DailyCoachPlan {
   horizonPlan: HorizonPlan;
   todayLeisure: TodayLeisurePick[];
   todaySportExtras: WorkoutOption[];
+  personalizedRecs: PersonalizedDayPlan;
 }
 
 export interface SlippingArea {
