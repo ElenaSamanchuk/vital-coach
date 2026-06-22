@@ -84,7 +84,7 @@ export const UI = {
   diaryDone: "День записан",
   todayRoleHint: "Всё на одном экране — в конце нажми «Сохранить день».",
   diaryRoleHint: "Дневник объединён с «Мой день» на главном экране.",
-  vitalityHint: "0–100: еда + движение + дневник + досуг за сегодня",
+  vitalityHint: "0–100: еда + движение + досуг + запись за сегодня",
   onboardingHeight: "Рост, см",
   onboardingWeight: "Вес сейчас, кг",
   onboardingBodySkip: "Можно пропустить — потом в Профиле",

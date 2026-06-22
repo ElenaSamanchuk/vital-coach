@@ -224,6 +224,47 @@ export function TodayOptionsStrip({
     </>
   );
 
+  const leisureBlock =
+    leisure.length === 0 ? (
+      <p className="vc-text-sm py-2 text-center text-[var(--text-secondary)]">
+        Подборка появится после загрузки плана
+      </p>
+    ) : (
+      <>
+        <PickStripSection count={leisure.length}>
+          {leisure.map((l) => {
+            const selected = selectedLeisureIds.includes(l.id);
+            const recommended = (recommendedLeisure ?? []).includes(l.id);
+            return (
+              <PickChip
+                key={l.id}
+                selected={selected}
+                recommended={recommended}
+                onClick={() => {
+                  if (!isStack) hapticLight();
+                  onLeisureSelect(l.id);
+                }}
+              >
+                <div className="vc-pick-chip-row">
+                  <LeisureIcon name={l.icon} color={l.color} />
+                  <span className="vc-pick-chip-title line-clamp-2">{l.label}</span>
+                </div>
+                <p className="vc-text-xs text-[var(--text-secondary)] leading-snug line-clamp-2 mt-0.5">
+                  {l.why}
+                </p>
+                <ImpactLine text={l.impact} />
+              </PickChip>
+            );
+          })}
+        </PickStripSection>
+        {selectedLeisure > 0 && (
+          <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
+            Выбрано: {selectedLeisure}
+          </p>
+        )}
+      </>
+    );
+
   if (isStack) {
     return (
       <div className="space-y-4">
@@ -234,6 +275,13 @@ export function TodayOptionsStrip({
         <div className="vc-glass-card rounded-2xl space-y-3">
           <p className="vc-text-sm font-semibold">Движение</p>
           {sportBlock}
+        </div>
+        <div className="vc-glass-card rounded-2xl space-y-3">
+          <p className="vc-text-sm font-semibold">Досуг</p>
+          <p className="vc-text-xs text-[var(--text-secondary)] -mt-1">
+            Как еда и тренировки — выбери и смотри, как влияет на настроение
+          </p>
+          {leisureBlock}
         </div>
       </div>
     );
@@ -271,49 +319,7 @@ export function TodayOptionsStrip({
 
       {tab === "sport" && sportBlock}
 
-      {tab === "leisure" && (
-        <>
-          {leisure.length === 0 ? (
-            <p className="vc-text-sm py-4 text-center text-[var(--text-secondary)]">
-              Подборка появится после загрузки плана
-            </p>
-          ) : (
-            <>
-              <PickStripSection count={leisure.length}>
-                {leisure.map((l) => {
-                  const selected = selectedLeisureIds.includes(l.id);
-                const recommended = (recommendedLeisure ?? []).includes(l.id);
-                  return (
-                  <PickChip
-                    key={l.id}
-                    selected={selected}
-                    recommended={recommended}
-                    onClick={() => {
-                        hapticLight();
-                        onLeisureSelect(l.id);
-                      }}
-                    >
-                      <div className="vc-pick-chip-row">
-                        <LeisureIcon name={l.icon} color={l.color} />
-                        <span className="vc-pick-chip-title line-clamp-2">{l.label}</span>
-                      </div>
-                      <p className="vc-text-xs text-[var(--text-secondary)] leading-snug line-clamp-2 mt-0.5">
-                        {l.why}
-                      </p>
-                      <ImpactLine text={l.impact} />
-                    </PickChip>
-                  );
-                })}
-              </PickStripSection>
-              {selectedLeisure > 0 && (
-                <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
-                  Выбрано: {selectedLeisure}
-                </p>
-              )}
-            </>
-          )}
-        </>
-      )}
+      {tab === "leisure" && leisureBlock}
     </div>
   );
 }

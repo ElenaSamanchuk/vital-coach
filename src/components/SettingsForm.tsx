@@ -29,6 +29,8 @@ import { WeeklyReviewCard } from "./WeeklyReviewCard";
 import { AppFlowCard } from "./AppFlowCard";
 import { ApkDownloadCard } from "./ApkDownloadCard";
 import { ProfileNumberField } from "./ui/ProfileNumberField";
+import { LeisureQuizCard } from "./visual/LeisureQuizCard";
+import { parseLeisureQuiz } from "@/lib/leisure-quiz";
 
 interface Profile {
   name: string;
@@ -60,6 +62,7 @@ interface Profile {
   interestsJson?: string;
   notificationPrefsJson?: string;
   styleJson?: string;
+  leisureQuizJson?: string;
 }
 
 type Tab = "body" | "life" | "health" | "system";
@@ -72,17 +75,15 @@ export function SettingsForm() {
   const [saved, setSaved] = useState(false);
   const [savingWheel, setSavingWheel] = useState(false);
   const [trackingTags, setTrackingTags] = useState<TrackingTag[]>([]);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const keyParamsRef = useRef<KeyParametersFormHandle>(null);
 
   useEffect(() => {
     const t = searchParams.get("tab");
-    if (t === "health" && GENERIC_MODE && !showAdvanced) return;
-    if (t === "life" && GENERIC_MODE && !showAdvanced) return;
+    if (GENERIC_MODE && (t === "health" || t === "life")) return;
     if (t === "health" || t === "life" || t === "body" || t === "system") {
       setTab(t as Tab);
     }
-  }, [searchParams, showAdvanced]);
+  }, [searchParams]);
 
   useEffect(() => {
     apiClient("/api/profile").then((r) => r.json()).then((p) => {
@@ -146,9 +147,7 @@ export function SettingsForm() {
 
   const settingsTabs = SETTINGS_TABS.filter((t) => {
     if (!GENERIC_MODE) return true;
-    if (t.id === "body" || t.id === "system") return true;
-    if (showAdvanced && (t.id === "life" || t.id === "health")) return true;
-    return false;
+    return t.id === "body" || t.id === "system";
   }).map((t) =>
     GENERIC_MODE && t.id === "system" ? { ...t, label: "Настройки" } : t,
   );
@@ -168,28 +167,12 @@ export function SettingsForm() {
       {activeTab === "body" && (
         <>
           {GENERIC_MODE && (
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((v) => !v)}
-              className="apple-btn apple-btn-secondary w-full text-[13px] mb-3"
-            >
-              {showAdvanced ? "Скрыть расширенные настройки" : UI.advancedSettings}
-            </button>
-          )}
-
-          {GENERIC_MODE && (
             <p className="text-[12px] text-[var(--text-secondary)] mb-3">
-              Данные о себе на всё время. Запись за сегодня — только во вкладке «Мой день».
+              Рост, вес, цели — здесь. Запись за сегодня — во вкладке «Мой день».
             </p>
           )}
 
-          {GENERIC_MODE && showAdvanced && (
-            <p className="text-[12px] text-[var(--text-secondary)] mb-3 -mt-1">
-              Появились вкладки «Жизнь» и «Чекап», чекбоксы здоровья и цели замеров
-            </p>
-          )}
-
-          <KeyParametersForm ref={keyParamsRef} showAdvanced={showAdvanced} hideSaveButton={GENERIC_MODE} />
+          <KeyParametersForm ref={keyParamsRef} hideSaveButton={GENERIC_MODE} />
           <Card title="Основное" subtitle="Рост, вес и год — в «Ключевых параметрах» выше">
             <div className="space-y-3">
               <label className="block">
@@ -210,40 +193,6 @@ export function SettingsForm() {
               </label>
             </div>
           </Card>
-
-          {GENERIC_MODE && showAdvanced && (
-            <Card title="Цикл" subtitle="Для рекомендаций по фазам — только в расширенном режиме">
-            <ProfileNumberField
-              label="Длина цикла, дней"
-              value={profile.cycleLength}
-              min={21}
-              max={45}
-              onCommit={(n) => setProfile({ ...profile, cycleLength: Math.round(n) })}
-            />
-            <label className="block mt-3">
-              <span className="vc-label">Начало последних месячных</span>
-              <input
-                type="date"
-                className="apple-input mt-1"
-                value={profile.lastPeriodStart?.split("T")[0] ?? ""}
-                onChange={(e) =>
-                  setProfile({ ...profile, lastPeriodStart: e.target.value || null })
-                }
-              />
-            </label>
-          </Card>
-          )}
-
-          {GENERIC_MODE && showAdvanced && (
-          <Card title="Лекарства" subtitle="Что принимаешь регулярно">
-            <input
-              className="apple-input"
-              placeholder="Тироксин, витамин D, доза…"
-              value={profile.thyroidMedication}
-              onChange={(e) => setProfile({ ...profile, thyroidMedication: e.target.value })}
-            />
-          </Card>
-          )}
 
           {!GENERIC_MODE && (
             <>
@@ -291,28 +240,6 @@ export function SettingsForm() {
             }}
           />
 
-          {GENERIC_MODE && showAdvanced && (
-            <Card title="Цели замеров" subtitle="Талия · бёдра · грудь">
-              <div className="grid grid-cols-3 gap-2">
-                <ProfileNumberField
-                  label="Талия, см"
-                  value={profile.targetWaistCm}
-                  onCommit={(n) => setProfile({ ...profile, targetWaistCm: n })}
-                />
-                <ProfileNumberField
-                  label="Бёдра, см"
-                  value={profile.targetHipsCm}
-                  onCommit={(n) => setProfile({ ...profile, targetHipsCm: n })}
-                />
-                <ProfileNumberField
-                  label="Грудь, см"
-                  value={profile.targetChestCm}
-                  onCommit={(n) => setProfile({ ...profile, targetChestCm: n })}
-                />
-              </div>
-            </Card>
-          )}
-
           <button type="button" onClick={() => void saveAllBody()} className="apple-btn apple-btn-primary w-full">
             {saved ? "Сохранено ✓" : GENERIC_MODE ? UI.saveAllProfile : "Сохранить тело"}
           </button>
@@ -351,11 +278,6 @@ export function SettingsForm() {
           </Card>
           <WeeklyReviewCard />
           {!GENERIC_MODE && <LifeProfileForm />}
-          {GENERIC_MODE && showAdvanced && (
-            <Card title="Психология" subtitle="Big Five, PERMA, WHO-5 — по желанию">
-              <LifeProfileForm />
-            </Card>
-          )}
         </>
       )}
 
@@ -364,6 +286,21 @@ export function SettingsForm() {
       {activeTab === "system" && (
         <>
           {GENERIC_MODE && <AppFlowCard />}
+          {GENERIC_MODE && (
+            <Card title="Опрос досуга" subtitle="3 вопроса — точнее подборки на «Мой день»">
+              <LeisureQuizCard
+                initial={parseLeisureQuiz(profile.leisureQuizJson ?? "{}")}
+                onSave={async (answers) => {
+                  await apiClient("/api/profile", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ leisureQuizJson: JSON.stringify(answers) }),
+                  });
+                  setProfile({ ...profile, leisureQuizJson: JSON.stringify(answers) });
+                }}
+              />
+            </Card>
+          )}
           <Card title="Напоминания" subtitle="Утро и вечер">
             <ReminderSettings
               value={profile.notificationPrefsJson ?? "{}"}

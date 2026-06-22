@@ -1,9 +1,9 @@
 "use client";
 
 import { apiClient } from "@/lib/api-client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { CheckCircle2, Droplets, Moon, Footprints, Scale, Tags } from "lucide-react";
+import { CheckCircle2, Droplets, Moon, Footprints, Scale, Tags, Leaf, Sparkles } from "lucide-react";
 import type { DailyCoachPlan } from "@/lib/types";
 import { MOOD_VISUAL } from "@/lib/visual-icons";
 import { PageSkeleton } from "@/components/ui/Skeleton";
@@ -12,11 +12,17 @@ import { LifePulseCard } from "./visual/LifePulseCard";
 import {
   type MealChoicesRaw,
   slotChoices,
+  leisureChoices,
   toggleSlotChoice,
+  toggleLeisureChoice,
   toggleWorkoutChoice,
   parseWorkoutChoices,
   serializeWorkoutChoices,
 } from "@/lib/today-choices";
+import { CompletionRings, buildTodayRings } from "./visual/CompletionRings";
+import { computeVitalityScore, vitalityLabel } from "@/lib/vitality-score";
+import { TodayPersonalRecsCard } from "./visual/TodayPersonalRecsCard";
+import { isSportLeisureId } from "@/lib/leisure";
 import {
   parseLifePulseFromLog,
   emptyLifePulseDay,
@@ -100,6 +106,9 @@ export function UnifiedDayScreen() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [softDay, setSoftDay] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const prevCompleteRef = useRef(false);
 
   const load = useCallback(() => {
     return Promise.all([apiClient("/api/coach"), apiClient("/api/journey")]).then(async ([c, j]) => {
@@ -117,6 +126,7 @@ export function UnifiedDayScreen() {
         }
       }
       setWorkoutChoice(d.todayLog?.workoutChoice ?? "");
+      setSoftDay(d.todayLog?.softDay === true || d.plan?.softDay === true);
       setLifePulse(parseLifePulseFromLog(d.todayLog?.lifeActionsJson));
       setTrackingTags(parseTrackingTags(d.trackingTagsJson));
       setDayTags(parseDayTags(d.todayLog?.dayTagsJson));
@@ -145,8 +155,60 @@ export function UnifiedDayScreen() {
   };
 
   const mealChoicesForSlots = useMemo(() => slotChoices(mealChoices), [mealChoices]);
+  const leisureIds = useMemo(() => leisureChoices(mealChoices), [mealChoices]);
   const workoutIds = useMemo(() => parseWorkoutChoices(workoutChoice), [workoutChoice]);
   const mealSlots = plan?.mealPlan.map((m) => m.slot) ?? ["breakfast", "lunch", "snack", "dinner"];
+
+  const diaryDone = saved || log.mood != null;
+  const mealsDone = mealSlots.filter((s) => (mealChoicesForSlots[s]?.length ?? 0) > 0).length;
+  const mealsTotal = mealSlots.length;
+  const workoutPicked =
+    workoutIds.length > 0 ||
+    leisureIds.some((id) => isSportLeisureId(id)) ||
+    (log.steps ?? 0) >= 5000;
+
+  const wellbeingProgress = useMemo(() => {
+    let p = 0;
+    if (log.mood != null || diaryDone) p += 0.34;
+    const balanceTouched =
+      lifePulse.work.items.length +
+        lifePulse.care.items.length +
+        lifePulse.home.items.length +
+        lifePulse.leisure.items.length >
+      0;
+    if (balanceTouched) p += 0.33;
+    if (leisureIds.length > 0) p += 0.33;
+    return Math.min(1, p);
+  }, [log.mood, diaryDone, lifePulse, leisureIds]);
+
+  const rings = useMemo(() => {
+    if (!plan) return [];
+    return buildTodayRings({
+      mealSlots,
+      mealChoices: mealChoicesForSlots,
+      workoutChoice: workoutChoice || null,
+      steps: log.steps,
+      diaryDone,
+      moodLogged: log.mood != null,
+      wellbeingActionsDone: wellbeingProgress >= 0.67 ? 1 : 0,
+      leisureChoice: leisureIds[0] ?? "",
+    });
+  }, [plan, mealSlots, mealChoicesForSlots, workoutChoice, log.steps, log.mood, diaryDone, wellbeingProgress, leisureIds]);
+
+  const vitalityScore = useMemo(() => computeVitalityScore(rings), [rings]);
+  const allComplete =
+    mealsDone >= mealsTotal && workoutPicked && diaryDone && wellbeingProgress >= 1;
+
+  useEffect(() => {
+    if (allComplete && !prevCompleteRef.current) {
+      setCelebrate(true);
+      hapticSuccess();
+      const t = setTimeout(() => setCelebrate(false), 800);
+      prevCompleteRef.current = true;
+      return () => clearTimeout(t);
+    }
+    if (!allComplete) prevCompleteRef.current = false;
+  }, [allComplete]);
 
   const flowBlocks = buildDayFlowBlocks({
     mood: log.mood,
@@ -168,12 +230,15 @@ export function UnifiedDayScreen() {
       await apiClient("/api/choices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, mealChoices, workoutChoice }),
+        body: JSON.stringify({ date, mealChoices, workoutChoice, softDay }),
       });
 
       const coachRes = await apiClient("/api/coach");
       const coach = await coachRes.json();
       const totals = coach.plan?.nutritionFramework?.totalsFromMeals;
+
+      const leisureFromPulse = leisureIdsFromPulse(lifePulse);
+      const leisureMerged = [...new Set([...leisureIds, ...leisureFromPulse])];
 
       const dailyRes = await apiClient("/api/daily", {
         method: "POST",
@@ -192,7 +257,7 @@ export function UnifiedDayScreen() {
           proteinG: totals?.proteinG,
           lifeActions: { _pulse: lifePulse },
           dayTags,
-          leisure: leisureIdsFromPulse(lifePulse),
+          leisure: leisureMerged,
         }),
       });
       const result = await dailyRes.json().catch(() => ({}));
@@ -222,18 +287,72 @@ export function UnifiedDayScreen() {
 
   return (
     <div className="vc-page vc-stagger pb-28">
+      {plan.suggestSoftDay && !softDay && !plan.softDay && (
+        <button
+          type="button"
+          onClick={() => {
+            hapticLight();
+            setSoftDay(true);
+            markDirty();
+          }}
+          className="w-full rounded-2xl border border-[var(--warning)]/40 bg-[var(--warning-soft)] p-4 text-left"
+        >
+          <p className="text-[13px] font-semibold text-[var(--text)]">Предлагаем мягкий день</p>
+          <p className="text-[11px] text-[var(--text-secondary)] mt-1">
+            Стресс или усталость — смягчим план без чувства вины
+          </p>
+        </button>
+      )}
+
       <div className="vc-glass-card rounded-2xl">
-        <p className="vc-text-lg">{plan.greeting}</p>
-        <p className="vc-subtitle vc-text-xs mt-1 leading-relaxed">
-          Заполни сверху вниз — в конце «Сохранить день». Прогресс и профиль — в других вкладках.
-        </p>
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="vc-text-lg">{plan.greeting}</p>
+            <p className="vc-subtitle vc-text-xs mt-1 leading-relaxed">{plan.summary}</p>
+          </div>
+          {allComplete && (
+            <span className="shrink-0 flex items-center gap-1 text-[11px] font-semibold text-[var(--success)] bg-[var(--success-soft)] px-2 py-1 rounded-full">
+              <Sparkles size={12} />
+              День собран
+            </span>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <CompletionRings
+            rings={rings}
+            centerLabel={String(vitalityScore)}
+            centerSub={vitalityLabel(vitalityScore)}
+            vitalityHint={UI.vitalityHint}
+            celebrate={celebrate}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-2 mt-4">
           <StreakBadge days={streak} />
           <span className="vc-text-xs text-[var(--text-secondary)] self-center">
             {totals.calories} ккал · цель {plan.dayTargets.calorieTarget}
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              hapticLight();
+              setSoftDay((v) => !v);
+              markDirty();
+            }}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-colors ${
+              softDay || plan.softDay
+                ? "bg-[var(--accent)] text-white"
+                : "bg-[var(--bg-subtle)] text-[var(--text-secondary)]"
+            }`}
+          >
+            <Leaf size={12} />
+            {softDay || plan.softDay ? "Мягкий день" : "Мягкий день"}
+          </button>
         </div>
       </div>
+
+      {plan.personalizedRecs && <TodayPersonalRecsCard plan={plan.personalizedRecs} />}
 
       <DayFlowChecklist blocks={flowBlocks} />
 
@@ -274,9 +393,9 @@ export function UnifiedDayScreen() {
         </div>
       </section>
 
-      {plan.mealPlan && plan.todaySportExtras && (
+      {plan.mealPlan && plan.todaySportExtras && plan.todayLeisure && (
         <section>
-          <p className="vc-overline px-1 mb-2">2 · Еда и движение</p>
+          <p className="vc-overline px-1 mb-2">2 · Еда · движение · досуг</p>
           <TodayOptionsStrip
             layout="stack"
             genericFoodLayout
@@ -294,15 +413,25 @@ export function UnifiedDayScreen() {
               setWorkoutChoice(serializeWorkoutChoices(toggleWorkoutChoice(workoutIds, id)));
               markDirty();
             }}
-            leisure={[]}
-            selectedLeisureIds={[]}
-            onLeisureSelect={() => {}}
+            leisure={plan.todayLeisure}
+            selectedLeisureIds={leisureIds}
+            onLeisureSelect={(id) => {
+              hapticLight();
+              setMealChoices(toggleLeisureChoice(mealChoices, id));
+              markDirty();
+            }}
+            recommendedMeals={plan.personalizedRecs?.highlights.meals}
+            recommendedWorkouts={plan.personalizedRecs?.highlights.workouts}
+            recommendedLeisure={plan.personalizedRecs?.highlights.leisure}
           />
         </section>
       )}
 
       <section>
-        <p className="vc-overline px-1 mb-2">3 · Баланс — работа · уход · досуг · быт</p>
+        <p className="vc-overline px-1 mb-2">3 · Баланс — что было · работа · уход · быт</p>
+        <p className="vc-text-xs text-[var(--text-secondary)] px-1 mb-2 -mt-1">
+          Досуг выше — план и мотивация; здесь — отметить, как прошёл день
+        </p>
         <LifePulseCard
           pulse={lifePulse}
           moodContext={{ mood: log.mood, energy: log.energy, stress: log.stress }}

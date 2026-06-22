@@ -1,4 +1,5 @@
 import { VC } from "./design-tokens";
+import { GENERIC_MODE } from "./app-config";
 import { isSportLeisureId } from "./leisure";
 import { slotChoices, leisureChoices, parseWorkoutChoices } from "./today-choices";
 
@@ -77,7 +78,7 @@ export function defaultDayRings(opts: {
     },
     {
       id: "log",
-      label: "Дневник",
+      label: GENERIC_MODE ? "Запись" : "Дневник",
       progress: opts.diaryDone ? 1 : 0,
       color: VC.ringLog,
       done: opts.diaryDone,
