@@ -10,6 +10,7 @@ import {
   Footprints,
   Flower2,
   Utensils,
+  UtensilsCrossed,
   Activity,
   ClipboardPen,
   Map,
@@ -19,6 +20,12 @@ import {
   Sparkles,
   Settings,
   BookOpen,
+  Beef,
+  Milk,
+  Wheat,
+  Salad,
+  Apple,
+  Droplets,
 } from "lucide-react";
 import { VC } from "./design-tokens";
 import { CHECKUP } from "./product-copy";
@@ -87,6 +94,20 @@ const WORKOUT_ICONS: Record<string, LucideIcon> = {
 export function workoutIcon(type?: string): LucideIcon {
   if (!type) return Activity;
   return WORKOUT_ICONS[type] ?? Activity;
+}
+
+const FOOD_CATEGORY_ICONS: Record<string, LucideIcon> = {
+  protein: Beef,
+  dairy: Milk,
+  grain: Wheat,
+  veg: Salad,
+  fruit: Apple,
+  drink: Droplets,
+};
+
+export function foodCategoryIcon(category: string, kind?: string): LucideIcon {
+  if (kind === "dish") return UtensilsCrossed;
+  return FOOD_CATEGORY_ICONS[category] ?? Utensils;
 }
 
 export const MOOD_VISUAL = [

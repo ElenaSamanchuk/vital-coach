@@ -2,11 +2,11 @@
 
 import { apiClient } from "@/lib/api-client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
-import { CheckCircle2, Footprints, Scale, Plus } from "lucide-react";
+import { format, isSameDay, startOfDay } from "date-fns";
+import { CheckCircle2, Footprints, Scale, RefreshCw } from "lucide-react";
 import type { DailyCoachPlan } from "@/lib/types";
-import type { WorkoutOption } from "@/lib/fitness";
 import { MOOD_VISUAL } from "@/lib/visual-icons";
+import { workoutIcon } from "@/lib/visual-icons";
 import { PageSkeleton } from "@/components/ui/Skeleton";
 import {
   type MealChoicesRaw,
@@ -32,15 +32,19 @@ import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import { WaterDropControl } from "./visual/WaterDropControl";
 import { SleepPillowControl } from "./visual/SleepPillowControl";
 import { MealEditorSection, sumMealCalories } from "./day/MealEditorSection";
-import { ActivityCardSection } from "./day/ActivityCardSection";
+import { HorizontalPickSection, type HorizontalPickItem } from "./ui/HorizontalPickSection";
 import { workoutImpact } from "@/lib/impact-motivation";
 import { genericLeisureCards, genericWorkoutOptions } from "@/lib/generic-day-catalogs";
 import { CycleDayCard } from "./visual/CycleDayCard";
 import { DayMemoryCard } from "./visual/DayMemoryCard";
 import { DayDiversityStrip } from "./visual/DayDiversityStrip";
 import { DayPhotoUpload } from "./visual/DayPhotoUpload";
+import { DayDateNav, readInitialDayFromUrl } from "./visual/DayDateNav";
+import { JournalCalendar } from "./visual/JournalCalendar";
 import { computeDayDiversity } from "@/lib/day-diversity";
 import { findDayMemories } from "@/lib/day-memories";
+import { syncAndroidSteps, isAndroidNative } from "@/lib/android-steps";
+import { parsePeriodMeta } from "@/lib/period-tracking";
 
 interface LogFields {
   mood: number;
@@ -59,45 +63,12 @@ function movementBurnTarget(calorieTarget: number): number {
   return Math.max(200, Math.round(calorieTarget * 0.2));
 }
 
-function WorkoutCard({
-  w,
-  onRemove,
-}: {
-  w: WorkoutOption;
-  onRemove: () => void;
-}) {
-  const icons: Record<string, string> = {
-    walk: "🚶",
-    bike: "🚴",
-    pool: "🏊",
-    strength: "💪",
-    yoga: "🧘",
-    dance: "💃",
-    rest: "🌿",
-  };
-  return (
-    <button
-      type="button"
-      onClick={onRemove}
-      className="w-full text-left vc-glass-card rounded-2xl p-3 flex gap-3"
-    >
-      <div className="shrink-0 w-10 h-10 rounded-xl bg-[var(--bg-subtle)] flex items-center justify-center text-xl">
-        {icons[w.type] ?? "🏃"}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="vc-text-sm font-semibold">{w.title}</p>
-        <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
-          {w.durationMin} мин · ~{w.caloriesBurned ?? "—"} ккал
-        </p>
-        <p className="vc-text-xs text-[var(--text-tertiary)] mt-1.5 leading-snug">
-          {w.impact ?? workoutImpact(w.id, w.type)}
-        </p>
-      </div>
-    </button>
-  );
-}
-
 export function UnifiedDayScreen() {
+  const [viewDate, setViewDate] = useState(readInitialDayFromUrl);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [journalLogs, setJournalLogs] = useState<
+    { date: string; mood?: number; notes?: string; dayPhoto?: string; mealChoices?: string; calories?: number }[]
+  >([]);
   const [plan, setPlan] = useState<DailyCoachPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [mealChoices, setMealChoices] = useState<MealChoicesRaw>({});
@@ -115,22 +86,31 @@ export function UnifiedDayScreen() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [workoutPickerOpen, setWorkoutPickerOpen] = useState(false);
+  const [stepsSyncing, setStepsSyncing] = useState(false);
+  const [stepsSyncNote, setStepsSyncNote] = useState<string | null>(null);
   const [sleepTargetMin, setSleepTargetMin] = useState(480);
   const [weightKg, setWeightKg] = useState(70);
   const [dayPhoto, setDayPhoto] = useState("");
   const [lastPeriodStart, setLastPeriodStart] = useState<string | null>(null);
   const [cycleLength, setCycleLength] = useState(28);
+  const [periodDays, setPeriodDays] = useState(5);
   const [memories, setMemories] = useState<ReturnType<typeof findDayMemories>>([]);
 
+  const dateIso = format(viewDate, "yyyy-MM-dd");
+  const isToday = isSameDay(viewDate, startOfDay(new Date()));
+
   const load = useCallback(() => {
-    return Promise.all([apiClient("/api/coach"), apiClient("/api/profile")]).then(async ([c, p]) => {
+    return Promise.all([
+      apiClient(`/api/coach?date=${dateIso}`),
+      apiClient("/api/profile"),
+    ]).then(async ([c, p]) => {
       const d = await c.json();
       const profile = await p.json();
       setSleepTargetMin(profile.sleepTargetMin ?? 480);
       setWeightKg(profile.currentWeightKg ?? 70);
       setLastPeriodStart(profile.lastPeriodStart ?? null);
       setCycleLength(profile.cycleLength ?? 28);
+      setPeriodDays(parsePeriodMeta(profile.assessmentJson).periodDays);
       setPlan(d.plan);
       if (d.todayLog?.mealChoices) {
         try {
@@ -142,6 +122,9 @@ export function UnifiedDayScreen() {
         } catch {
           setMealChoices({});
         }
+      } else {
+        setMealChoices({});
+        setMealSlots(DEFAULT_MEAL_SLOTS);
       }
       setWorkoutChoice(d.todayLog?.workoutChoice ?? "");
       setDayPhoto(d.todayLog?.dayPhoto ?? "");
@@ -159,18 +142,34 @@ export function UnifiedDayScreen() {
       setDirty(false);
       setSaved(Boolean(d.todayLog?.mood != null));
     });
-  }, []);
+  }, [dateIso]);
 
   useEffect(() => {
+    setLoading(true);
     load().finally(() => setLoading(false));
   }, [load]);
 
   useEffect(() => {
     apiClient("/api/analytics?days=400")
       .then((r) => r.json())
-      .then((d) => setMemories(findDayMemories(d.logs ?? [])))
-      .catch(() => setMemories([]));
+      .then((d) => {
+        setJournalLogs(d.logs ?? []);
+        setMemories(findDayMemories(d.logs ?? []));
+      })
+      .catch(() => {
+        setJournalLogs([]);
+        setMemories([]);
+      });
   }, [saved]);
+
+  useEffect(() => {
+    if (!isToday || !isAndroidNative()) return;
+    void syncAndroidSteps().then((steps) => {
+      if (steps != null && steps > 0) {
+        setLog((l) => ({ ...l, steps: l.steps ?? steps }));
+      }
+    });
+  }, [isToday]);
 
   const markDirty = () => {
     setDirty(true);
@@ -185,17 +184,46 @@ export function UnifiedDayScreen() {
 
   const allWorkouts = useMemo(() => genericWorkoutOptions(weightKg), [weightKg]);
 
+  const workoutPickItems = useMemo(
+    (): HorizontalPickItem[] =>
+      allWorkouts.map((w) => ({
+        id: w.id,
+        title: w.title,
+        subtitle: `${w.durationMin} мин · ~${w.caloriesBurned ?? "—"} ккал`,
+        impact: w.impact ?? workoutImpact(w.id, w.type),
+        icon: workoutIcon(w.type),
+      })),
+    [allWorkouts],
+  );
+
+  const leisurePickItems = useMemo(
+    (): HorizontalPickItem[] =>
+      genericLeisureCards().map((l) => ({
+        id: l.id,
+        title: l.label,
+        subtitle: `${l.minutes} мин · ${l.impactLabel}`,
+        impact: l.impact,
+        iconName: l.iconName,
+      })),
+    [],
+  );
+
+  const pulsePickItems = (key: LifePulseKey): HorizontalPickItem[] => {
+    const SphereIcon = LIFE_PULSE_META[key].icon;
+    return LIFE_PULSE_ITEMS[key].map((item) => ({
+      id: item.id,
+      title: item.label,
+      subtitle: item.minutes != null ? `${item.minutes} мин` : undefined,
+      impact: item.tip,
+      icon: SphereIcon,
+    }));
+  };
+
   const burnedKcal = useMemo(() => {
     return workoutIds.reduce((sum, id) => {
       const w = allWorkouts.find((o) => o.id === id);
       return sum + (w?.caloriesBurned ?? 0);
     }, 0);
-  }, [allWorkouts, workoutIds]);
-
-  const selectedWorkouts = useMemo(() => {
-    return workoutIds
-      .map((id) => allWorkouts.find((o) => o.id === id))
-      .filter((w): w is WorkoutOption => Boolean(w));
   }, [allWorkouts, workoutIds]);
 
   const miniRings = useMemo(() => {
@@ -238,18 +266,6 @@ export function UnifiedDayScreen() {
     ];
   }, [plan, consumedKcal, burnedKcal, log.sleepMinutes, log.waterMl, sleepTargetMin]);
 
-  const pulseItems = (key: LifePulseKey) =>
-    LIFE_PULSE_ITEMS[key].map((item) => ({
-      id: item.id,
-      label: item.label,
-      icon: LIFE_PULSE_META[key].icon,
-      minutes: item.minutes,
-      impact: item.tip,
-      impactLabel: item.moodBoost ? `настроение +${item.moodBoost}` : undefined,
-    }));
-
-  const leisureItems = useMemo(() => genericLeisureCards(), []);
-
   const diversity = useMemo(
     () =>
       computeDayDiversity({
@@ -261,18 +277,38 @@ export function UnifiedDayScreen() {
     [lifePulse, leisureIds, workoutIds, log.steps],
   );
 
+  const syncSteps = async () => {
+    setStepsSyncing(true);
+    setStepsSyncNote(null);
+    try {
+      const steps = await syncAndroidSteps();
+      if (steps != null && steps > 0) {
+        setLog((l) => ({ ...l, steps }));
+        markDirty();
+        setStepsSyncNote(`Подтянуто из Health Connect: ${steps.toLocaleString("ru-RU")} шагов`);
+      } else if (steps === 0) {
+        setStepsSyncNote("Разреши доступ к шагам в Health Connect или введи вручную");
+      } else {
+        setStepsSyncNote("Health Connect недоступен — введи шаги вручную");
+      }
+    } catch {
+      setStepsSyncNote("Не удалось прочитать шаги — проверь разрешения Health Connect");
+    } finally {
+      setStepsSyncing(false);
+    }
+  };
+
   const saveAll = async () => {
     setSaving(true);
     setSaveError(null);
-    const date = format(new Date(), "yyyy-MM-dd");
     try {
       await apiClient("/api/choices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, mealChoices, workoutChoice, softDay: false }),
+        body: JSON.stringify({ date: dateIso, mealChoices, workoutChoice, softDay: false }),
       });
 
-      const coachRes = await apiClient("/api/coach");
+      const coachRes = await apiClient(`/api/coach?date=${dateIso}`);
       const coach = await coachRes.json();
       const totals = coach.plan?.nutritionFramework?.totalsFromMeals;
 
@@ -280,7 +316,7 @@ export function UnifiedDayScreen() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date,
+          date: dateIso,
           energy: log.energy,
           mood: log.mood,
           stress: log.stress,
@@ -322,20 +358,50 @@ export function UnifiedDayScreen() {
 
   return (
     <div className="vc-page vc-stagger pb-28 space-y-5">
+      <DayDateNav
+        date={viewDate}
+        onDateChange={(d) => {
+          setViewDate(d);
+          setCalendarOpen(false);
+        }}
+        onOpenCalendar={() => setCalendarOpen((v) => !v)}
+      />
+
+      {calendarOpen && (
+        <JournalCalendar
+          logs={journalLogs}
+          selectedDate={viewDate}
+          onSelectDate={(d) => {
+            setViewDate(d);
+            setCalendarOpen(false);
+          }}
+          compact
+        />
+      )}
+
+      {!isToday && (
+        <p className="vc-text-xs text-center text-[var(--accent)] bg-[var(--accent-soft)] rounded-xl py-2 px-3">
+          Редактируешь прошлый день — изменения сохранятся на {format(viewDate, "d.MM.yyyy")}
+        </p>
+      )}
+
       <div className="vc-glass-card rounded-2xl px-2">
         <DayMiniRings rings={miniRings} />
       </div>
 
-      <CycleDayCard
-        lastPeriodStart={lastPeriodStart}
-        cycleLength={cycleLength}
-        onUpdated={() => {
-          void load();
-          apiClient("/api/profile")
-            .then((r) => r.json())
-            .then((p) => setLastPeriodStart(p.lastPeriodStart ?? null));
-        }}
-      />
+      {isToday && (
+        <CycleDayCard
+          lastPeriodStart={lastPeriodStart}
+          cycleLength={cycleLength}
+          periodDays={periodDays}
+          onUpdated={() => {
+            void load();
+            apiClient("/api/profile")
+              .then((r) => r.json())
+              .then((p) => setLastPeriodStart(p.lastPeriodStart ?? null));
+          }}
+        />
+      )}
 
       <DayMemoryCard memories={memories} />
 
@@ -381,6 +447,13 @@ export function UnifiedDayScreen() {
         choices={mealChoicesForSlots}
         onSlotsChange={(s) => {
           setMealSlots(s);
+          setMealChoices((prev) => {
+            const next = { ...prev };
+            for (const key of Object.keys(next)) {
+              if (!s.includes(key) && !key.startsWith("_")) delete next[key];
+            }
+            return next;
+          });
           markDirty();
         }}
         onChoiceToggle={(slot, id) => {
@@ -389,99 +462,59 @@ export function UnifiedDayScreen() {
         }}
       />
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <p className="vc-text-sm font-semibold">Движение</p>
-          <button
-            type="button"
-            onClick={() => {
-              hapticLight();
-              setWorkoutPickerOpen((v) => !v);
-            }}
-            className="w-8 h-8 rounded-full bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent)]"
-            aria-label="Добавить движение"
-          >
-            <Plus size={18} />
-          </button>
-        </div>
-        {selectedWorkouts.length > 0 && (
-          <div className="space-y-2">
-            {selectedWorkouts.map((w) => (
-              <WorkoutCard
-                key={w.id}
-                w={w}
-                onRemove={() => {
-                  hapticLight();
-                  setWorkoutChoice(serializeWorkoutChoices(toggleWorkoutChoice(workoutIds, w.id)));
-                  markDirty();
-                }}
-              />
-            ))}
-          </div>
-        )}
-        {workoutPickerOpen && (
-          <div className="grid grid-cols-2 gap-2">
-            {(allWorkouts)
-              .filter((w) => !workoutIds.includes(w.id))
-              .map((w) => (
-                <button
-                  key={w.id}
-                  type="button"
-                  onClick={() => {
-                    hapticLight();
-                    setWorkoutChoice(serializeWorkoutChoices(toggleWorkoutChoice(workoutIds, w.id)));
-                    markDirty();
-                  }}
-                  className="text-left rounded-xl border border-[var(--border)] bg-[var(--elevated)] p-2.5"
-                >
-                  <p className="vc-text-xs font-semibold">{w.title}</p>
-                  <p className="vc-text-xs text-[var(--text-tertiary)] mt-0.5">
-                    {w.durationMin} мин · ~{w.caloriesBurned} ккал
-                  </p>
-                </button>
-              ))}
-          </div>
-        )}
-      </section>
+      <HorizontalPickSection
+        title="Движение"
+        items={workoutPickItems}
+        selectedIds={workoutIds}
+        onToggle={(id) => {
+          setWorkoutChoice(serializeWorkoutChoices(toggleWorkoutChoice(workoutIds, id)));
+          markDirty();
+        }}
+        searchPlaceholder="Поиск: йога, прогулка, бассейн…"
+      />
 
-      <ActivityCardSection
+      <HorizontalPickSection
         title="Досуг"
-        items={leisureItems}
+        items={leisurePickItems}
         selectedIds={leisureIds}
         onToggle={(id) => {
           setMealChoices(toggleLeisureChoice(mealChoices, id));
           markDirty();
         }}
+        searchPlaceholder="Поиск: книги, кино, прогулка…"
       />
 
-      <ActivityCardSection
+      <HorizontalPickSection
         title="Быт"
-        items={pulseItems("home")}
+        items={pulsePickItems("home")}
         selectedIds={lifePulse.home.items}
         onToggle={(id) => {
           setLifePulse(togglePulseItem(lifePulse, "home", id));
           markDirty();
         }}
+        searchPlaceholder="Поиск: уборка, готовка…"
       />
 
-      <ActivityCardSection
+      <HorizontalPickSection
         title="Уход за собой"
-        items={pulseItems("care")}
+        items={pulsePickItems("care")}
         selectedIds={lifePulse.care.items}
         onToggle={(id) => {
           setLifePulse(togglePulseItem(lifePulse, "care", id));
           markDirty();
         }}
+        searchPlaceholder="Поиск: маска, медитация…"
       />
 
-      <ActivityCardSection
+      <HorizontalPickSection
         title="Работа"
-        items={pulseItems("work")}
+        items={pulsePickItems("work")}
         selectedIds={lifePulse.work.items}
         onToggle={(id) => {
           setLifePulse(togglePulseItem(lifePulse, "work", id));
           markDirty();
         }}
+        searchPlaceholder="Поиск: фокус, встречи…"
       />
 
       <DayDiversityStrip
@@ -509,9 +542,22 @@ export function UnifiedDayScreen() {
         />
 
         <div>
-          <label className="vc-text-sm font-semibold flex items-center gap-1.5 mb-2">
-            <Footprints size={16} className="text-[var(--accent)]" /> Шаги
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="vc-text-sm font-semibold flex items-center gap-1.5">
+              <Footprints size={16} className="text-[var(--accent)]" /> Шаги
+            </label>
+            {isAndroidNative() && (
+              <button
+                type="button"
+                onClick={() => void syncSteps()}
+                disabled={stepsSyncing}
+                className="flex items-center gap-1 vc-text-xs font-semibold text-[var(--accent)] px-2 py-1 rounded-lg bg-[var(--accent-soft)]"
+              >
+                <RefreshCw size={12} className={stepsSyncing ? "animate-spin" : ""} />
+                Health Connect
+              </button>
+            )}
+          </div>
           <input
             type="number"
             className="apple-input apple-input--metric w-full"
@@ -525,14 +571,19 @@ export function UnifiedDayScreen() {
               markDirty();
             }}
           />
-          <p className="vc-text-xs text-[var(--text-tertiary)] mt-1.5">
-            Автоматически — только в установленном приложении на Android. На iPhone введи вручную или из «Здоровья»
-          </p>
+          {stepsSyncNote && (
+            <p className="vc-text-xs text-[var(--text-tertiary)] mt-1.5">{stepsSyncNote}</p>
+          )}
+          {!isAndroidNative() && (
+            <p className="vc-text-xs text-[var(--text-tertiary)] mt-1.5">
+              Автошаги — в APK на Android через Health Connect. На iPhone — вручную или из «Здоровья»
+            </p>
+          )}
         </div>
 
         <div>
           <label className="vc-text-sm font-semibold flex items-center gap-1.5 mb-2">
-            <Scale size={16} /> Вес сегодня, кг
+            <Scale size={16} /> Вес, кг
           </label>
           <input
             type="number"

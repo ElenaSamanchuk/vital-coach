@@ -13,6 +13,7 @@ import {
   GENERIC_HEALTH_OPTIONS,
 } from "@/lib/generic-health-options";
 import { mergePreferencesIntoAssessment, parseProfilePreferences } from "@/lib/profile-preferences";
+import { parsePeriodMeta } from "@/lib/period-tracking";
 
 interface ProfileData {
   name: string;
@@ -47,6 +48,7 @@ export function PotokProfileForm() {
   const [data, setData] = useState<ProfileData | null>(null);
   const [gender, setGender] = useState("female");
   const [birthDate, setBirthDate] = useState("");
+  const [periodDays, setPeriodDays] = useState(5);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -58,6 +60,7 @@ export function PotokProfileForm() {
         const ex = parseExtras(p.assessmentJson);
         setGender(ex.gender ?? "female");
         setBirthDate(ex.birthDate ?? `${p.birthYear}-01-01`);
+        setPeriodDays(parsePeriodMeta(p.assessmentJson).periodDays);
       });
   }, []);
 
@@ -87,9 +90,9 @@ export function PotokProfileForm() {
     let merged = assessmentJson;
     try {
       const base = JSON.parse(assessmentJson) as Record<string, unknown>;
-      merged = JSON.stringify({ ...base, gender, birthDate });
+      merged = JSON.stringify({ ...base, gender, birthDate, periodDays });
     } catch {
-      merged = JSON.stringify({ gender, birthDate });
+      merged = JSON.stringify({ gender, birthDate, periodDays });
     }
 
     await apiClient("/api/profile", {
@@ -226,8 +229,17 @@ export function PotokProfileForm() {
           step={1}
           unit="дн."
         />
+        <SwipeSlider
+          label="Длительность месячных"
+          value={periodDays}
+          onChange={(n) => setPeriodDays(Math.round(n))}
+          min={3}
+          max={8}
+          step={1}
+          unit="дн."
+        />
         <p className="vc-text-xs text-[var(--text-tertiary)] mt-2">
-          1-й день месячных отмечай на «Мой день» — история попадёт в аналитику
+          1-й день месячных отмечай на «Мой день» — график учтёт {periodDays} дн.
         </p>
       </Card>
 

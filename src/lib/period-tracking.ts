@@ -34,6 +34,7 @@ export function parsePeriodMeta(assessmentJson?: string | null): PeriodMeta {
 export function mergePeriodStarts(
   assessmentJson: string | null | undefined,
   newStart: string,
+  periodDays = DEFAULT_PERIOD_DAYS,
 ): string {
   let base: Record<string, unknown> = {};
   try {
@@ -45,7 +46,11 @@ export function mergePeriodStarts(
     ? (base.periodStarts as string[])
     : [];
   const starts = [newStart, ...existing.filter((d) => d !== newStart)].slice(0, 36);
-  return JSON.stringify({ ...base, periodStarts: starts, periodDays: DEFAULT_PERIOD_DAYS });
+  const savedDays =
+    typeof base.periodDays === "number" && base.periodDays >= 3 && base.periodDays <= 8
+      ? base.periodDays
+      : periodDays;
+  return JSON.stringify({ ...base, periodStarts: starts, periodDays: savedDays });
 }
 
 export function isMenstrualDay(

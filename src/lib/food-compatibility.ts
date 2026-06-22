@@ -48,3 +48,47 @@ export function mealComboHints(itemIds: string[]): string[] {
 
   return [...new Set(hints)].slice(0, 2);
 }
+
+/** Подсказки по сочетаемости между приёмами пищи за день */
+export function dayMealComboHints(choices: Record<string, string[]>): string[] {
+  const hints: string[] = [];
+  const breakfast = choices.breakfast ?? [];
+  const lunch = choices.lunch ?? [];
+  const dinner = choices.dinner ?? [];
+  const snack = choices.snack ?? [];
+  const extras = Object.entries(choices)
+    .filter(([k]) => k.startsWith("extra_"))
+    .flatMap(([, ids]) => ids);
+
+  const dinnerIds = [...dinner, ...extras.filter((id) => !snack.includes(id))];
+  const allFruitSlots = [
+    hasCategory(breakfast, "fruit") ? "завтрак" : null,
+    hasCategory(lunch, "fruit") ? "обед" : null,
+    hasCategory(dinner, "fruit") ? "ужин" : null,
+    hasCategory(snack, "fruit") ? "перекус" : null,
+  ].filter(Boolean);
+
+  if (hasCategory(dinnerIds, "fruit") && hasCategory(dinnerIds, "protein")) {
+    hints.push("Фрукт на ужине лучше отдельным перекусом — не смешивай с белковым ужином");
+  }
+  if (hasCategory(breakfast, "fruit") && !hasCategory(breakfast, "protein")) {
+    hints.push("Фрукт на завтрак — добавь белок (яйцо, творог), чтобы дольше не было голода");
+  }
+  if (hasCategory(lunch, "fruit") && hasCategory(lunch, "grain") && !hasCategory(lunch, "protein")) {
+    hints.push("Фрукт + крупа на обед — добавь белок, сахар будет ровнее");
+  }
+  if (allFruitSlots.length >= 2) {
+    hints.push("Фрукты в нескольких приёмах — распредели: лучше 1–2 порции в день с белком");
+  }
+  if (hasCategory(snack, "fruit") && (hasCategory(dinner, "protein") || hasCategory(lunch, "protein"))) {
+    hints.push("Фрукт отдельным перекусом — удобнее, чем в одном приёме с плотным белком");
+  }
+  if (
+    countCategory([...breakfast, ...lunch, ...dinner], "grain") >= 3 &&
+    !hasCategory([...breakfast, ...lunch, ...dinner], "veg")
+  ) {
+    hints.push("Много круп за день — добавь овощи хотя бы в один приём");
+  }
+
+  return [...new Set(hints)].slice(0, 2);
+}

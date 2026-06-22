@@ -7,16 +7,17 @@ import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import {
   cycleStatus,
   mergePeriodStarts,
-  DEFAULT_PERIOD_DAYS,
 } from "@/lib/period-tracking";
 
 export function CycleDayCard({
   lastPeriodStart,
   cycleLength,
+  periodDays = 5,
   onUpdated,
 }: {
   lastPeriodStart: string | null;
   cycleLength: number;
+  periodDays?: number;
   onUpdated?: () => void;
 }) {
   const status = cycleStatus(lastPeriodStart, cycleLength);
@@ -34,7 +35,7 @@ export function CycleDayCard({
       body: JSON.stringify({
         lastPeriodStart: today,
         cycleLength: profile.cycleLength ?? cycleLength,
-        assessmentJson: mergePeriodStarts(profile.assessmentJson, today),
+        assessmentJson: mergePeriodStarts(profile.assessmentJson, today, periodDays),
       }),
     });
     hapticSuccess();
@@ -50,7 +51,7 @@ export function CycleDayCard({
           </p>
           <p className="vc-text-xs text-[var(--text-secondary)] mt-1">{status.label}</p>
           <p className="vc-text-xs text-[var(--text-tertiary)] mt-0.5">
-            Месячные ~{DEFAULT_PERIOD_DAYS} дней · достаточно отметить 1-й день
+            Месячные ~{periodDays} дн. · достаточно отметить 1-й день
           </p>
         </div>
       </div>

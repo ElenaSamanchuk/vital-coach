@@ -16,6 +16,7 @@ import {
 import { format, parseISO, subDays } from "date-fns";
 import { Card } from "./ui/Card";
 import { JournalHistoryList } from "./visual/JournalHistoryList";
+import { JournalCalendar, navigateToDay } from "./visual/JournalCalendar";
 import {
   buildCycleChartData,
   parsePeriodMeta,
@@ -107,6 +108,11 @@ export function PotokAnalytics() {
 
   return (
     <div className="space-y-4 pb-8">
+      <JournalCalendar
+        logs={logs}
+        onSelectDate={(d) => navigateToDay(d)}
+      />
+
       {periodStarts.length > 0 && (
         <Card title="Цикл" subtitle={cycleLabel}>
           <p className="vc-text-xs text-[var(--text-secondary)] mb-3">

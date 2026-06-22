@@ -19,47 +19,10 @@ export const GENERIC_LEISURE_POOL: ActivityItem[] = [
   ...INTELLECT_ACTIVITIES,
 ];
 
-const LEISURE_EMOJI: Record<string, string> = {
-  movie: "🎬",
-  books: "📚",
-  draw: "🎨",
-  music: "🎵",
-  tea: "🍵",
-  nature: "🌲",
-  lake: "🏞️",
-  firepit: "🔥",
-  dacha: "🏡",
-  parents: "👨‍👩‍👧",
-  pets: "🐱",
-  cafe: "☕",
-  garden: "🪴",
-  travel: "✈️",
-  cooking: "👩‍🍳",
-  projector: "📽️",
-  bath: "🛁",
-  park: "🌳",
-  beach: "🏖️",
-  chess: "♟️",
-  english: "🇬🇧",
-  social: "👥",
-  comedy: "😄",
-  banya: "🧖",
-  hammock: "🪑",
-  balcony: "☀️",
-  podcast: "🎧",
-  photo: "📷",
-  boardgames: "🎲",
-  masterclass: "🎓",
-  anticafe: "🎭",
-  sort: "📦",
-  reading_intel: "📖",
-  programming: "💻",
-};
-
 export interface GenericLeisureCard {
   id: string;
   label: string;
-  icon: string;
+  iconName: string;
   minutes: number;
   impact: string;
   impactLabel: string;
@@ -69,7 +32,7 @@ export function genericLeisureCards(): GenericLeisureCard[] {
   return GENERIC_LEISURE_POOL.map((act) => ({
     id: act.id,
     label: act.label,
-    icon: LEISURE_EMOJI[act.id] ?? "✨",
+    iconName: act.icon,
     minutes: act.category === "intellect" ? 30 : act.category === "social" ? 60 : 45,
     impact: leisureImpact(act.id),
     impactLabel: `настроение +${act.moodBoost}`,
