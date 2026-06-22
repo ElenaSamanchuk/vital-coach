@@ -83,7 +83,7 @@ export function pickTodayLeisure(ctx: {
     intellect: "Разум — сфера в фокусе",
   };
 
-  const limit = ctx.limit ?? 24;
+  const limit = ctx.limit ?? 32;
   const picks: TodayLeisurePick[] = [];
   const used = new Set<string>();
 
@@ -107,7 +107,7 @@ export function pickTodayLeisure(ctx: {
   return picks;
 }
 
-export function pickTodaySportExtras(ctx: WorkoutContext, limit = 18): WorkoutOption[] {
+export function pickTodaySportExtras(ctx: WorkoutContext, limit = 22): WorkoutOption[] {
   const base = getWorkoutOptions(ctx);
   const seen = new Set<string>();
   const result: WorkoutOption[] = [];

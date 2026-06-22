@@ -57,6 +57,16 @@ import {
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import type { DailyCoachPlan, WeeklyInsights } from "@/lib/types";
 import { AnalyticsRecommendationsCard } from "./visual/AnalyticsRecommendationsCard";
+import {
+  type MealChoicesRaw,
+  slotChoices,
+  leisureChoices,
+  toggleSlotChoice,
+  toggleLeisureChoice,
+  parseWorkoutChoices,
+  serializeWorkoutChoices,
+  toggleWorkoutChoice,
+} from "@/lib/today-choices";
 import { isSportLeisureId } from "@/lib/leisure";
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { PageSkeleton } from "@/components/ui/Skeleton";
@@ -80,7 +90,7 @@ export function CoachDashboard({
   const [plan, setPlan] = useState<DailyCoachPlan | null>(null);
   const [profile, setProfile] = useState<ProfileFlags | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mealChoices, setMealChoices] = useState<Record<string, string>>({});
+  const [mealChoices, setMealChoices] = useState<MealChoicesRaw>({});
   const [workoutChoice, setWorkoutChoice] = useState<string>("");
   const [diaryDone, setDiaryDone] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -154,12 +164,14 @@ export function CoachDashboard({
       setTodayStress(d.todayLog?.stress ?? undefined);
       if (d.todayLog?.mealChoices) {
         try {
-          const parsed = JSON.parse(d.todayLog.mealChoices) as Record<string, string>;
+          const parsed = JSON.parse(d.todayLog.mealChoices) as MealChoicesRaw;
           delete parsed._softDay;
           setMealChoices(parsed);
         } catch {
           setMealChoices({});
         }
+      } else {
+        setMealChoices({});
       }
       setWorkoutChoice(d.todayLog?.workoutChoice ?? "");
       if (a.ok) {
@@ -176,7 +188,7 @@ export function CoachDashboard({
 
   const saveMealChoice = async (slot: string, optionId: string) => {
     hapticLight();
-    const next = { ...mealChoices, [slot]: optionId };
+    const next = toggleSlotChoice(mealChoices, slot, optionId);
     setMealChoices(next);
     await apiClient("/api/choices", {
       method: "POST",
@@ -303,7 +315,9 @@ export function CoachDashboard({
 
   const saveWorkoutChoice = async (id: string) => {
     hapticLight();
-    const next = workoutChoice === id ? "" : id;
+    const current = parseWorkoutChoices(workoutChoice);
+    const nextIds = toggleWorkoutChoice(current, id);
+    const next = serializeWorkoutChoices(nextIds);
     setWorkoutChoice(next);
     await apiClient("/api/choices", {
       method: "POST",
@@ -315,12 +329,7 @@ export function CoachDashboard({
 
   const saveLeisureChoice = async (id: string) => {
     hapticLight();
-    const next = { ...mealChoices };
-    if (next._leisure === id) {
-      delete next._leisure;
-    } else {
-      next._leisure = id;
-    }
+    const next = toggleLeisureChoice(mealChoices, id);
     setMealChoices(next);
     await apiClient("/api/choices", {
       method: "POST",
@@ -330,28 +339,28 @@ export function CoachDashboard({
     load();
   };
 
-  const mealChoicesForSlots = useMemo(() => {
-    const { _leisure: _, ...slots } = mealChoices;
-    return slots;
-  }, [mealChoices]);
-
-  const leisureChoice = mealChoices._leisure ?? "";
+  const mealChoicesForSlots = useMemo(() => slotChoices(mealChoices), [mealChoices]);
+  const leisureChoiceIds = useMemo(() => leisureChoices(mealChoices), [mealChoices]);
+  const workoutChoiceIds = useMemo(() => parseWorkoutChoices(workoutChoice), [workoutChoice]);
 
   const mealsDone = useMemo(() => {
     if (!plan) return 0;
-    return plan.mealPlan.filter((s) => Boolean(mealChoicesForSlots[s.slot])).length;
+    return plan.mealPlan.filter((s) => (mealChoicesForSlots[s.slot]?.length ?? 0) > 0).length;
   }, [plan, mealChoicesForSlots]);
 
   const mealsTotal = plan?.mealPlan.length ?? 4;
-  const workoutPicked = Boolean(workoutChoice) || isSportLeisureId(leisureChoice) || (todaySteps ?? 0) >= 5000;
+  const workoutPicked =
+    workoutChoiceIds.length > 0 ||
+    leisureChoiceIds.some((id) => isSportLeisureId(id)) ||
+    (todaySteps ?? 0) >= 5000;
   const wellbeingProgress = useMemo(() => {
     if (!plan) return 0;
     let p = 0;
     if (plan.wellbeing.moodLogged || diaryDone) p += 0.34;
     if (plan.wellbeing.actionsDone.length > 0) p += 0.33;
-    if (leisureChoice) p += 0.33;
+    if (leisureChoiceIds.length > 0) p += 0.33;
     return Math.min(1, p);
-  }, [plan, diaryDone, leisureChoice]);
+  }, [plan, diaryDone, leisureChoiceIds]);
   const allComplete =
     mealsDone >= mealsTotal &&
     workoutPicked &&
@@ -387,7 +396,7 @@ export function CoachDashboard({
     diaryDone,
     moodLogged: plan.wellbeing.moodLogged,
     wellbeingActionsDone: plan.wellbeing.actionsDone.length,
-    leisureChoice,
+    leisureChoice: leisureChoiceIds[0] ?? "",
   });
   const vitalityScore = computeVitalityScore(rings);
 
@@ -401,7 +410,7 @@ export function CoachDashboard({
     plan.nutritionFramework.calorieNote,
   );
 
-  const selectedWorkoutId = workoutChoice;
+  const selectedWorkoutId = workoutChoiceIds[0] ?? "";
   const selectedWorkoutType =
     [plan.workout.recommended, ...plan.workout.alternatives].find(
       (w) => (w.id ?? w.title) === selectedWorkoutId,
@@ -616,10 +625,10 @@ export function CoachDashboard({
           mealChoices={mealChoicesForSlots}
           onMealSelect={saveMealChoice}
           sportOptions={plan.todaySportExtras}
-          selectedWorkoutId={selectedWorkoutId ?? ""}
+          selectedWorkoutIds={workoutChoiceIds}
           onWorkoutSelect={saveWorkoutChoice}
           leisure={plan.todayLeisure}
-          selectedLeisureId={leisureChoice}
+          selectedLeisureIds={leisureChoiceIds}
           onLeisureSelect={saveLeisureChoice}
         />
       )}

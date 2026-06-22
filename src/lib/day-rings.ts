@@ -1,5 +1,6 @@
 import { VC } from "./design-tokens";
 import { isSportLeisureId } from "./leisure";
+import { slotChoices, leisureChoices, parseWorkoutChoices } from "./today-choices";
 
 export interface RingSegment {
   id: string;
@@ -13,13 +14,27 @@ export interface RingSegment {
 
 export function computeMovementRing(opts: {
   workoutChoice?: string | null;
+  workoutChoices?: string[];
   steps?: number | null;
   leisureChoice?: string;
+  leisureChoices?: string[];
 }): Pick<RingSegment, "progress" | "done" | "hint"> {
-  if (opts.workoutChoice) {
-    return { progress: 1, done: true, hint: "выбрано" };
+  const workouts = opts.workoutChoices?.length
+    ? opts.workoutChoices
+    : parseWorkoutChoices(opts.workoutChoice);
+  if (workouts.length > 0) {
+    return {
+      progress: 1,
+      done: true,
+      hint: workouts.length > 1 ? `${workouts.length} вида` : "выбрано",
+    };
   }
-  if (isSportLeisureId(opts.leisureChoice)) {
+  const leisureIds = opts.leisureChoices?.length
+    ? opts.leisureChoices
+    : opts.leisureChoice
+      ? [opts.leisureChoice]
+      : [];
+  if (leisureIds.some((id) => isSportLeisureId(id))) {
     return { progress: 1, done: true, hint: "досуг" };
   }
   const steps = opts.steps ?? 0;
@@ -82,7 +97,7 @@ export function defaultDayRings(opts: {
 /** Единая логика колец для «Сегодня» — явный выбор + шаги + спорт в досуге */
 export function buildTodayRings(opts: {
   mealSlots: string[];
-  mealChoices: Record<string, string>;
+  mealChoices: Record<string, string | string[]>;
   workoutChoice?: string | null;
   steps?: number | null;
   diaryDone: boolean;
@@ -90,17 +105,20 @@ export function buildTodayRings(opts: {
   wellbeingActionsDone: number;
   leisureChoice?: string;
 }): RingSegment[] {
+  const slots = slotChoices(opts.mealChoices);
+  const leisureIds = leisureChoices(opts.mealChoices);
   const mealsTotal = opts.mealSlots.length || 4;
-  const mealsDone = opts.mealSlots.filter((slot) => Boolean(opts.mealChoices[slot])).length;
+  const mealsDone = opts.mealSlots.filter((slot) => (slots[slot]?.length ?? 0) > 0).length;
 
   let wellbeingProgress = 0;
   if (opts.moodLogged || opts.diaryDone) wellbeingProgress += 0.34;
   if (opts.wellbeingActionsDone > 0) wellbeingProgress += 0.33;
-  if (opts.leisureChoice) wellbeingProgress += 0.33;
+  if (leisureIds.length > 0 || opts.leisureChoice) wellbeingProgress += 0.33;
 
   const movement = computeMovementRing({
     workoutChoice: opts.workoutChoice,
     steps: opts.steps,
+    leisureChoices: leisureIds,
     leisureChoice: opts.leisureChoice,
   });
 

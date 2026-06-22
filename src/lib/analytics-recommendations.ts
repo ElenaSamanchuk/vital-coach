@@ -1,6 +1,7 @@
 /**
  * Рекомендации из аналитики: еда, движение, досуг, сон, вода, настроение…
  */
+import { parseWorkoutChoices, leisureChoices, parseMealChoicesRaw } from "./today-choices";
 import type { WeeklyInsights } from "./types";
 
 export type RecCategory =
@@ -57,8 +58,8 @@ function avg(nums: number[]): number | null {
 
 function hasLeisure(log: LogRow): boolean {
   try {
-    const mc = JSON.parse(log.mealChoices || "{}") as Record<string, string>;
-    if (mc._leisure) return true;
+    const mc = parseMealChoicesRaw(log.mealChoices);
+    if (leisureChoices(mc).length > 0) return true;
   } catch {
     /* */
   }
@@ -236,7 +237,7 @@ export function buildAnalyticsRecommendations(
   }
 
   // Тренировки — выбор на «Сегодня»
-  const workoutPicks = weekLogs.filter((l) => l.workoutChoice).length;
+  const workoutPicks = weekLogs.filter((l) => parseWorkoutChoices(l.workoutChoice).length > 0).length;
   if (weekLogs.length >= 3 && workoutPicks < 2 && !seen.has("workout:workouts")) {
     pushRec(recs, seen, {
       id: "workout-pick",

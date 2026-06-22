@@ -50,6 +50,12 @@ import { syndromeInsight } from "./syndrome-coach";
 import { currentExperiment } from "./weekly-experiment";
 import { buildTodayRings } from "./day-rings";
 import { computeVitalityScore } from "./vitality-score";
+import {
+  parseMealChoicesRaw,
+  slotChoices,
+  leisureChoices,
+  parseWorkoutChoices,
+} from "./today-choices";
 import type {
   CoachTask,
   CyclePhase,
@@ -86,13 +92,10 @@ function profileConditions(p: Profile): HealthConditions {
   };
 }
 
-function parseMealChoices(raw: string | null | undefined): Record<string, string> {
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw) as Record<string, string>;
-  } catch {
-    return {};
-  }
+function parseMealChoices(raw: string | null | undefined) {
+  const parsed = parseMealChoicesRaw(raw);
+  delete parsed._softDay;
+  return parsed;
 }
 
 function toWorkoutSuggestion(w: {
@@ -146,11 +149,11 @@ export function generateDailyPlan(
   const streak = computeStreak(recentLogs.map((l) => l.date));
   const nutritionMeta = deriveNutritionMeta(profileToDerivationInput(profile));
 
-  const mealChoices = parseMealChoices(todayLog?.mealChoices);
-  const leisureChoiceId = mealChoices._leisure ?? "";
+  const mealChoicesRaw = parseMealChoicesRaw(todayLog?.mealChoices);
+  const leisureChoiceIds = leisureChoices(mealChoicesRaw);
+  const leisureChoiceId = leisureChoiceIds[0] ?? "";
   const softDay = todayLog?.softDay === true;
-  delete mealChoices._softDay;
-  delete mealChoices._leisure;
+  const mealChoicesForPlan = parseMealChoices(todayLog?.mealChoices);
 
   let psychology = getPsychologyCoach(
     { energy, mood, stress, cortisolFeeling },
@@ -220,9 +223,10 @@ export function generateDailyPlan(
   }
 
   const framework = getNutritionFramework(conditions, phase, calorieTarget);
-  const workoutChoiceId = todayLog?.workoutChoice || undefined;
+  const workoutChoiceIds = parseWorkoutChoices(todayLog?.workoutChoice);
+  const workoutChoiceId = workoutChoiceIds[0];
 
-  const rawMealPlan = getDailyMealPlan(phase, conditions, mealChoices);
+  const rawMealPlan = getDailyMealPlan(phase, conditions, mealChoicesForPlan);
   const mealTotals = sumSelectedMeals(rawMealPlan);
   const mealOverTarget =
     nutritionMeta.bodyGoal === "lose" && mealTotals.calories > calorieTarget * 1.05;
@@ -270,10 +274,20 @@ export function generateDailyPlan(
   }
 
   let recommended = workoutBlock.recommended;
-  if (workoutChoiceId) {
-    const picked =
-      [workoutBlock.recommended, ...workoutBlock.alternatives].find((w) => w.id === workoutChoiceId);
-    if (picked) recommended = picked;
+  if (workoutChoiceIds.length > 0) {
+    const pool = [workoutBlock.recommended, ...workoutBlock.alternatives];
+    const picked = workoutChoiceIds
+      .map((id) => pool.find((w) => w.id === id))
+      .filter((w): w is NonNullable<typeof w> => Boolean(w));
+    if (picked.length > 0) {
+      recommended = {
+        ...picked[0],
+        title:
+          picked.length > 1
+            ? `${picked[0].title} + ещё ${picked.length - 1}`
+            : picked[0].title,
+      };
+    }
   }
 
   if (compensation.netExtraWalkMin > 0) {
@@ -583,8 +597,8 @@ export function generateDailyPlan(
   const vitalityScore = computeVitalityScore(
     buildTodayRings({
       mealSlots: rawMealPlan.map((m) => m.slot),
-      mealChoices,
-      workoutChoice: workoutChoiceId,
+      mealChoices: mealChoicesForPlan,
+      workoutChoice: todayLog?.workoutChoice,
       steps: todayLog?.steps,
       diaryDone: todayLog?.mood != null || todayLog?.weightKg != null,
       moodLogged: todayLog?.mood != null,

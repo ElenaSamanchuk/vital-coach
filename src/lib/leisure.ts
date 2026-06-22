@@ -41,6 +41,11 @@ export const LEISURE_ACTIVITIES: ActivityItem[] = [
   { id: "anticafe", label: "Антикафе / антикино", category: "social", moodBoost: 8, xpStat: "soul", icon: "Coffee", color: "#a2845e" },
   { id: "masterclass", label: "Мастер-класс", category: "creative", moodBoost: 9, xpStat: "mind", icon: "Palette", color: "#ff2d55" },
   { id: "balcony", label: "Балкон-чил", category: "rest", moodBoost: 7, xpStat: "energy", icon: "Sun", color: "#ffd60a" },
+  { id: "podcast", label: "Подкаст / аудиокнига", category: "intellect", moodBoost: 6, xpStat: "mind", icon: "Headphones", color: "#5856d6" },
+  { id: "photo", label: "Фото / прогулка с камерой", category: "creative", moodBoost: 8, xpStat: "soul", icon: "Camera", color: "#0071e3" },
+  { id: "boardgames", label: "Настолки", category: "social", moodBoost: 8, xpStat: "soul", icon: "Dice5", color: "#ff9500" },
+  { id: "stretch", label: "Растяжка / мобилити", category: "sport", moodBoost: 7, xpStat: "body", icon: "StretchHorizontal", color: "#af52de" },
+  { id: "run", label: "Лёгкий бег", category: "sport", moodBoost: 8, xpStat: "body", icon: "PersonStanding", color: "#34c759" },
 ];
 
 export const INTELLECT_ACTIVITIES: ActivityItem[] = [

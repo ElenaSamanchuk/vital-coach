@@ -244,7 +244,7 @@ export function getMealOptions(
     options = options.filter((o) => !o.title.toLowerCase().includes("сырой капуст"));
   }
 
-  const limit = 12;
+  const limit = 22;
   if (options.length < limit) {
     for (const phaseKey of Object.keys(BANK) as CyclePhase[]) {
       if (phaseKey === p) continue;
@@ -264,26 +264,41 @@ export function getMealOptions(
 export function getDailyMealPlan(
   phase: CyclePhase | null,
   conditions: HealthConditions,
-  selectedIds?: Record<string, string>,
-): { slot: string; options: MealOption[]; selected: MealOption }[] {
+  selectedIds?: Record<string, string | string[]>,
+): {
+  slot: string;
+  options: MealOption[];
+  selected: MealOption;
+  selectedIds: string[];
+  selectedItems: MealOption[];
+}[] {
   return MEAL_SLOTS.map((slot) => {
     const options = getMealOptions(phase, conditions, slot);
-    const selectedId = selectedIds?.[slot];
-    const selected = options.find((o) => o.id === selectedId) ?? options[0];
-    return { slot, options, selected };
+    const raw = selectedIds?.[slot];
+    const ids = Array.isArray(raw) ? raw.filter(Boolean) : raw ? [raw] : [];
+    const selectedItems = ids
+      .map((id) => options.find((o) => o.id === id))
+      .filter((o): o is MealOption => Boolean(o));
+    const selected = selectedItems[0] ?? options[0];
+    return { slot, options, selected, selectedIds: ids, selectedItems };
   });
 }
 
-export function sumSelectedMeals(plan: { selected: MealOption }[]): {
+export function sumSelectedMeals(
+  plan: { selectedItems?: MealOption[]; selected: MealOption }[],
+): {
   calories: number;
   proteinG: number;
   fatG: number;
   carbsG: number;
 } {
-  return plan.reduce(
-    (acc, p) => {
-      const c = p.selected.calories;
-      const pr = p.selected.proteinG;
+  const items = plan.flatMap((p) =>
+    p.selectedItems && p.selectedItems.length > 0 ? p.selectedItems : [p.selected],
+  );
+  return items.reduce(
+    (acc, sel) => {
+      const c = sel.calories;
+      const pr = sel.proteinG;
       const fat = Math.round((c * 0.28) / 9);
       const carbs = Math.round((c - pr * 4 - fat * 9) / 4);
       return {

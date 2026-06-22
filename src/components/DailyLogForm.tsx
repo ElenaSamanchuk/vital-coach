@@ -707,50 +707,12 @@ export function DailyLogForm() {
             />
           </IconCard>
 
-          <IconCard icon={Pill} iconColor={CARD_ICON} title="Цикл и лекарства" subtitle="Профиль · можно править здесь">
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <label className="block">
-                <span className="vc-label">Длина цикла, дн.</span>
-                <input
-                  type="number"
-                  className="apple-input mt-1"
-                  defaultValue={profile.cycleLength ?? 28}
-                  key={`cycle-${profile.cycleLength ?? 28}`}
-                  onBlur={(e) =>
-                    void patchProfile({ cycleLength: parseInt(e.target.value, 10) || 28 })
-                  }
-                />
-              </label>
-              <label className="block">
-                <span className="vc-label">Начало месячных</span>
-                <input
-                  type="date"
-                  className="apple-input mt-1"
-                  value={profile.lastPeriodStart?.split("T")[0] ?? ""}
-                  onChange={(e) =>
-                    void patchProfile({ lastPeriodStart: e.target.value || null })
-                  }
-                />
-              </label>
-            </div>
-            <button
-              type="button"
-              className="apple-btn apple-btn-secondary w-full mb-3"
-              onClick={() => void patchProfile({ lastPeriodStart: format(new Date(), "yyyy-MM-dd") })}
-            >
-              Начались месячные сегодня
-            </button>
-            <label className="block">
-              <span className="vc-label">Лекарства</span>
-              <input
-                className="apple-input mt-1"
-                placeholder="Что принимаешь регулярно…"
-                defaultValue={profile.thyroidMedication ?? ""}
-                key={`meds-${profile.thyroidMedication ?? ""}`}
-                onBlur={(e) => void patchProfile({ thyroidMedication: e.target.value })}
-              />
-            </label>
-          </IconCard>
+          <Link
+            href="/settings?tab=body"
+            className="block text-[12px] font-semibold text-[var(--accent)] px-1 -mt-2"
+          >
+            Цикл и лекарства → настройки «Тело»
+          </Link>
 
           <EveningRitualCard
             done={eveningRitual}

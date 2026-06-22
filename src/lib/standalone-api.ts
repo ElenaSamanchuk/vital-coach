@@ -127,8 +127,8 @@ async function profilePut(body: Record<string, unknown>) {
   const merged = { ...existing, ...body };
   const needsRecalc =
     Object.keys(body).some((k) => RECALC_KEYS.has(k)) &&
-    merged.currentWeightKg &&
-    merged.heightCm;
+    merged.currentWeightKg > 0 &&
+    merged.heightCm > 0;
   let patch = { ...body } as Partial<typeof existing>;
   if (needsRecalc) {
     const targets = deriveNutritionTargets(
@@ -351,13 +351,13 @@ export async function handleStandaloneApi(path: string, init?: RequestInit): Pro
     if (path.startsWith("/api/choices") && method === "POST") {
       const date = startOfDayDate((body.date as string) ?? new Date());
       const existing = await store.getDailyLog(date);
-      let mealChoicesObj: Record<string, string> = {};
+      let mealChoicesObj: Record<string, string | string[]> = {};
       try {
         mealChoicesObj = JSON.parse(
           body.mealChoices != null
             ? JSON.stringify(body.mealChoices)
             : (existing?.mealChoices ?? "{}"),
-        ) as Record<string, string>;
+        ) as Record<string, string | string[]>;
       } catch {
         mealChoicesObj = {};
       }

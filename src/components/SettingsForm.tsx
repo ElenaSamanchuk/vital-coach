@@ -27,6 +27,7 @@ import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { UI } from "@/lib/product-copy";
 import { WeeklyReviewCard } from "./WeeklyReviewCard";
 import { AppFlowCard } from "./AppFlowCard";
+import { ProfileNumberField } from "./ui/ProfileNumberField";
 
 interface Profile {
   name: string;
@@ -91,15 +92,39 @@ export function SettingsForm() {
     });
   }, []);
 
-  const saveProfile = async () => {
+  const saveProfile = async (patch?: Partial<Profile>) => {
     if (!profile) return;
+    const payload: Partial<Profile> & { onboardingDone?: boolean } = patch ?? {
+      name: profile.name,
+      occupation: profile.occupation,
+      cycleLength: profile.cycleLength,
+      lastPeriodStart: profile.lastPeriodStart,
+      thyroidMedication: profile.thyroidMedication,
+      targetWaistCm: profile.targetWaistCm,
+      targetHipsCm: profile.targetHipsCm,
+      targetChestCm: profile.targetChestCm,
+      interestsJson: profile.interestsJson,
+      styleJson: profile.styleJson,
+      notificationPrefsJson: profile.notificationPrefsJson,
+      onboardingDone: true,
+    };
     await apiClient("/api/profile", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...profile, onboardingDone: true }),
+      body: JSON.stringify(payload),
     });
+    setProfile({ ...profile, ...payload });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const persistNotificationPrefs = async (json: string) => {
+    await apiClient("/api/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notificationPrefsJson: json }),
+    });
+    setProfile((p) => (p ? { ...p, notificationPrefsJson: json } : p));
   };
 
   const saveWheel = async () => {
@@ -122,20 +147,6 @@ export function SettingsForm() {
   const activeTab: Tab = settingsTabs.some((t) => t.id === tab) ? tab : "body";
 
   if (!profile) return <div className="text-center py-8 text-[var(--text-secondary)]">Загрузка…</div>;
-
-  const num = (key: keyof Profile, label: string) => (
-    <label className="block">
-      <span className="vc-label">{label}</span>
-      <input
-        type="number"
-        className="apple-input mt-1"
-        value={profile[key] as number}
-        onChange={(e) =>
-          setProfile({ ...profile, [key]: parseFloat(e.target.value) || 0 })
-        }
-      />
-    </label>
-  );
 
   return (
     <div className="vc-page">
@@ -164,7 +175,7 @@ export function SettingsForm() {
           )}
 
           <KeyParametersForm showAdvanced={showAdvanced} />
-          <Card title="Основное" subtitle="Вес и здоровье — в блоке «Ключевые параметры» выше">
+          <Card title="Основное" subtitle="Рост, вес и год — в «Ключевых параметрах» выше">
             <div className="space-y-3">
               <label className="block">
                 <span className="vc-label">Имя</span>
@@ -182,12 +193,17 @@ export function SettingsForm() {
                   onChange={(e) => setProfile({ ...profile, occupation: e.target.value })}
                 />
               </label>
-              {num("heightCm", "Рост, см")}
             </div>
           </Card>
 
-          <Card title="Цикл" subtitle="Длина и начало — для рекомендаций">
-            {num("cycleLength", "Длина цикла, дней")}
+          <Card title="Цикл" subtitle="Единственное место — для рекомендаций по фазам">
+            <ProfileNumberField
+              label="Длина цикла, дней"
+              value={profile.cycleLength}
+              min={21}
+              max={45}
+              onCommit={(n) => setProfile({ ...profile, cycleLength: Math.round(n) })}
+            />
             <label className="block mt-3">
               <span className="vc-label">Начало последних месячных</span>
               <input
@@ -225,14 +241,26 @@ export function SettingsForm() {
           {GENERIC_MODE && showAdvanced && (
             <Card title="Цели замеров" subtitle="Талия · бёдра · грудь">
               <div className="grid grid-cols-3 gap-2">
-                {num("targetWaistCm", "Талия, см")}
-                {num("targetHipsCm", "Бёдра, см")}
-                {num("targetChestCm", "Грудь, см")}
+                <ProfileNumberField
+                  label="Талия, см"
+                  value={profile.targetWaistCm}
+                  onCommit={(n) => setProfile({ ...profile, targetWaistCm: n })}
+                />
+                <ProfileNumberField
+                  label="Бёдра, см"
+                  value={profile.targetHipsCm}
+                  onCommit={(n) => setProfile({ ...profile, targetHipsCm: n })}
+                />
+                <ProfileNumberField
+                  label="Грудь, см"
+                  value={profile.targetChestCm}
+                  onCommit={(n) => setProfile({ ...profile, targetChestCm: n })}
+                />
               </div>
             </Card>
           )}
 
-          <button type="button" onClick={saveProfile} className="apple-btn apple-btn-primary w-full">
+          <button type="button" onClick={() => saveProfile()} className="apple-btn apple-btn-primary w-full">
             {saved ? "Сохранено ✓" : GENERIC_MODE ? UI.saveProfile : "Сохранить тело"}
           </button>
         </>
@@ -257,7 +285,7 @@ export function SettingsForm() {
               value={profile.interestsJson ?? "[]"}
               onChange={(json) => setProfile({ ...profile, interestsJson: json })}
             />
-            <button type="button" onClick={saveProfile} className="apple-btn apple-btn-secondary w-full mt-4">
+            <button type="button" onClick={() => saveProfile()} className="apple-btn apple-btn-secondary w-full mt-4">
               Сохранить интересы
             </button>
           </Card>
@@ -265,7 +293,7 @@ export function SettingsForm() {
             <StyleCapsuleCard
               profile={parseStyleProfile(profile.styleJson)}
               onChange={(s) => setProfile({ ...profile, styleJson: JSON.stringify(s) })}
-              onSave={saveProfile}
+              onSave={() => saveProfile()}
             />
           </Card>
           <WeeklyReviewCard />
@@ -287,7 +315,7 @@ export function SettingsForm() {
             <ReminderSettings
               value={profile.notificationPrefsJson ?? "{}"}
               onChange={(json) => setProfile({ ...profile, notificationPrefsJson: json })}
-              onSave={saveProfile}
+              onPersist={persistNotificationPrefs}
             />
           </Card>
           <BackupPanel />

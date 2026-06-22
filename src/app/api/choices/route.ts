@@ -21,11 +21,11 @@ export async function POST(req: Request) {
     where: { userId_date: { userId: user.id, date } },
   });
 
-  let mealChoicesObj: Record<string, string> = {};
+  let mealChoicesObj: Record<string, string | string[]> = {};
   try {
     mealChoicesObj = JSON.parse(
       body.mealChoices != null ? JSON.stringify(body.mealChoices) : existing?.mealChoices ?? "{}",
-    ) as Record<string, string>;
+    ) as Record<string, string | string[]>;
   } catch {
     mealChoicesObj = {};
   }

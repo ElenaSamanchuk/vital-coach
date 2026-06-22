@@ -59,20 +59,20 @@ export function TodayOptionsStrip({
   mealChoices,
   onMealSelect,
   sportOptions,
-  selectedWorkoutId,
+  selectedWorkoutIds,
   onWorkoutSelect,
   leisure,
-  selectedLeisureId,
+  selectedLeisureIds,
   onLeisureSelect,
 }: {
   mealPlan: MealSlotPlan[];
-  mealChoices: Record<string, string>;
+  mealChoices: Record<string, string[]>;
   onMealSelect: (slot: string, id: string) => void;
   sportOptions: WorkoutOption[];
-  selectedWorkoutId: string;
+  selectedWorkoutIds: string[];
   onWorkoutSelect: (id: string) => void;
   leisure: TodayLeisurePick[];
-  selectedLeisureId: string;
+  selectedLeisureIds: string[];
   onLeisureSelect: (id: string) => void;
 }) {
   const defaultTab = (): Tab => {
@@ -84,13 +84,19 @@ export function TodayOptionsStrip({
   const [tab, setTab] = useState<Tab>(defaultTab);
 
   const mealCount = mealPlan.reduce((n, s) => n + s.options.length, 0);
+  const selectedMeals = mealPlan.reduce(
+    (n, s) => n + (mealChoices[s.slot]?.length ?? 0),
+    0,
+  );
+  const selectedSport = selectedWorkoutIds.length;
+  const selectedLeisure = selectedLeisureIds.length;
 
   return (
     <div className="vc-glass-card rounded-2xl space-y-3">
       <div>
         <p className="vc-text-lg">Выбор на сегодня</p>
         <p className="vc-subtitle vc-text-xs mt-0.5">
-          Листай влево — вариантов много · подпись — что получишь
+          Можно выбрать несколько · листай влево · повторное нажатие снимает выбор
         </p>
       </div>
       <div className="flex gap-1 p-0.5 rounded-xl bg-[var(--bg-subtle)]">
@@ -117,7 +123,7 @@ export function TodayOptionsStrip({
             <PickStripSection key={slot.slot} label={slot.slotLabel} count={slot.options.length}>
               {slot.options.map((opt) => {
                 const id = (opt as { id?: string }).id ?? opt.title;
-                const selected = mealChoices[slot.slot] === id;
+                const selected = (mealChoices[slot.slot] ?? []).includes(id);
                 const short = opt.title.split("+")[0].trim().slice(0, 40);
                 const impact = (opt as { impact?: string }).impact;
                 return (
@@ -139,39 +145,46 @@ export function TodayOptionsStrip({
               })}
             </PickStripSection>
           ))}
-          {mealCount > 4 && (
+          {selectedMeals > 0 && (
             <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
-              Всего {mealCount} блюд на день
+              Выбрано {selectedMeals} · всего {mealCount} вариантов
             </p>
           )}
         </div>
       )}
 
       {tab === "sport" && (
-        <PickStripSection count={sportOptions.length}>
-          {sportOptions.map((w) => {
-            const id = w.id ?? w.title;
-            const selected = selectedWorkoutId === id;
-            const WIcon = workoutIcon(w.type);
-            return (
-              <PickChip
-                key={id}
-                selected={selected}
-                onClick={() => {
-                  hapticLight();
-                  onWorkoutSelect(id);
-                }}
-              >
-                <div className="vc-pick-chip-row">
-                  <WIcon size={16} className="text-[var(--accent)] shrink-0" />
-                  <p className="vc-pick-chip-title line-clamp-2">{w.title}</p>
-                </div>
-                <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">{w.durationMin} мин</p>
-                {w.impact && <ImpactLine text={w.impact} />}
-              </PickChip>
-            );
-          })}
-        </PickStripSection>
+        <>
+          <PickStripSection count={sportOptions.length}>
+            {sportOptions.map((w) => {
+              const id = w.id ?? w.title;
+              const selected = selectedWorkoutIds.includes(id);
+              const WIcon = workoutIcon(w.type);
+              return (
+                <PickChip
+                  key={id}
+                  selected={selected}
+                  onClick={() => {
+                    hapticLight();
+                    onWorkoutSelect(id);
+                  }}
+                >
+                  <div className="vc-pick-chip-row">
+                    <WIcon size={16} className="text-[var(--accent)] shrink-0" />
+                    <p className="vc-pick-chip-title line-clamp-2">{w.title}</p>
+                  </div>
+                  <p className="vc-text-xs text-[var(--text-secondary)] mt-0.5">{w.durationMin} мин</p>
+                  {w.impact && <ImpactLine text={w.impact} />}
+                </PickChip>
+              );
+            })}
+          </PickStripSection>
+          {selectedSport > 0 && (
+            <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
+              Выбрано тренировок: {selectedSport}
+            </p>
+          )}
+        </>
       )}
 
       {tab === "leisure" && (
@@ -181,30 +194,37 @@ export function TodayOptionsStrip({
               Подборка появится после загрузки плана
             </p>
           ) : (
-            <PickStripSection count={leisure.length}>
-              {leisure.map((l) => {
-                const selected = selectedLeisureId === l.id;
-                return (
-                  <PickChip
-                    key={l.id}
-                    selected={selected}
-                    onClick={() => {
-                      hapticLight();
-                      onLeisureSelect(l.id);
-                    }}
-                  >
-                    <div className="vc-pick-chip-row">
-                      <LeisureIcon name={l.icon} color={l.color} />
-                      <span className="vc-pick-chip-title line-clamp-2">{l.label}</span>
-                    </div>
-                    <p className="vc-text-xs text-[var(--text-secondary)] leading-snug line-clamp-2 mt-0.5">
-                      {l.why}
-                    </p>
-                    <ImpactLine text={l.impact} />
-                  </PickChip>
-                );
-              })}
-            </PickStripSection>
+            <>
+              <PickStripSection count={leisure.length}>
+                {leisure.map((l) => {
+                  const selected = selectedLeisureIds.includes(l.id);
+                  return (
+                    <PickChip
+                      key={l.id}
+                      selected={selected}
+                      onClick={() => {
+                        hapticLight();
+                        onLeisureSelect(l.id);
+                      }}
+                    >
+                      <div className="vc-pick-chip-row">
+                        <LeisureIcon name={l.icon} color={l.color} />
+                        <span className="vc-pick-chip-title line-clamp-2">{l.label}</span>
+                      </div>
+                      <p className="vc-text-xs text-[var(--text-secondary)] leading-snug line-clamp-2 mt-0.5">
+                        {l.why}
+                      </p>
+                      <ImpactLine text={l.impact} />
+                    </PickChip>
+                  );
+                })}
+              </PickStripSection>
+              {selectedLeisure > 0 && (
+                <p className="vc-text-xs text-center text-[var(--text-tertiary)]">
+                  Выбрано: {selectedLeisure}
+                </p>
+              )}
+            </>
           )}
         </>
       )}

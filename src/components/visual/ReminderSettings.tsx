@@ -2,7 +2,6 @@
 
 import { Bell } from "lucide-react";
 import {
-  DEFAULT_NOTIFICATION_PREFS,
   parseNotificationPrefs,
   requestNotificationPermission,
   type NotificationPrefs,
@@ -11,22 +10,24 @@ import {
 export function ReminderSettings({
   value,
   onChange,
-  onSave,
+  onPersist,
 }: {
   value: string;
   onChange: (json: string) => void;
-  onSave: () => void;
+  /** Сохранить в профиль сразу (важно для APK/PWA) */
+  onPersist: (json: string) => void | Promise<void>;
 }) {
   const prefs = parseNotificationPrefs(value);
 
-  const update = (patch: Partial<NotificationPrefs>) => {
-    onChange(JSON.stringify({ ...prefs, ...patch }));
+  const commit = (patch: Partial<NotificationPrefs>) => {
+    const json = JSON.stringify({ ...prefs, ...patch });
+    onChange(json);
+    void onPersist(json);
   };
 
   const enable = async () => {
     const ok = await requestNotificationPermission();
-    update({ enabled: ok, askedPermission: true });
-    if (ok) onSave();
+    commit({ enabled: ok, askedPermission: true });
   };
 
   return (
@@ -42,7 +43,7 @@ export function ReminderSettings({
         <input
           type="checkbox"
           checked={prefs.enabled}
-          onChange={(e) => (e.target.checked ? enable() : update({ enabled: false }))}
+          onChange={(e) => (e.target.checked ? enable() : commit({ enabled: false }))}
           className="accent-[var(--accent)]"
         />
         Включить уведомления
@@ -57,7 +58,10 @@ export function ReminderSettings({
               max={11}
               className="apple-input apple-input--compact mt-1"
               value={prefs.morningHour}
-              onChange={(e) => update({ morningHour: parseInt(e.target.value, 10) || 9 })}
+              onChange={(e) => {
+                const h = parseInt(e.target.value, 10);
+                if (!Number.isNaN(h)) commit({ morningHour: h });
+              }}
             />
           </label>
           <label className="text-[11px]">
@@ -68,14 +72,14 @@ export function ReminderSettings({
               max={23}
               className="apple-input apple-input--compact mt-1"
               value={prefs.eveningHour}
-              onChange={(e) => update({ eveningHour: parseInt(e.target.value, 10) || 21 })}
+              onChange={(e) => {
+                const h = parseInt(e.target.value, 10);
+                if (!Number.isNaN(h)) commit({ eveningHour: h });
+              }}
             />
           </label>
         </div>
       )}
-      <button type="button" onClick={onSave} className="apple-btn apple-btn-secondary w-full text-[12px]">
-        Сохранить
-      </button>
     </div>
   );
 }

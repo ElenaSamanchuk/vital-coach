@@ -16,6 +16,7 @@ import {
 import { GENERIC_FEATURES } from "@/lib/generic-ui";
 import { GENERIC_MODE } from "@/lib/app-config";
 import type { BodyGoal } from "@/lib/profile-derivation";
+import { ProfileNumberField } from "./ui/ProfileNumberField";
 
 interface KeyProfile {
   assessmentJson: string;
@@ -91,14 +92,31 @@ export function KeyParametersForm({ showAdvanced = false }: { showAdvanced?: boo
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...data,
         assessmentJson: mergePreferencesIntoAssessment(data.assessmentJson, prefs),
+        birthYear: data.birthYear,
+        currentWeightKg: data.currentWeightKg,
+        targetWeightKg: data.targetWeightKg,
+        heightCm: data.heightCm,
+        activityLevel: data.activityLevel,
+        workActivityLevel: data.workActivityLevel,
+        primaryFocus: data.primaryFocus,
+        insulinResistance: data.insulinResistance,
+        hypothyroidism: data.hypothyroidism,
+        cortisolIssues: data.cortisolIssues,
+        vitaminDDeficiency: data.vitaminDDeficiency,
+        b12Deficiency: data.b12Deficiency,
+        hormoneIssues: data.hormoneIssues,
+        pcosSuspected: data.pcosSuspected,
+        endometriosis: data.endometriosis,
+        vitaminAbsorption: data.vitaminAbsorption,
+        surgeryRecovery: data.surgeryRecovery,
         calorieTarget: preview.calorieTarget,
         proteinTargetG: preview.proteinTargetG,
         fatTargetG: preview.fatTargetG,
         carbTargetG: preview.carbTargetG,
         fiberTargetG: preview.fiberTargetG,
         waterTargetMl: preview.waterTargetMl,
+        onboardingDone: true,
       }),
     });
     setSaved(true);
@@ -176,29 +194,39 @@ export function KeyParametersForm({ showAdvanced = false }: { showAdvanced?: boo
       )}
 
       <div className="grid grid-cols-2 gap-3 mb-3">
-        <label className="block">
-          <span className="vc-label">Рост, см</span>
-          <input type="number" className="apple-input mt-1" value={data.heightCm}
-            onChange={(e) => setData({ ...data, heightCm: +e.target.value })} />
-        </label>
-        <label className="block">
-          <span className="vc-label">Год рождения</span>
-          <input type="number" className="apple-input mt-1" value={data.birthYear}
-            onChange={(e) => setData({ ...data, birthYear: +e.target.value })} />
-        </label>
+        <ProfileNumberField
+          label="Рост, см"
+          value={data.heightCm}
+          min={120}
+          max={220}
+          onCommit={(n) => setData({ ...data, heightCm: n })}
+        />
+        <ProfileNumberField
+          label="Год рождения"
+          value={data.birthYear}
+          min={1940}
+          max={2015}
+          onCommit={(n) => setData({ ...data, birthYear: Math.round(n) })}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <label className="block">
-          <span className="vc-label">Вес сейчас</span>
-          <input type="number" className="apple-input mt-1" value={data.currentWeightKg}
-            onChange={(e) => setData({ ...data, currentWeightKg: +e.target.value })} />
-        </label>
-        <label className="block">
-          <span className="vc-label">Цель вес</span>
-          <input type="number" className="apple-input mt-1" value={data.targetWeightKg}
-            onChange={(e) => setData({ ...data, targetWeightKg: +e.target.value })} />
-        </label>
+        <ProfileNumberField
+          label="Вес сейчас"
+          value={data.currentWeightKg}
+          step={0.1}
+          min={30}
+          max={200}
+          onCommit={(n) => setData({ ...data, currentWeightKg: n })}
+        />
+        <ProfileNumberField
+          label="Цель вес"
+          value={data.targetWeightKg}
+          step={0.1}
+          min={30}
+          max={200}
+          onCommit={(n) => setData({ ...data, targetWeightKg: n })}
+        />
       </div>
 
       <label className="block mb-3">
