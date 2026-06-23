@@ -22,22 +22,15 @@ import {
   buildCycleChartData,
   parsePeriodMeta,
   cycleStatus,
+  deriveLastPeriodStart,
 } from "@/lib/period-tracking";
 import { journalEntries } from "@/lib/day-memories";
 import { enrichLogsWithMovement, hasMovementData } from "@/lib/movement-analytics";
+import type { JournalDayLog } from "@/lib/day-journal-entry";
+import { CYCLE_COPY, potokCycleLabel } from "@/lib/app-config";
 
-interface LogRow {
-  date: string;
+interface LogRow extends JournalDayLog {
   dateLabel?: string;
-  weightKg?: number;
-  calories?: number;
-  waterMl?: number;
-  sleepMinutes?: number;
-  mood?: number;
-  steps?: number;
-  workoutChoice?: string;
-  notes?: string;
-  dayPhoto?: string;
 }
 
 export function PotokAnalytics() {
@@ -70,18 +63,13 @@ export function PotokAnalytics() {
     [profile?.assessmentJson],
   );
 
-  const periodStarts = useMemo(() => {
-    const starts = [...periodMeta.periodStarts];
-    const last = profile?.lastPeriodStart?.split("T")[0];
-    if (last && !starts.includes(last)) starts.unshift(last);
-    return starts;
-  }, [periodMeta.periodStarts, profile?.lastPeriodStart]);
+  const menstrualDays = periodMeta.menstrualDays;
 
   const cycleChart = useMemo(() => {
     const to = new Date();
     const from = subDays(to, 89);
-    return buildCycleChartData(from, to, periodStarts, periodMeta.periodDays);
-  }, [periodStarts, periodMeta.periodDays]);
+    return buildCycleChartData(from, to, menstrualDays);
+  }, [menstrualDays]);
 
   const journal = useMemo(() => journalEntries(logs, 24), [logs]);
 
@@ -101,16 +89,17 @@ export function PotokAnalytics() {
     return { avgSteps, workoutDays: withWorkouts.length, totalBurn };
   }, [movementLogs]);
 
-  const cycleLabel = cycleStatus(
-    profile?.lastPeriodStart ?? null,
-    profile?.cycleLength ?? 28,
-  ).label;
+  const cycleStatusData = useMemo(() => {
+    const lastStart = deriveLastPeriodStart(menstrualDays) ?? profile?.lastPeriodStart ?? null;
+    const status = cycleStatus(lastStart, profile?.cycleLength ?? 28);
+    return { label: potokCycleLabel(status.day, status.phase ?? undefined) };
+  }, [menstrualDays, profile?.lastPeriodStart, profile?.cycleLength]);
 
   if (loading) {
     return <div className="text-center py-8 text-[var(--text-secondary)]">Загрузка…</div>;
   }
 
-  if (logs.length === 0 && periodStarts.length === 0) {
+  if (logs.length === 0 && menstrualDays.length === 0) {
     return (
       <p className="text-center py-12 vc-text-sm text-[var(--text-secondary)]">
         Сохрани несколько дней — здесь появятся графики
@@ -131,11 +120,9 @@ export function PotokAnalytics() {
         onSelectDate={(d) => navigateToDay(d)}
       />
 
-      {periodStarts.length > 0 && (
-        <Card title="Цикл" subtitle={cycleLabel}>
-          <p className="vc-text-xs text-[var(--text-secondary)] mb-3">
-            Розовые столбцы — дни месячных (~{periodMeta.periodDays} дн. от 1-го дня)
-          </p>
+      {menstrualDays.length > 0 && (
+        <Card title={CYCLE_COPY.cardTitle} subtitle={cycleStatusData.label}>
+          <p className="vc-text-xs text-[var(--text-secondary)] mb-3">{CYCLE_COPY.chartBars}</p>
           <div className="h-36">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cycleChart}>
@@ -143,13 +130,11 @@ export function PotokAnalytics() {
                 {chartProps.x}
                 <YAxis hide domain={[0, 1]} />
                 {chartProps.tooltip}
-                <Bar dataKey="menstrual" fill="#D4869C" name="месячные" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="menstrual" fill="#D4869C" name={CYCLE_COPY.chartLegend} radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="vc-text-xs text-[var(--text-tertiary)] mt-2">
-            Отмечай 1-й день на «Мой день» — график обновится
-          </p>
+          <p className="vc-text-xs text-[var(--text-tertiary)] mt-2">{CYCLE_COPY.chartAction}</p>
         </Card>
       )}
 

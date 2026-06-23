@@ -9,7 +9,6 @@ import {
   format,
   isSameDay,
   isSameMonth,
-  parseISO,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -17,26 +16,8 @@ import {
 } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { dayHasJournalEntry, type JournalDayLog } from "@/lib/day-journal-entry";
 import { hapticLight } from "@/lib/haptics";
-
-interface DayLog {
-  date: string;
-  mood?: number;
-  notes?: string;
-  dayPhoto?: string;
-  mealChoices?: string;
-  calories?: number;
-}
-
-function hasEntry(log: DayLog): boolean {
-  return Boolean(
-    log.mood != null ||
-      log.notes?.trim() ||
-      log.dayPhoto ||
-      log.calories ||
-      (log.mealChoices && log.mealChoices !== "{}" && log.mealChoices !== "null"),
-  );
-}
 
 export function JournalCalendar({
   logs,
@@ -44,7 +25,7 @@ export function JournalCalendar({
   onSelectDate,
   compact = false,
 }: {
-  logs: DayLog[];
+  logs: JournalDayLog[];
   selectedDate?: Date;
   onSelectDate: (d: Date) => void;
   compact?: boolean;
@@ -54,7 +35,7 @@ export function JournalCalendar({
   const entryDates = useMemo(() => {
     const set = new Set<string>();
     for (const l of logs) {
-      if (hasEntry(l)) set.add(l.date.split("T")[0]);
+      if (dayHasJournalEntry(l)) set.add(l.date.split("T")[0]);
     }
     return set;
   }, [logs]);
@@ -149,7 +130,7 @@ export function JournalCalendar({
       </div>
 
       <p className="vc-text-xs text-[var(--text-tertiary)] text-center">
-        Точки — дни с записями · нажми, чтобы открыть
+        Точки — дни с едой, движением, заметками · не пустое сохранение
       </p>
     </div>
   );

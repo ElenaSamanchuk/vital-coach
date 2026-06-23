@@ -82,6 +82,21 @@ export function HorizontalPickSection({
     );
   }, [items, search]);
 
+  /** Выбранные — в начале полоски, в порядке выбора */
+  const ordered = useMemo(() => {
+    const seen = new Set<string>();
+    const selected: HorizontalPickItem[] = [];
+    for (const id of selectedIds) {
+      const item = filtered.find((i) => i.id === id);
+      if (item && !seen.has(id)) {
+        selected.push(item);
+        seen.add(id);
+      }
+    }
+    const rest = filtered.filter((i) => !seen.has(i.id));
+    return [...selected, ...rest];
+  }, [filtered, selectedIds]);
+
   const selectedCount = selectedIds.length;
 
   return (
@@ -129,14 +144,14 @@ export function HorizontalPickSection({
       )}
 
       <PickStripSection
-        count={filtered.length}
+        count={ordered.length}
         headerRight={
           selectedCount > 0 ? (
             <span className="vc-text-xs text-[var(--accent)] tabular-nums">{selectedCount} выбрано</span>
           ) : undefined
         }
       >
-        {filtered.map((item) => {
+        {ordered.map((item) => {
           const selected = selectedIds.includes(item.id);
           const Icon = item.icon;
           return (

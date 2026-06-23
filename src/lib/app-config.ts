@@ -46,5 +46,36 @@ export const APP_TAGLINE = GENERIC_MODE
   ? "будь в потоке"
   : "Личный коуч: питание, тренировки, здоровье";
 
+/** Мягкие подписи цикла в режиме «Поток» — без слова «месячные» */
+export const CYCLE_COPY = {
+  cardTitle: "Цикл",
+  markButton: "День цикла",
+  markHint: "Отмечай дни, когда идёт цикл — повторное нажатие снимает",
+  chartBars: "Розовые столбцы — отмеченные дни цикла",
+  chartAction: "Отмечай день цикла на «Мой день»",
+  profileHint: "Дни цикла — на «Мой день», каждый день отдельно",
+  chartLegend: "цикл",
+  phaseMenstrual: "цикл",
+  phaseFollicular: "фолликулярная фаза",
+  phaseOvulation: "овуляция",
+  phaseLuteal: "лютеиновая фаза",
+  notMarked: "Цикл не отмечен",
+} as const;
+
+/** Человекочитаемый статус фазы для «Поток» */
+export function potokCycleLabel(
+  day: number | null,
+  phase: string | null | undefined,
+): string {
+  if (day == null || !phase) return CYCLE_COPY.notMarked;
+  const phaseRu: Record<string, string> = {
+    menstrual: CYCLE_COPY.phaseMenstrual,
+    follicular: CYCLE_COPY.phaseFollicular,
+    ovulation: CYCLE_COPY.phaseOvulation,
+    luteal: CYCLE_COPY.phaseLuteal,
+  };
+  return `День ${day} · ${phaseRu[phase] ?? phase}`;
+}
+
 /** Префикс файла резервной копии в standalone */
 export const BACKUP_FILE_PREFIX = GENERIC_MODE ? "potok-backup" : "vital-coach-backup";

@@ -44,7 +44,7 @@ import { JournalCalendar } from "./visual/JournalCalendar";
 import { computeDayDiversity } from "@/lib/day-diversity";
 import { findDayMemories } from "@/lib/day-memories";
 import { syncAndroidSteps, isAndroidNative } from "@/lib/android-steps";
-import { parsePeriodMeta } from "@/lib/period-tracking";
+import type { JournalDayLog } from "@/lib/day-journal-entry";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 
 interface LogFields {
@@ -67,9 +67,7 @@ function movementBurnTarget(calorieTarget: number): number {
 export function UnifiedDayScreen() {
   const [viewDate, setViewDate] = useState(readInitialDayFromUrl);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [journalLogs, setJournalLogs] = useState<
-    { date: string; mood?: number; notes?: string; dayPhoto?: string; mealChoices?: string; calories?: number }[]
-  >([]);
+  const [journalLogs, setJournalLogs] = useState<JournalDayLog[]>([]);
   const [plan, setPlan] = useState<DailyCoachPlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [mealChoices, setMealChoices] = useState<MealChoicesRaw>({});
@@ -92,9 +90,7 @@ export function UnifiedDayScreen() {
   const [sleepTargetMin, setSleepTargetMin] = useState(480);
   const [weightKg, setWeightKg] = useState(70);
   const [dayPhoto, setDayPhoto] = useState("");
-  const [lastPeriodStart, setLastPeriodStart] = useState<string | null>(null);
   const [cycleLength, setCycleLength] = useState(28);
-  const [periodDays, setPeriodDays] = useState(5);
   const [assessmentJson, setAssessmentJson] = useState<string | null>(null);
   const [memories, setMemories] = useState<ReturnType<typeof findDayMemories>>([]);
 
@@ -110,9 +106,7 @@ export function UnifiedDayScreen() {
       const profile = await p.json();
       setSleepTargetMin(profile.sleepTargetMin ?? 480);
       setWeightKg(profile.currentWeightKg ?? 70);
-      setLastPeriodStart(profile.lastPeriodStart ?? null);
       setCycleLength(profile.cycleLength ?? 28);
-      setPeriodDays(parsePeriodMeta(profile.assessmentJson).periodDays);
       setAssessmentJson(profile.assessmentJson ?? null);
       setPlan(d.plan);
       if (d.todayLog?.mealChoices) {
@@ -399,18 +393,13 @@ export function UnifiedDayScreen() {
 
       <CycleDayCard
         viewDate={viewDate}
-        lastPeriodStart={lastPeriodStart}
         cycleLength={cycleLength}
-        periodDays={periodDays}
         assessmentJson={assessmentJson}
         onUpdated={() => {
           void load();
           apiClient("/api/profile")
             .then((r) => r.json())
-            .then((p) => {
-              setLastPeriodStart(p.lastPeriodStart ?? null);
-              setAssessmentJson(p.assessmentJson ?? null);
-            });
+            .then((p) => setAssessmentJson(p.assessmentJson ?? null));
         }}
       />
 
